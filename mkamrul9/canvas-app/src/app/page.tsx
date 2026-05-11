@@ -1,6 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import Toolbar from '../components/layout/Toolbar';
+import PropertiesPanel from '../components/layout/PropertiesPanel';
 
 // Dynamically import the Board component and strictly disable SSR
 const Board = dynamic(() => import('../components/canvas/Board'), {
@@ -10,9 +12,15 @@ const Board = dynamic(() => import('../components/canvas/Board'), {
 
 export default function Home() {
   return (
-    <main className="h-screen w-screen overflow-hidden relative">
+    <main className="h-screen w-screen overflow-hidden relative bg-slate-50">
 
+      {/* The Core Canvas Engine */}
       <Board />
+
+      {/* Floating UI Elements */}
+      <Toolbar />
+      <PropertiesPanel />
+
     </main>
   );
 }
