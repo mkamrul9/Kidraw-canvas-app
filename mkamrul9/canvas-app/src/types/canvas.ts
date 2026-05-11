@@ -1,6 +1,6 @@
 export type Color = string;
 
-export type LayerType = 'rectangle' | 'ellipse' | 'path' | 'text';
+export type LayerType = 'rectangle' | 'ellipse' | 'pen' | 'text';
 
 export type Tool = 'select' | 'rectangle' | 'ellipse' | 'pen';
 
@@ -18,4 +18,5 @@ export type Layer = {
     width: number;
     fill: Color;
     stroke?: Color;
+    points?: number[];
 };
