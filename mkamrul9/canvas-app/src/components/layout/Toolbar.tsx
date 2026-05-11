@@ -2,21 +2,25 @@
 
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { MousePointer2, Square, Circle, Pen } from 'lucide-react';
+import { MousePointer2, Square, Circle, Pen, Undo, Redo, Trash2, Download } from 'lucide-react';
 import { Tool } from '../../types/canvas';
 
 export default function Toolbar() {
-    const { activeTool, setActiveTool } = useCanvasStore();
+    const { activeTool, setActiveTool, undo, redo, clear, historyStep, history } = useCanvasStore();
 
     const tools: { id: Tool; icon: React.ReactNode; label: string }[] = [
         { id: 'select', icon: <MousePointer2 className="w-4 h-4" />, label: 'Select' },
+        { id: 'pen', icon: <Pen className="w-4 h-4" />, label: 'Draw' },
         { id: 'rectangle', icon: <Square className="w-4 h-4" />, label: 'Rectangle' },
         { id: 'ellipse', icon: <Circle className="w-4 h-4" />, label: 'Ellipse' },
-        { id: 'pen', icon: <Pen className="w-4 h-4" />, label: 'Draw' },
     ];
 
+    const handleExport = () => {
+        window.dispatchEvent(new Event('export-canvas'));
+    };
+
     return (
-        <div className="absolute z-50 top-4 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-md border border-slate-200 flex gap-1 p-1">
+        <div className="absolute z-50 top-4 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-md border border-slate-200 flex items-center gap-1 p-1">
             {tools.map((tool) => (
                 <Button
                     key={tool.id}
@@ -29,6 +33,50 @@ export default function Toolbar() {
                     {tool.icon}
                 </Button>
             ))}
+
+            <div className="w-[1px] h-8 bg-slate-200 mx-1"></div>
+
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={undo}
+                disabled={historyStep === 0}
+                title="Undo"
+                className="w-10 h-10 rounded-lg text-slate-600"
+            >
+                <Undo className="w-4 h-4" />
+            </Button>
+
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={redo}
+                disabled={historyStep === history.length - 1}
+                title="Redo"
+                className="w-10 h-10 rounded-lg text-slate-600"
+            >
+                <Redo className="w-4 h-4" />
+            </Button>
+
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={clear}
+                title="Clear Canvas"
+                className="w-10 h-10 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+                <Trash2 className="w-4 h-4" />
+            </Button>
+
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleExport}
+                title="Download as PNG"
+                className="w-10 h-10 rounded-lg text-slate-600"
+            >
+                <Download className="w-4 h-4" />
+            </Button>
         </div>
     );
 }

@@ -12,13 +12,31 @@ export default function Board() {
         height: window.innerHeight
     });
 
-    const { layers, activeTool, activeColor, isDrawing, setIsDrawing, addLayer, updateLayer } = useCanvasStore();
+    const { layers, activeTool, activeColor, isDrawing, setIsDrawing, addLayer, updateLayer, saveHistory } = useCanvasStore();
     const currentShapeId = useRef<string | null>(null);
+    const stageRef = useRef<Konva.Stage>(null);
 
     useEffect(() => {
         const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+
+        const handleExport = () => {
+            if (stageRef.current) {
+                const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 });
+                const link = document.createElement('a');
+                link.download = 'my-whiteboard.png';
+                link.href = dataURL;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
+        };
+        window.addEventListener('export-canvas', handleExport);
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('export-canvas', handleExport);
+        };
     }, []);
 
     const handlePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
@@ -78,10 +96,12 @@ export default function Board() {
     const handlePointerUp = () => {
         setIsDrawing(false);
         currentShapeId.current = null;
+        saveHistory();
     };
 
     return (
         <Stage
+            ref={stageRef}
             width={dimensions.width}
             height={dimensions.height}
             className="bg-slate-50 touch-none cursor-crosshair"
