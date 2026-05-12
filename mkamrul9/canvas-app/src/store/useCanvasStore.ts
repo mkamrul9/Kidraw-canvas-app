@@ -9,6 +9,7 @@ interface CanvasState {
     layers: Layer[];
     isDrawing: boolean;
     isSaving: boolean;
+    boardId: string | null;
 
     // History State
     history: Layer[][];
@@ -18,6 +19,7 @@ interface CanvasState {
     setActiveColor: (color: Color) => void;
     setBackgroundColor: (color: string) => void;
     setIsDrawing: (isDrawing: boolean) => void;
+    setBoardId: (id: string) => void;
 
     addLayer: (layer: Layer) => void;
     updateLayer: (id: string, newAttributes: Partial<Layer>) => void;
@@ -38,6 +40,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     layers: [],
     isDrawing: false,
     isSaving: false,
+    boardId: null,
 
     history: [[]], // Start with one empty state
     historyStep: 0,
@@ -46,6 +49,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setActiveColor: (color) => set({ activeColor: color }),
     setBackgroundColor: (color) => set({ backgroundColor: color }),
     setIsDrawing: (isDrawing) => set({ isDrawing }),
+    setBoardId: (id) => set({ boardId: id }),
 
     addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
 

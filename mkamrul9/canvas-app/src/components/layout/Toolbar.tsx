@@ -7,7 +7,7 @@ import { MousePointer2, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud
 import { Tool } from '../../types/canvas';
 
 export default function Toolbar() {
-    const { activeTool, setActiveTool, undo, redo, clear, historyStep, history, saveToCloud, isSaving } = useCanvasStore();
+    const { activeTool, setActiveTool, undo, redo, clear, historyStep, history, saveToCloud, isSaving, boardId } = useCanvasStore();
     const { data: session } = useSession();
 
     const tools: { id: Tool; icon: React.ReactNode; label: string }[] = [
@@ -83,8 +83,8 @@ export default function Toolbar() {
             <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => saveToCloud('default-board')}
-                disabled={isSaving}
+                onClick={() => boardId && saveToCloud(boardId)}
+                disabled={isSaving || !boardId}
                 title="Save to Cloud"
                 className="w-10 h-10 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50"
             >
