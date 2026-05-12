@@ -12,12 +12,7 @@ export default function Board() {
         height: window.innerHeight
     });
 
-    const [editingText, setEditingText] = useState<{
-        id: string;
-        x: number;
-        y: number;
-        text: string;
-    } | null>(null);
+    const [editingText, setEditingText] = useState<{ id: string; x: number; y: number; text: string } | null>(null);
 
     const {
         layers,
@@ -35,6 +30,8 @@ export default function Board() {
 
     const stageRef = useRef<Konva.Stage>(null);
     const transformerRef = useRef<Konva.Transformer>(null);
+
+    const currentShapeId = useRef<string | null>(null);
 
     useEffect(() => {
         const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
@@ -81,13 +78,14 @@ export default function Board() {
     }, []);
 
     useEffect(() => {
-        if (!selectedLayerId || !transformerRef.current || !stageRef.current) return;
-        const selectedNode = stageRef.current.findOne(`#${selectedLayerId}`);
-        if (selectedNode) {
-            transformerRef.current.nodes([selectedNode]);
-            transformerRef.current.getLayer()?.batchDraw();
+        if (activeTool === 'select' && selectedLayerId && transformerRef.current && stageRef.current) {
+            const selectedNode = stageRef.current.findOne(`#${selectedLayerId}`);
+            if (selectedNode) {
+                transformerRef.current.nodes([selectedNode]);
+                transformerRef.current.getLayer()?.batchDraw();
+            }
         }
-    }, [selectedLayerId, layers]);
+    }, [selectedLayerId, layers, activeTool]);
 
     const handlePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
         const stage = e.target.getStage();
@@ -102,46 +100,56 @@ export default function Board() {
             return;
         }
 
+        if (activeTool === 'text') {
+            setSelectedLayerId(null);
+            const newId = uuidv4();
+            addLayer({
+                id: newId,
+                type: 'text',
+                x: pos.x,
+                y: pos.y,
+                width: 200,
+                height: 50,
+                fill: activeColor,
+                text: '',
+            });
+            setEditingText({ id: newId, x: pos.x, y: pos.y, text: '' });
+            setIsDrawing(false);
+            return;
+        }
+
         setSelectedLayerId(null);
         setIsDrawing(true);
-
         const newId = uuidv4();
+        currentShapeId.current = newId;
 
         addLayer({
             id: newId,
             type: activeTool,
             x: pos.x,
             y: pos.y,
-            width: activeTool === 'text' ? 150 : 0,
-            height: activeTool === 'text' ? 50 : 0,
+            width: 0,
+            height: 0,
             fill: activeColor,
             stroke: activeTool === 'pen' ? activeColor : undefined,
             points: activeTool === 'pen' ? [pos.x, pos.y] : undefined,
-            text: activeTool === 'text' ? 'Double click to edit' : undefined,
         });
-
-        if (activeTool === 'text') {
-            setIsDrawing(false);
-            saveHistory();
-        } else {
-            setSelectedLayerId(newId);
-        }
     };
 
     const handlePointerMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-        if (!isDrawing || activeTool === 'select' || activeTool === 'text' || !selectedLayerId) return;
+        if (!isDrawing || activeTool === 'select' || activeTool === 'text' || !currentShapeId.current) return;
 
         const pos = e.target.getStage()?.getPointerPosition();
         if (!pos) return;
 
-        const currentShape = layers.find(layer => layer.id === selectedLayerId);
+        const currentShape = layers.find(layer => layer.id === currentShapeId.current);
         if (!currentShape) return;
 
         if (activeTool === 'pen') {
             const newPoints = currentShape.points ? [...currentShape.points, pos.x, pos.y] : [pos.x, pos.y];
-            updateLayer(selectedLayerId, { points: newPoints });
+            updateLayer(currentShapeId.current, { points: newPoints });
         } else {
-            updateLayer(selectedLayerId, {
+            updateLayer(currentShapeId.current, {
                 width: pos.x - currentShape.x,
                 height: pos.y - currentShape.y,
             });
@@ -151,21 +159,24 @@ export default function Board() {
     const handlePointerUp = () => {
         if (isDrawing) {
             setIsDrawing(false);
+            currentShapeId.current = null;
             saveHistory();
         }
     };
 
     const handleTextDblClick = (e: Konva.KonvaEventObject<MouseEvent>, layer: { id: string; text?: string }) => {
-        if (activeTool !== 'select') return;
-        const textNode = e.target;
-        const absPos = textNode.absolutePosition();
-        setEditingText({
-            id: layer.id,
-            x: absPos.x,
-            y: absPos.y,
-            text: layer.text || '',
-        });
-        textNode.hide();
+        if (activeTool === 'select') {
+            const textNode = e.target;
+            const absPos = textNode.absolutePosition();
+            setEditingText({ id: layer.id, x: absPos.x, y: absPos.y, text: layer.text || '' });
+            textNode.hide();
+        }
+    };
+
+    const getCursorClass = () => {
+        if (activeTool === 'select') return 'cursor-default';
+        if (activeTool === 'text') return 'cursor-text';
+        return 'cursor-crosshair';
     };
 
     return (
@@ -196,7 +207,7 @@ export default function Board() {
                 ref={stageRef}
                 width={dimensions.width}
                 height={dimensions.height}
-                className="touch-none cursor-crosshair"
+                className={`touch-none ${getCursorClass()}`}
                 onMouseDown={handlePointerDown}
                 onMouseMove={handlePointerMove}
                 onMouseUp={handlePointerUp}
@@ -215,10 +226,10 @@ export default function Board() {
                     />
 
                     {layers.map((layer) => {
-                        const isSelected = layer.id === selectedLayerId;
+                        const isSelected = layer.id === selectedLayerId && activeTool === 'select';
                         const commonProps = {
                             id: layer.id,
-                            draggable: activeTool === 'select' && isSelected,
+                            draggable: isSelected,
                             onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => {
                                 updateLayer(layer.id, { x: event.target.x(), y: event.target.y() });
                                 saveHistory();
@@ -237,7 +248,7 @@ export default function Board() {
                                     width={layer.width}
                                     height={layer.height}
                                     fill={layer.fill}
-                                    opacity={0.85}
+                                    opacity={0.5}
                                     cornerRadius={4}
                                 />
                             );
@@ -252,7 +263,7 @@ export default function Board() {
                                     radiusX={Math.abs(layer.width / 2)}
                                     radiusY={Math.abs(layer.height / 2)}
                                     fill={layer.fill}
-                                    opacity={0.85}
+                                    opacity={0.5}
                                 />
                             );
                         }
@@ -288,7 +299,7 @@ export default function Board() {
                         return null;
                     })}
 
-                    {selectedLayerId && (
+                    {activeTool === 'select' && selectedLayerId && (
                         <Transformer
                             ref={transformerRef}
                             boundBoxFunc={(oldBox, newBox) => (newBox.width < 5 || newBox.height < 5 ? oldBox : newBox)}
