@@ -1,6 +1,6 @@
 'use client';
 
-import { Stage, Layer as KonvaLayer, Rect, Ellipse, Line } from 'react-konva';
+import { Stage, Layer as KonvaLayer, Rect, Ellipse, Line, Text } from 'react-konva';
 import Konva from 'konva';
 import { useEffect, useState, useRef } from 'react';
 import { useCanvasStore } from '../../store/useCanvasStore';
@@ -73,6 +73,22 @@ export default function Board() {
 
         const newId = uuidv4();
         currentShapeId.current = newId;
+
+        if (activeTool === 'text') {
+            addLayer({
+                id: newId,
+                type: 'text',
+                x: pos.x,
+                y: pos.y,
+                width: 200,
+                height: 50,
+                fill: activeColor,
+                text: 'Double click to edit',
+            });
+            setIsDrawing(false);
+            saveHistory();
+            return;
+        }
 
         // We configure the initial layer based on the tool
         addLayer({
@@ -179,6 +195,19 @@ export default function Board() {
                                 tension={0.5}       // This makes the freehand line smooth instead of jagged
                                 lineCap="round"     // Rounds the ends of the line
                                 lineJoin="round"    // Rounds the corners where line segments meet
+                            />
+                        );
+                    }
+                    if (layer.type === 'text') {
+                        return (
+                            <Text
+                                key={layer.id}
+                                x={layer.x}
+                                y={layer.y}
+                                text={layer.text || 'Type here'}
+                                fill={layer.fill}
+                                fontSize={24}
+                                fontFamily="sans-serif"
                             />
                         );
                     }

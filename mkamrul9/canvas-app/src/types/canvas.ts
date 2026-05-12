@@ -2,7 +2,7 @@ export type Color = string;
 
 export type LayerType = 'rectangle' | 'ellipse' | 'pen' | 'text';
 
-export type Tool = 'select' | 'rectangle' | 'ellipse' | 'pen';
+export type Tool = 'select' | 'rectangle' | 'ellipse' | 'pen' | 'text';
 
 export type Camera = {
     x: number;
@@ -19,4 +19,5 @@ export type Layer = {
     fill: Color;
     stroke?: Color;
     points?: number[];
+    text?: string;
 };

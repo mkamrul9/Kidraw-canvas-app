@@ -17,7 +17,7 @@ export default function PropertiesPanel() {
     const { activeColor, setActiveColor, setBackgroundColor } = useCanvasStore();
 
     return (
-        <div className="absolute z-50 right-4 top-1/2 -translate-y-1/2 bg-white rounded-xl shadow-md border border-slate-200 w-16 flex flex-col items-center py-3 gap-3">
+        <div className="absolute z-50 right-6 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 w-16 flex flex-col items-center py-4 gap-3 transition-all">
             <span className="text-xs font-semibold text-slate-500 mb-1">Color</span>
             {COLORS.map((color) => (
                 <button

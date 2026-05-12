@@ -3,7 +3,7 @@
 import { signIn, signOut, useSession } from 'next-auth/react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { MousePointer2, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut } from 'lucide-react';
+import { MousePointer2, Square, Circle, Pen, Type, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut } from 'lucide-react';
 import { Tool } from '../../types/canvas';
 
 export default function Toolbar() {
@@ -13,6 +13,7 @@ export default function Toolbar() {
     const tools: { id: Tool; icon: React.ReactNode; label: string }[] = [
         { id: 'select', icon: <MousePointer2 className="w-4 h-4" />, label: 'Select' },
         { id: 'pen', icon: <Pen className="w-4 h-4" />, label: 'Draw' },
+        { id: 'text', icon: <Type className="w-4 h-4" />, label: 'Text' },
         { id: 'rectangle', icon: <Square className="w-4 h-4" />, label: 'Rectangle' },
         { id: 'ellipse', icon: <Circle className="w-4 h-4" />, label: 'Ellipse' },
     ];
@@ -22,7 +23,7 @@ export default function Toolbar() {
     };
 
     return (
-        <div className="absolute z-50 top-4 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-md border border-slate-200 flex items-center gap-1 p-1">
+        <div className="absolute z-50 top-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 flex items-center gap-1 p-1.5 transition-all">
             {tools.map((tool) => (
                 <Button
                     key={tool.id}
