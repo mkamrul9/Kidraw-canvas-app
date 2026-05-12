@@ -12,7 +12,7 @@ export default function Board() {
         height: window.innerHeight
     });
 
-    const { layers, activeTool, activeColor, isDrawing, setIsDrawing, addLayer, updateLayer, saveHistory } = useCanvasStore();
+    const { layers, activeTool, activeColor, backgroundColor, isDrawing, setIsDrawing, addLayer, updateLayer, saveHistory } = useCanvasStore();
     const currentShapeId = useRef<string | null>(null);
     const stageRef = useRef<Konva.Stage>(null);
 
@@ -20,15 +20,36 @@ export default function Board() {
         const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener('resize', handleResize);
 
-        const handleExport = () => {
-            if (stageRef.current) {
-                const dataURL = stageRef.current.toDataURL({ pixelRatio: 2 });
-                const link = document.createElement('a');
-                link.download = 'my-whiteboard.png';
-                link.href = dataURL;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+        const handleExport = async () => {
+            if (!stageRef.current) return;
+
+            const format = window.confirm('Click OK for PNG (Transparent/High Quality) or Cancel for JPEG (Smaller file)')
+                ? 'png'
+                : 'jpeg';
+            const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+
+            const dataURL = stageRef.current.toDataURL({ pixelRatio: 2, mimeType });
+
+            try {
+                const response = await fetch(dataURL);
+                const blob = await response.blob();
+
+                if ('showSaveFilePicker' in window) {
+                    const handle = await window.showSaveFilePicker({
+                        suggestedName: `my-whiteboard.${format}`,
+                        types: [{ description: 'Image File', accept: { [mimeType]: [`.${format}`] } }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                } else {
+                    const link = document.createElement('a');
+                    link.download = `my-whiteboard.${format}`;
+                    link.href = dataURL;
+                    link.click();
+                }
+            } catch (err) {
+                console.log('User cancelled save or error occurred', err);
             }
         };
         window.addEventListener('export-canvas', handleExport);
@@ -113,6 +134,14 @@ export default function Board() {
             onTouchEnd={handlePointerUp}
         >
             <KonvaLayer>
+                <Rect
+                    x={0}
+                    y={0}
+                    width={dimensions.width}
+                    height={dimensions.height}
+                    fill={backgroundColor}
+                    listening={false}
+                />
                 {layers.map((layer) => {
                     if (layer.type === 'rectangle') {
                         return (

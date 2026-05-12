@@ -4,6 +4,7 @@ import { Layer, Color, Tool } from '../types/canvas';
 interface CanvasState {
     activeTool: Tool;
     activeColor: Color;
+    backgroundColor: string;
     layers: Layer[];
     isDrawing: boolean;
 
@@ -13,6 +14,7 @@ interface CanvasState {
 
     setActiveTool: (tool: Tool) => void;
     setActiveColor: (color: Color) => void;
+    setBackgroundColor: (color: string) => void;
     setIsDrawing: (isDrawing: boolean) => void;
 
     addLayer: (layer: Layer) => void;
@@ -28,6 +30,7 @@ interface CanvasState {
 export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeTool: 'pen',
     activeColor: '#000000',
+    backgroundColor: '#ffffff',
     layers: [],
     isDrawing: false,
 
@@ -36,6 +39,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     setActiveTool: (tool) => set({ activeTool: tool }),
     setActiveColor: (color) => set({ activeColor: color }),
+    setBackgroundColor: (color) => set({ backgroundColor: color }),
     setIsDrawing: (isDrawing) => set({ isDrawing }),
 
     addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
