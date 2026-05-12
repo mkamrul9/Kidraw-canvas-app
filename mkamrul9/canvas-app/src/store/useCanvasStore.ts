@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { toast } from 'sonner';
 import { Layer, Color, Tool } from '../types/canvas';
 
 interface CanvasState {
@@ -7,6 +8,7 @@ interface CanvasState {
     backgroundColor: string;
     layers: Layer[];
     isDrawing: boolean;
+    isSaving: boolean;
 
     // History State
     history: Layer[][];
@@ -25,6 +27,8 @@ interface CanvasState {
     undo: () => void;
     redo: () => void;
     clear: () => void;
+    saveToCloud: (boardId: string) => Promise<void>;
+    loadFromCloud: (boardId: string) => Promise<void>;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
@@ -33,6 +37,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     backgroundColor: '#ffffff',
     layers: [],
     isDrawing: false,
+    isSaving: false,
 
     history: [[]], // Start with one empty state
     historyStep: 0,
@@ -86,5 +91,44 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     clear: () => {
         set({ layers: [] });
         get().saveHistory(); // Save the cleared state to history so we can undo a clear
+    },
+
+    saveToCloud: async (boardId: string) => {
+        set({ isSaving: true });
+        const loadingToast = toast.loading('Saving to cloud...');
+        try {
+            const { layers, backgroundColor } = get();
+            const res = await fetch(`/api/board/${boardId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ layers, backgroundColor }),
+            });
+
+            if (!res.ok) throw new Error('Server rejected save');
+
+            toast.success('Saved successfully!', { id: loadingToast });
+        } catch (error) {
+            console.error('Failed to save:', error);
+            toast.error('Failed to save to cloud.', { id: loadingToast });
+        } finally {
+            set({ isSaving: false });
+        }
+    },
+
+    loadFromCloud: async (boardId: string) => {
+        try {
+            const res = await fetch(`/api/board/${boardId}`);
+            const data = await res.json();
+            if (data) {
+                set({
+                    layers: data.layers || [],
+                    backgroundColor: data.backgroundColor || '#ffffff',
+                    history: [data.layers || []],
+                    historyStep: 0,
+                });
+            }
+        } catch (error) {
+            console.error('Failed to load:', error);
+        }
     },
 }));

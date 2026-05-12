@@ -2,11 +2,11 @@
 
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { MousePointer2, Square, Circle, Pen, Undo, Redo, Trash2, Download } from 'lucide-react';
+import { MousePointer2, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud } from 'lucide-react';
 import { Tool } from '../../types/canvas';
 
 export default function Toolbar() {
-    const { activeTool, setActiveTool, undo, redo, clear, historyStep, history } = useCanvasStore();
+    const { activeTool, setActiveTool, undo, redo, clear, historyStep, history, saveToCloud, isSaving } = useCanvasStore();
 
     const tools: { id: Tool; icon: React.ReactNode; label: string }[] = [
         { id: 'select', icon: <MousePointer2 className="w-4 h-4" />, label: 'Select' },
@@ -76,6 +76,17 @@ export default function Toolbar() {
                 className="w-10 h-10 rounded-lg text-slate-600"
             >
                 <Download className="w-4 h-4" />
+            </Button>
+
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => saveToCloud('default-board')}
+                disabled={isSaving}
+                title="Save to Cloud"
+                className="w-10 h-10 rounded-lg text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+            >
+                <Cloud className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />
             </Button>
         </div>
     );

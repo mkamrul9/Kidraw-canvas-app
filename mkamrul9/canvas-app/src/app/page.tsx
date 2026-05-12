@@ -1,8 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
 import Toolbar from '../components/layout/Toolbar';
 import PropertiesPanel from '../components/layout/PropertiesPanel';
+import { useCanvasStore } from '../store/useCanvasStore';
 
 // Dynamically import the Board component and strictly disable SSR
 const Board = dynamic(() => import('../components/canvas/Board'), {
@@ -11,6 +13,12 @@ const Board = dynamic(() => import('../components/canvas/Board'), {
 });
 
 export default function Home() {
+  const loadFromCloud = useCanvasStore((state) => state.loadFromCloud);
+
+  useEffect(() => {
+    loadFromCloud('default-board');
+  }, [loadFromCloud]);
+
   return (
     <main className="h-screen w-screen overflow-hidden relative bg-slate-50">
 
