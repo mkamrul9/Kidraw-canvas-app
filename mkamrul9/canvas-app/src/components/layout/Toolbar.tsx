@@ -1,12 +1,14 @@
 'use client';
 
+import { signIn, signOut, useSession } from 'next-auth/react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { MousePointer2, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud } from 'lucide-react';
+import { MousePointer2, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut } from 'lucide-react';
 import { Tool } from '../../types/canvas';
 
 export default function Toolbar() {
     const { activeTool, setActiveTool, undo, redo, clear, historyStep, history, saveToCloud, isSaving } = useCanvasStore();
+    const { data: session } = useSession();
 
     const tools: { id: Tool; icon: React.ReactNode; label: string }[] = [
         { id: 'select', icon: <MousePointer2 className="w-4 h-4" />, label: 'Select' },
@@ -88,6 +90,30 @@ export default function Toolbar() {
             >
                 <Cloud className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />
             </Button>
+
+            <div className="w-[1px] h-8 bg-slate-200 mx-1"></div>
+
+            {session ? (
+                <Button
+                    variant="ghost"
+                    onClick={() => signOut()}
+                    title={`Log out (${session.user?.name ?? 'User'})`}
+                    className="text-slate-600 hover:text-red-600 px-3 h-10 rounded-lg text-xs font-semibold"
+                >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                </Button>
+            ) : (
+                <Button
+                    variant="default"
+                    onClick={() => signIn()}
+                    title="Log in to save boards"
+                    className="bg-slate-900 text-white hover:bg-slate-800 px-3 h-10 rounded-lg text-xs font-semibold"
+                >
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Login
+                </Button>
+            )}
         </div>
     );
 }
