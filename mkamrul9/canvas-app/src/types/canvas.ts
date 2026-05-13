@@ -1,8 +1,8 @@
 export type Color = string;
-export type ShapeType = 'rectangle' | 'ellipse';
+// Added triangle, diamond, and star
+export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star';
 export type LayerType = ShapeType | 'pen' | 'text' | 'eraser';
 
-// Added 'hand' and 'shape'
 export type Tool = 'select' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser';
 
 export type Camera = {

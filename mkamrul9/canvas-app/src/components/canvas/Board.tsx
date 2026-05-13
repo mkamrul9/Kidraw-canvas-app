@@ -1,6 +1,6 @@
 'use client';
 
-import { Stage, Layer as KonvaLayer, Rect, Ellipse, Line, Text, Transformer } from 'react-konva';
+import { Stage, Layer as KonvaLayer, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar } from 'react-konva';
 import Konva from 'konva';
 import { useEffect, useState, useRef } from 'react';
 import { useCanvasStore } from '../../store/useCanvasStore';
@@ -31,6 +31,8 @@ export default function Board() {
         penSize,
         camera,
         setCamera,
+        zoom,
+        setZoom,
     } = useCanvasStore();
 
     const stageRef = useRef<Konva.Stage>(null);
@@ -52,6 +54,38 @@ export default function Board() {
             }
         }
     }, [selectedLayerId, layers, activeTool]);
+
+    const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
+        e.evt.preventDefault();
+        const stage = e.target.getStage();
+        if (!stage) return;
+
+        if (e.evt.ctrlKey || e.evt.metaKey) {
+            const scaleBy = 1.1;
+            const oldScale = stage.scaleX();
+            const pointer = stage.getPointerPosition();
+            if (!pointer) return;
+
+            const mousePointTo = {
+                x: (pointer.x - stage.x()) / oldScale,
+                y: (pointer.y - stage.y()) / oldScale,
+            };
+
+            const newScale = e.evt.deltaY > 0 ? oldScale / scaleBy : oldScale * scaleBy;
+            const clampedScale = Math.max(0.1, Math.min(newScale, 5));
+
+            setZoom(clampedScale);
+            setCamera({
+                x: pointer.x - mousePointTo.x * clampedScale,
+                y: pointer.y - mousePointTo.y * clampedScale,
+            });
+        } else {
+            setCamera({
+                x: camera.x - e.evt.deltaX,
+                y: camera.y - e.evt.deltaY,
+            });
+        }
+    };
 
     const handlePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
         if (editingText) {
@@ -207,7 +241,12 @@ export default function Board() {
                 width={dimensions.width}
                 height={dimensions.height}
                 className={`touch-none ${getCursorClass()}`}
+                x={camera.x}
+                y={camera.y}
+                scaleX={zoom}
+                scaleY={zoom}
                 draggable={activeTool === 'hand'}
+                onWheel={handleWheel}
                 onDragMove={(e) => {
                     if (e.target === stageRef.current) {
                         setCamera({ x: e.target.x(), y: e.target.y() });
@@ -223,10 +262,10 @@ export default function Board() {
                 <KonvaLayer>
                     <Rect
                         name="background"
-                        x={-5000}
-                        y={-5000}
-                        width={10000}
-                        height={10000}
+                        x={-50000}
+                        y={-50000}
+                        width={100000}
+                        height={100000}
                         fill={backgroundColor === 'transparent' ? null : backgroundColor}
                     />
                 </KonvaLayer>
@@ -258,8 +297,14 @@ export default function Board() {
                             },
                         };
 
+                        const radius = Math.max(Math.abs(layer.width), Math.abs(layer.height)) / 2;
+
                         if (layer.type === 'rectangle') return <Rect key={layer.id} {...commonProps} x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill={layer.fill} opacity={0.5} cornerRadius={4} />;
                         if (layer.type === 'ellipse') return <Ellipse key={layer.id} {...commonProps} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} opacity={0.5} />;
+
+                        if (layer.type === 'triangle') return <RegularPolygon key={layer.id} {...commonProps} sides={3} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={0.5} />;
+                        if (layer.type === 'diamond') return <RegularPolygon key={layer.id} {...commonProps} sides={4} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={0.5} />;
+                        if (layer.type === 'star') return <KonvaStar key={layer.id} {...commonProps} numPoints={5} innerRadius={radius / 2} outerRadius={radius} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} fill={layer.fill} opacity={0.5} />;
 
                         if (layer.type === 'pen') return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={0.5} lineCap="round" lineJoin="round" />;
 
@@ -276,7 +321,7 @@ export default function Board() {
                             height={Math.abs(selectionBox.height)}
                             fill="rgba(79, 70, 229, 0.1)"
                             stroke="#4f46e5"
-                            strokeWidth={1}
+                            strokeWidth={1 / zoom}
                         />
                     )}
 

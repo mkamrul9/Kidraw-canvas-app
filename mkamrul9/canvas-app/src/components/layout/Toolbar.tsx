@@ -3,7 +3,7 @@
 import { useSession, signIn, signOut } from 'next-auth/react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut, Type, Eraser, XSquare } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut, Type, Eraser, XSquare, Triangle, Star, Diamond } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Toolbar() {
@@ -76,16 +76,19 @@ export default function Toolbar() {
 
             <div className="relative flex items-center">
                 <Button variant={activeTool === 'shape' ? 'default' : 'ghost'} size="icon" onClick={() => { setActiveTool('shape'); toggleMenu('shape'); }} title="Shapes (S)" className="w-10 h-10 rounded-lg">
-                    {activeShape === 'rectangle' ? <Square className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                    {activeShape === 'rectangle' ? <Square className="w-4 h-4" /> :
+                        activeShape === 'ellipse' ? <Circle className="w-4 h-4" /> :
+                            activeShape === 'triangle' ? <Triangle className="w-4 h-4" /> :
+                                activeShape === 'diamond' ? <Diamond className="w-4 h-4" /> :
+                                    <Star className="w-4 h-4" />}
                 </Button>
                 {activeMenu === 'shape' && (
-                    <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-slate-200 p-2 flex gap-1 min-w-[100px]">
-                        <Button variant={activeShape === 'rectangle' ? 'secondary' : 'ghost'} size="icon" className="flex-1" onClick={() => { setActiveShape('rectangle'); closeMenu(); }}>
-                            <Square className="w-4 h-4" />
-                        </Button>
-                        <Button variant={activeShape === 'ellipse' ? 'secondary' : 'ghost'} size="icon" className="flex-1" onClick={() => { setActiveShape('ellipse'); closeMenu(); }}>
-                            <Circle className="w-4 h-4" />
-                        </Button>
+                    <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-slate-200 p-2 grid grid-cols-3 gap-1 min-w-[120px]">
+                        <Button variant={activeShape === 'rectangle' ? 'secondary' : 'ghost'} size="icon" onClick={() => { setActiveShape('rectangle'); closeMenu(); }}><Square className="w-4 h-4" /></Button>
+                        <Button variant={activeShape === 'ellipse' ? 'secondary' : 'ghost'} size="icon" onClick={() => { setActiveShape('ellipse'); closeMenu(); }}><Circle className="w-4 h-4" /></Button>
+                        <Button variant={activeShape === 'triangle' ? 'secondary' : 'ghost'} size="icon" onClick={() => { setActiveShape('triangle'); closeMenu(); }}><Triangle className="w-4 h-4" /></Button>
+                        <Button variant={activeShape === 'diamond' ? 'secondary' : 'ghost'} size="icon" onClick={() => { setActiveShape('diamond'); closeMenu(); }}><Diamond className="w-4 h-4" /></Button>
+                        <Button variant={activeShape === 'star' ? 'secondary' : 'ghost'} size="icon" onClick={() => { setActiveShape('star'); closeMenu(); }}><Star className="w-4 h-4" /></Button>
                     </div>
                 )}
             </div>

@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { useEffect, use } from 'react';
 import Toolbar from '../../../components/layout/Toolbar';
 import PropertiesPanel from '../../../components/layout/PropertiesPanel';
+import ZoomHUD from '../../../components/layout/ZoomHUD';
 import { useCanvasStore } from '../../../store/useCanvasStore';
 
 
@@ -29,6 +30,7 @@ export default function CanvasPage({ params }: { params: Promise<{ id: string }>
     <main className="h-screen w-screen overflow-hidden relative bg-slate-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
       <Board />
       <Toolbar />
+      <ZoomHUD />
       <PropertiesPanel />
     </main>
   );

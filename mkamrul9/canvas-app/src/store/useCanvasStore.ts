@@ -16,6 +16,7 @@ interface CanvasState {
     eraserSize: number;
     customColors: string[];
     camera: { x: number; y: number };
+    zoom: number;
     activeShape: ShapeType;
     penSize: number;
 
@@ -35,6 +36,7 @@ interface CanvasState {
     addCustomColor: (color: string) => void;
     removeLayer: (id: string) => void;
     setCamera: (pos: { x: number; y: number }) => void;
+    setZoom: (zoom: number) => void;
     setActiveShape: (shape: ShapeType) => void;
     setPenSize: (size: number) => void;
 
@@ -64,6 +66,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     eraserSize: 20,
     customColors: [],
     camera: { x: 0, y: 0 },
+    zoom: 1,
     activeShape: 'rectangle',
     penSize: 4,
 
@@ -90,6 +93,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         layers: state.layers.filter((layer) => layer.id !== id),
     })),
     setCamera: (pos) => set({ camera: pos }),
+    setZoom: (zoom) => set({ zoom }),
     setActiveShape: (shape) => set({ activeShape: shape, activeTool: 'shape' }),
     setPenSize: (size) => set({ penSize: size }),
 
