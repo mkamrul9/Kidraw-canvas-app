@@ -18,7 +18,7 @@ export default function Board() {
         activeShape,
         activeColor,
         backgroundColor,
-        bgMode,
+        bgPattern,
         isDrawing,
         setIsDrawing,
         addLayer,
@@ -128,6 +128,17 @@ export default function Board() {
             return;
         }
 
+        if (activeTool === 'comment') {
+            setSelectedLayerId(null);
+            const newId = uuidv4();
+            addLayer({ id: newId, type: 'comment', x: pos.x, y: pos.y, width: 250, height: 100, fill: '#fef08a', text: '' });
+
+            const absPos = stage.getPointerPosition() || pos;
+            setIsDrawing(false);
+            setTimeout(() => setEditingText({ id: newId, x: absPos.x, y: absPos.y, text: '' }), 50);
+            return;
+        }
+
         setSelectedLayerId(null);
         setIsDrawing(true);
         const newId = uuidv4();
@@ -217,8 +228,16 @@ export default function Board() {
 
     return (
         <div
-            className={`relative w-full h-full ${bgMode === 'dotted' ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)] [background-size:24px_24px]' : ''}`}
-            style={bgMode === 'dotted' ? { backgroundPosition: `${camera.x}px ${camera.y}px` } : {}}
+            className={`relative w-full h-full ${
+                bgPattern === 'dotted' ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)]' :
+                bgPattern === 'grid' ? 'bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)]' :
+                ''
+            }`}
+            style={{
+                backgroundColor,
+                backgroundPosition: `${camera.x}px ${camera.y}px`,
+                backgroundSize: bgPattern === 'dotted' ? `${24 * zoom}px ${24 * zoom}px` : bgPattern === 'grid' ? `${40 * zoom}px ${40 * zoom}px` : 'auto'
+            }}
         >
             {editingText && (
                 <textarea

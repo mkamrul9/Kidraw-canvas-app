@@ -11,7 +11,7 @@ interface CanvasState {
     isSaving: boolean;
     boardId: string | null;
     selectedLayerId: string | null;
-    bgMode: 'white' | 'dotted' | 'black';
+    bgPattern: 'solid' | 'dotted' | 'grid';
     activeEraserType: 'eraser' | 'object-eraser';
     eraserSize: number;
     customColors: string[];
@@ -33,7 +33,7 @@ interface CanvasState {
     setIsDrawing: (isDrawing: boolean) => void;
     setBoardId: (id: string) => void;
     setSelectedLayerId: (id: string | null) => void;
-    setBgMode: (mode: 'white' | 'dotted' | 'black') => void;
+    setBgPattern: (pattern: 'solid' | 'dotted' | 'grid') => void;
     setActiveEraserType: (type: 'eraser' | 'object-eraser') => void;
     setEraserSize: (size: number) => void;
     addCustomColor: (color: string) => void;
@@ -61,13 +61,13 @@ interface CanvasState {
 export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeTool: 'pen',
     activeColor: '#000000',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#f8fafc',
     layers: [],
     isDrawing: false,
     isSaving: false,
     boardId: null,
     selectedLayerId: null,
-    bgMode: 'dotted',
+    bgPattern: 'dotted',
     activeEraserType: 'eraser',
     eraserSize: 20,
     customColors: [],
@@ -88,10 +88,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setIsDrawing: (isDrawing) => set({ isDrawing }),
     setBoardId: (id) => set({ boardId: id }),
     setSelectedLayerId: (id) => set({ selectedLayerId: id }),
-    setBgMode: (mode) => set({
-        bgMode: mode,
-        backgroundColor: mode === 'white' ? '#ffffff' : mode === 'black' ? '#0f172a' : 'transparent',
-    }),
+    setBgPattern: (pattern) => set({ bgPattern: pattern }),
     setActiveEraserType: (type) => set({ activeEraserType: type, activeTool: type }),
     setEraserSize: (size) => set({ eraserSize: size }),
     addCustomColor: (color) => set((state) => {

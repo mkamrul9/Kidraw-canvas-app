@@ -72,9 +72,9 @@ export default function ZoomHUD() {
                             <div className="flex items-center gap-2">
                                 <span className="text-sm font-medium">Link Access:</span>
                                 <select className="border rounded p-1 text-sm outline-none" value={shareSetting} onChange={(e) => setShareSetting(e.target.value)}>
-                                    <option value="VIEW">Can View (No Sign-in required)</option>
-                                    <option value="COMMENT">Can Comment (Sign-in required)</option>
-                                    <option value="EDIT">Can Edit (Sign-in required)</option>
+                                    <option value="VIEW">Can View</option>
+                                    <option value="COMMENT">Can Comment</option>
+                                    <option value="EDIT">Can Edit</option>
                                 </select>
                             </div>
                             <Button onClick={copyLink} className="w-full">Copy Link</Button>

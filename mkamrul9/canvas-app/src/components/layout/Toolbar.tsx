@@ -1,10 +1,8 @@
 'use client';
 
-import { useSession, signIn, signOut } from 'next-auth/react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { toast } from 'sonner';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Lock, Unlock, Share2, Shapes, MessageSquare } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Shapes } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Toolbar() {
@@ -13,12 +11,8 @@ export default function Toolbar() {
         setActiveTool,
         undo,
         redo,
-        clear,
         historyStep,
         history,
-        saveToCloud,
-        isSaving,
-        boardId,
         activeEraserType,
         setActiveEraserType,
         eraserSize,
@@ -28,9 +22,7 @@ export default function Toolbar() {
         penSize,
         setPenSize,
         isLocked,
-        toggleLock,
     } = useCanvasStore();
-    const { data: session } = useSession();
 
     const [activeMenu, setActiveMenu] = useState<'pen' | 'shape' | 'eraser' | null>(null);
 
@@ -52,22 +44,8 @@ export default function Toolbar() {
         }
     };
 
-    const handleShare = () => {
-        navigator.clipboard.writeText(window.location.href);
-        toast.success('Link copied! Ready to share.', {
-            description: 'Anyone with the link will be able to view this board.'
-        });
-    };
-
     return (
-        <div className="absolute z-50 top-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-white/40 flex items-center gap-1 p-1.5 transition-all">
-            <Button variant="ghost" size="icon" onClick={handleShare} title="Share Link" className="w-10 h-10 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50"><Share2 className="w-4 h-4" /></Button>
-            <Button variant={isLocked ? 'default' : 'ghost'} size="icon" onClick={toggleLock} title={isLocked ? 'Unlock Board' : 'Lock Board'} className={`w-10 h-10 rounded-lg ${isLocked ? 'bg-amber-500 hover:bg-amber-600' : 'text-slate-600'}`}>
-                {isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />}
-            </Button>
-
-            <div className="w-[1px] h-8 bg-slate-200 mx-1"></div>
-
+        <div className="absolute z-50 top-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/50 flex items-center gap-1 p-1.5 transition-all">
             <Button variant={activeTool === 'select' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('select')} title="Select (V)" className="w-10 h-10 rounded-lg"><MousePointer2 className="w-4 h-4" /></Button>
             <Button variant={activeTool === 'hand' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('hand')} title="Pan Canvas (H)" className="w-10 h-10 rounded-lg"><Hand className="w-4 h-4" /></Button>
 
@@ -102,10 +80,6 @@ export default function Toolbar() {
 
             <Button variant={activeTool === 'text' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('text')} className="w-10 h-10 rounded-lg"><Type className="w-4 h-4" /></Button>
 
-            <Button variant={activeTool === 'comment' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('comment')} title="Add Comment (C)" className="w-10 h-10 rounded-lg">
-                <MessageSquare className="w-4 h-4" />
-            </Button>
-
             <div className="relative flex items-center">
                 <Button variant={(activeTool === 'eraser' || activeTool === 'object-eraser') ? 'default' : 'ghost'} size="icon" onClick={handleEraserClick} className="w-10 h-10 rounded-lg">
                     {activeEraserType === 'object-eraser' ? <XSquare className="w-4 h-4" /> : <Eraser className="w-4 h-4" />}
@@ -137,14 +111,8 @@ export default function Toolbar() {
             </div>
 
             <div className="w-[1px] h-8 bg-slate-200 mx-1"></div>
-
             <Button variant="ghost" size="icon" onClick={undo} disabled={historyStep === 0 || isLocked} className="w-10 h-10 rounded-lg text-slate-600"><Undo className="w-4 h-4" /></Button>
             <Button variant="ghost" size="icon" onClick={redo} disabled={historyStep === history.length - 1 || isLocked} className="w-10 h-10 rounded-lg text-slate-600"><Redo className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={clear} disabled={isLocked} className="w-10 h-10 rounded-lg text-red-600 hover:text-red-700 hover:bg-red-50"><Trash2 className="w-4 h-4" /></Button>
-            <Button variant="ghost" size="icon" onClick={() => window.dispatchEvent(new Event('export-canvas'))} className="w-10 h-10 rounded-lg text-slate-600"><Download className="w-4 h-4" /></Button>
-
-            <div className="w-[1px] h-8 bg-slate-200 mx-1"></div>
-            <Button variant="ghost" size="icon" onClick={() => boardId && saveToCloud(boardId)} disabled={isSaving || !boardId || isLocked} className="w-10 h-10 rounded-lg text-blue-600 hover:text-blue-700"><Cloud className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} /></Button>
         </div>
     );
 }
