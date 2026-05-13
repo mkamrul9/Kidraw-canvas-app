@@ -11,6 +11,10 @@ interface CanvasState {
     isSaving: boolean;
     boardId: string | null;
     selectedLayerId: string | null;
+    bgMode: 'white' | 'dotted' | 'black';
+    activeEraserType: 'eraser' | 'object-eraser';
+    eraserSize: number;
+    customColors: string[];
 
     // History State
     history: Layer[][];
@@ -22,6 +26,11 @@ interface CanvasState {
     setIsDrawing: (isDrawing: boolean) => void;
     setBoardId: (id: string) => void;
     setSelectedLayerId: (id: string | null) => void;
+    setBgMode: (mode: 'white' | 'dotted' | 'black') => void;
+    setActiveEraserType: (type: 'eraser' | 'object-eraser') => void;
+    setEraserSize: (size: number) => void;
+    addCustomColor: (color: string) => void;
+    removeLayer: (id: string) => void;
 
     addLayer: (layer: Layer) => void;
     updateLayer: (id: string, newAttributes: Partial<Layer>) => void;
@@ -44,6 +53,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     isSaving: false,
     boardId: null,
     selectedLayerId: null,
+    bgMode: 'dotted',
+    activeEraserType: 'eraser',
+    eraserSize: 20,
+    customColors: [],
 
     history: [[]], // Start with one empty state
     historyStep: 0,
@@ -54,6 +67,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setIsDrawing: (isDrawing) => set({ isDrawing }),
     setBoardId: (id) => set({ boardId: id }),
     setSelectedLayerId: (id) => set({ selectedLayerId: id }),
+    setBgMode: (mode) => set({
+        bgMode: mode,
+        backgroundColor: mode === 'white' ? '#ffffff' : mode === 'black' ? '#0f172a' : 'transparent',
+    }),
+    setActiveEraserType: (type) => set({ activeEraserType: type, activeTool: type }),
+    setEraserSize: (size) => set({ eraserSize: size }),
+    addCustomColor: (color) => set((state) => {
+        const newColors = [color, ...state.customColors.filter((current) => current !== color)].slice(0, 5);
+        return { customColors: newColors };
+    }),
+    removeLayer: (id) => set((state) => ({
+        layers: state.layers.filter((layer) => layer.id !== id),
+    })),
 
     addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
 

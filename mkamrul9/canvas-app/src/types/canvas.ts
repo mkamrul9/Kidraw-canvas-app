@@ -1,8 +1,8 @@
 export type Color = string;
 
-export type LayerType = 'rectangle' | 'ellipse' | 'pen' | 'text';
+export type LayerType = 'rectangle' | 'ellipse' | 'pen' | 'text' | 'eraser';
 
-export type Tool = 'select' | 'rectangle' | 'ellipse' | 'pen' | 'text';
+export type Tool = 'select' | 'rectangle' | 'ellipse' | 'pen' | 'text' | 'eraser' | 'object-eraser';
 
 export type Camera = {
     x: number;
@@ -20,4 +20,5 @@ export type Layer = {
     stroke?: Color;
     points?: number[];
     text?: string;
+    eraserSize?: number;
 };

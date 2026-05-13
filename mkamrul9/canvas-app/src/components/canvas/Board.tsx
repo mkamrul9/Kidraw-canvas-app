@@ -23,9 +23,11 @@ export default function Board() {
         setIsDrawing,
         addLayer,
         updateLayer,
+        removeLayer,
         saveHistory,
         selectedLayerId,
         setSelectedLayerId,
+        eraserSize,
     } = useCanvasStore();
 
     const stageRef = useRef<Konva.Stage>(null);
@@ -88,11 +90,19 @@ export default function Board() {
     }, [selectedLayerId, layers, activeTool]);
 
     const handlePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        if (editingText) {
+            updateLayer(editingText.id, { text: editingText.text });
+            setEditingText(null);
+            stageRef.current?.findOne(`#${editingText.id}`)?.show();
+            saveHistory();
+            return;
+        }
+
         const stage = e.target.getStage();
         const pos = stage?.getPointerPosition();
         if (!stage || !pos) return;
 
-        if (activeTool === 'select') {
+        if (activeTool === 'select' || activeTool === 'object-eraser') {
             const clickedOnEmpty = e.target === stage || e.target.name() === 'background';
             if (clickedOnEmpty) {
                 setSelectedLayerId(null);
@@ -113,8 +123,9 @@ export default function Board() {
                 fill: activeColor,
                 text: '',
             });
-            setEditingText({ id: newId, x: pos.x, y: pos.y, text: '' });
-            setIsDrawing(false);
+            setTimeout(() => {
+                setEditingText({ id: newId, x: pos.x, y: pos.y, text: '' });
+            }, 50);
             return;
         }
 
@@ -125,14 +136,15 @@ export default function Board() {
 
         addLayer({
             id: newId,
-            type: activeTool,
+            type: activeTool === 'eraser' ? 'eraser' : activeTool,
             x: pos.x,
             y: pos.y,
             width: 0,
             height: 0,
             fill: activeColor,
             stroke: activeTool === 'pen' ? activeColor : undefined,
-            points: activeTool === 'pen' ? [pos.x, pos.y] : undefined,
+            points: activeTool === 'pen' || activeTool === 'eraser' ? [pos.x, pos.y] : undefined,
+            eraserSize: activeTool === 'eraser' ? eraserSize : undefined,
         });
     };
 
@@ -145,7 +157,7 @@ export default function Board() {
         const currentShape = layers.find(layer => layer.id === currentShapeId.current);
         if (!currentShape) return;
 
-        if (activeTool === 'pen') {
+        if (activeTool === 'pen' || activeTool === 'eraser') {
             const newPoints = currentShape.points ? [...currentShape.points, pos.x, pos.y] : [pos.x, pos.y];
             updateLayer(currentShapeId.current, { points: newPoints });
         } else {
@@ -176,6 +188,7 @@ export default function Board() {
     const getCursorClass = () => {
         if (activeTool === 'select') return 'cursor-default';
         if (activeTool === 'text') return 'cursor-text';
+        if (activeTool === 'object-eraser') return 'cursor-pointer';
         return 'cursor-crosshair';
     };
 
@@ -183,7 +196,7 @@ export default function Board() {
         <div className="relative w-full h-full">
             {editingText && (
                 <textarea
-                    className="absolute z-50 bg-white/90 border-2 border-indigo-500 shadow-xl rounded outline-none p-1 text-[24px] font-sans resize-none"
+                    className="absolute z-50 bg-white/90 border-2 border-indigo-500 shadow-xl rounded outline-none p-1 text-[24px] font-sans resize-none pointer-events-auto"
                     style={{ top: editingText.y, left: editingText.x, minWidth: '150px' }}
                     value={editingText.text}
                     autoFocus
@@ -222,9 +235,11 @@ export default function Board() {
                         y={0}
                         width={dimensions.width}
                         height={dimensions.height}
-                        fill={backgroundColor}
+                        fill={backgroundColor === 'transparent' ? undefined : backgroundColor}
                     />
+                </KonvaLayer>
 
+                <KonvaLayer>
                     {layers.map((layer) => {
                         const isSelected = layer.id === selectedLayerId && activeTool === 'select';
                         const commonProps = {
@@ -234,8 +249,20 @@ export default function Board() {
                                 updateLayer(layer.id, { x: event.target.x(), y: event.target.y() });
                                 saveHistory();
                             },
-                            onClick: () => activeTool === 'select' && setSelectedLayerId(layer.id),
-                            onTap: () => activeTool === 'select' && setSelectedLayerId(layer.id),
+                            onClick: () => {
+                                if (activeTool === 'select') setSelectedLayerId(layer.id);
+                                if (activeTool === 'object-eraser') {
+                                    removeLayer(layer.id);
+                                    saveHistory();
+                                }
+                            },
+                            onTap: () => {
+                                if (activeTool === 'select') setSelectedLayerId(layer.id);
+                                if (activeTool === 'object-eraser') {
+                                    removeLayer(layer.id);
+                                    saveHistory();
+                                }
+                            },
                         };
 
                         if (layer.type === 'rectangle') {
@@ -293,6 +320,21 @@ export default function Board() {
                                     fontSize={24}
                                     fontFamily="sans-serif"
                                     onDblClick={(event) => handleTextDblClick(event, layer)}
+                                />
+                            );
+                        }
+                        if (layer.type === 'eraser') {
+                            return (
+                                <Line
+                                    key={layer.id}
+                                    {...commonProps}
+                                    points={layer.points || []}
+                                    stroke="#ffffff"
+                                    strokeWidth={layer.eraserSize || 20}
+                                    tension={0.5}
+                                    lineCap="round"
+                                    lineJoin="round"
+                                    globalCompositeOperation="destination-out"
                                 />
                             );
                         }
