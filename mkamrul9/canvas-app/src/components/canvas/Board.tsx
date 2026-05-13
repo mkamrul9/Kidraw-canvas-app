@@ -1,16 +1,18 @@
 'use client';
 
-import { Stage, Layer as KonvaLayer, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar, Arrow } from 'react-konva';
+import { Stage, Layer as KonvaLayer, Group, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar, Arrow } from 'react-konva';
 import Konva from 'konva';
 import { useEffect, useState, useRef } from 'react';
+import type React from 'react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { v4 as uuidv4 } from 'uuid';
+import { toast } from 'sonner';
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
     const [editingText, setEditingText] = useState<{ id: string; x: number; y: number; text: string } | null>(null);
-
     const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+    const [laserPoints, setLaserPoints] = useState<number[]>([]);
 
     const {
         layers,
@@ -19,6 +21,7 @@ export default function Board() {
         activeColor,
         backgroundColor,
         bgPattern,
+        activeOpacity,
         isDrawing,
         setIsDrawing,
         addLayer,
@@ -34,7 +37,7 @@ export default function Board() {
         zoom,
         setZoom,
         isLocked,
-        activeOpacity,
+        permissionRole,
     } = useCanvasStore();
 
     const stageRef = useRef<Konva.Stage>(null);
@@ -42,10 +45,73 @@ export default function Board() {
     const currentShapeId = useRef<string | null>(null);
 
     useEffect(() => {
+        const interval = setInterval(() => {
+            setLaserPoints((prev) => (prev.length > 0 ? prev.slice(2) : []));
+        }, 30);
+        return () => clearInterval(interval);
+    }, []);
+
+    useEffect(() => {
         const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
-    }, []);
+
+        const handleExport = async (event: Event) => {
+            if (!stageRef.current) return;
+            const customEvent = event as CustomEvent<'png' | 'jpeg' | 'svg'>;
+            const format = customEvent.detail;
+            if (!format) return;
+
+            try {
+                let blob: Blob;
+
+                if (format === 'svg') {
+                    let svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" style="background-color:${backgroundColor}">`;
+                    layers.forEach((layer) => {
+                        const op = layer.opacity ?? 1;
+                        if (layer.type === 'rectangle') {
+                            svgString += `<rect x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" fill="${layer.fill}" opacity="${op}" rx="4"/>`;
+                        }
+                        if (layer.type === 'ellipse') {
+                            svgString += `<ellipse cx="${layer.x + layer.width / 2}" cy="${layer.y + layer.height / 2}" rx="${Math.abs(layer.width / 2)}" ry="${Math.abs(layer.height / 2)}" fill="${layer.fill}" opacity="${op}"/>`;
+                        }
+                    });
+                    svgString += '</svg>';
+                    blob = new Blob([svgString], { type: 'image/svg+xml' });
+                } else {
+                    const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
+                    const dataURL = stageRef.current.toDataURL({ pixelRatio: 2, mimeType });
+                    blob = await (await fetch(dataURL)).blob();
+                }
+
+                if ('showSaveFilePicker' in window) {
+                    const handle = await (window as { showSaveFilePicker: (options: unknown) => Promise<any> }).showSaveFilePicker({
+                        suggestedName: `whiteboard.${format}`,
+                        types: [{
+                            description: `${format.toUpperCase()} Image`,
+                            accept: { [`image/${format === 'svg' ? 'svg+xml' : format}`]: [`.${format}`] }
+                        }],
+                    });
+                    const writable = await handle.createWritable();
+                    await writable.write(blob);
+                    await writable.close();
+                    toast.success('Board downloaded successfully!');
+                } else {
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = `whiteboard.${format}`;
+                    link.click();
+                }
+            } catch (err) {
+                console.log('Download cancelled or failed', err);
+            }
+        };
+
+        window.addEventListener('export-canvas', handleExport);
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('export-canvas', handleExport);
+        };
+    }, [layers, backgroundColor, dimensions]);
 
     useEffect(() => {
         if (activeTool === 'select' && selectedLayerId && transformerRef.current && stageRef.current) {
@@ -90,13 +156,17 @@ export default function Board() {
     };
 
     const handlePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-        if (isLocked && activeTool !== 'hand') return;
-
         if (editingText) {
             updateLayer(editingText.id, { text: editingText.text });
             setEditingText(null);
             stageRef.current?.findOne(`#${editingText.id}`)?.show();
             saveHistory();
+            return;
+        }
+
+        if (isLocked && activeTool !== 'hand') return;
+        if (permissionRole === 'viewer' && activeTool !== 'hand' && activeTool !== 'select') {
+            toast.error('View Only Mode', { description: 'Please sign in or request edit access to draw.' });
             return;
         }
 
@@ -106,9 +176,14 @@ export default function Board() {
 
         if (activeTool === 'hand') return;
 
+        if (activeTool === 'laser') {
+            setIsDrawing(true);
+            setLaserPoints([pos.x, pos.y]);
+            return;
+        }
+
         if (activeTool === 'select') {
-            const clickedOnEmpty = e.target === stage || e.target.name() === 'background';
-            if (clickedOnEmpty) {
+            if (e.target === stage || e.target.name() === 'background') {
                 setSelectedLayerId(null);
                 setSelectionBox({ x: pos.x, y: pos.y, width: 0, height: 0 });
                 setIsDrawing(true);
@@ -118,23 +193,17 @@ export default function Board() {
 
         if (activeTool === 'object-eraser') return;
 
-        if (activeTool === 'text') {
+        if (activeTool === 'text' || activeTool === 'comment') {
             setSelectedLayerId(null);
             const newId = uuidv4();
-            addLayer({ id: newId, type: 'text', x: pos.x, y: pos.y, width: 200, height: 50, fill: activeColor, text: '' });
+
+            if (activeTool === 'comment') {
+                addLayer({ id: newId, type: 'comment', x: pos.x, y: pos.y, width: 200, height: 100, fill: '#fef08a', text: '' });
+            } else {
+                addLayer({ id: newId, type: 'text', x: pos.x, y: pos.y, width: 200, height: 50, fill: activeColor, text: '', opacity: activeOpacity });
+            }
 
             const absPos = stage.getPointerPosition() || pos;
-            setTimeout(() => setEditingText({ id: newId, x: absPos.x, y: absPos.y, text: '' }), 50);
-            return;
-        }
-
-        if (activeTool === 'comment') {
-            setSelectedLayerId(null);
-            const newId = uuidv4();
-            addLayer({ id: newId, type: 'comment', x: pos.x, y: pos.y, width: 250, height: 100, fill: '#fef08a', text: '' });
-
-            const absPos = stage.getPointerPosition() || pos;
-            setIsDrawing(false);
             setTimeout(() => setEditingText({ id: newId, x: absPos.x, y: absPos.y, text: '' }), 50);
             return;
         }
@@ -161,28 +230,27 @@ export default function Board() {
     };
 
     const handlePointerMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
-        if (isLocked && activeTool !== 'hand') return;
         if (!isDrawing) return;
         const stage = e.target.getStage();
         const pos = stage?.getRelativePointerPosition();
         if (!pos) return;
 
+        if (activeTool === 'laser') {
+            setLaserPoints((prev) => [...prev, pos.x, pos.y]);
+            return;
+        }
+
         if (activeTool === 'select' && selectionBox) {
-            setSelectionBox({
-                ...selectionBox,
-                width: pos.x - selectionBox.x,
-                height: pos.y - selectionBox.y,
-            });
+            setSelectionBox({ ...selectionBox, width: pos.x - selectionBox.x, height: pos.y - selectionBox.y });
             return;
         }
 
         if (!currentShapeId.current) return;
-        const currentShape = layers.find(layer => layer.id === currentShapeId.current);
+        const currentShape = layers.find((layer) => layer.id === currentShapeId.current);
         if (!currentShape) return;
 
         if (activeTool === 'pen' || activeTool === 'eraser') {
-            const newPoints = currentShape.points ? [...currentShape.points, pos.x, pos.y] : [pos.x, pos.y];
-            updateLayer(currentShapeId.current, { points: newPoints });
+            updateLayer(currentShapeId.current, { points: [...(currentShape.points || []), pos.x, pos.y] });
         } else {
             updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
         }
@@ -192,6 +260,8 @@ export default function Board() {
         if (!isDrawing) return;
         setIsDrawing(false);
 
+        if (activeTool === 'laser') return;
+
         if (activeTool === 'select' && selectionBox && stageRef.current) {
             const boxRect = {
                 x: selectionBox.width < 0 ? selectionBox.x + selectionBox.width : selectionBox.x,
@@ -200,7 +270,7 @@ export default function Board() {
                 height: Math.abs(selectionBox.height),
             };
 
-            const capturedLayer = layers.find(layer => {
+            const capturedLayer = layers.find((layer) => {
                 if (!layer.width && !layer.points) return false;
                 const lx = layer.x;
                 const ly = layer.y;
@@ -218,30 +288,40 @@ export default function Board() {
         }
     };
 
-    const getCursorClass = () => {
-        if (activeTool === 'select') return 'cursor-default';
-        if (activeTool === 'hand') return isDrawing ? 'cursor-grabbing' : 'cursor-grab';
-        if (activeTool === 'text') return 'cursor-text';
-        if (activeTool === 'object-eraser') return 'cursor-pointer';
-        return 'cursor-crosshair';
+    const getBackgroundStyle = () => {
+        const base = { backgroundColor };
+        if (bgPattern === 'solid') return base;
+        if (bgPattern === 'dotted') {
+            return {
+                ...base,
+                backgroundImage: 'radial-gradient(#94a3b8 2px, transparent 2px)',
+                backgroundSize: `${30 * zoom}px ${30 * zoom}px`,
+                backgroundPosition: `${camera.x}px ${camera.y}px`
+            };
+        }
+        if (bgPattern === 'grid') {
+            return {
+                ...base,
+                backgroundImage: 'linear-gradient(to right, #e2e8f0 1px, transparent 1px), linear-gradient(to bottom, #e2e8f0 1px, transparent 1px)',
+                backgroundSize: `${40 * zoom}px ${40 * zoom}px`,
+                backgroundPosition: `${camera.x}px ${camera.y}px`
+            };
+        }
+        return base;
     };
 
     return (
-        <div
-            className={`relative w-full h-full ${bgPattern === 'dotted' ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)]' :
-                    bgPattern === 'grid' ? 'bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)]' :
-                        ''
-                }`}
-            style={{
-                backgroundColor,
-                backgroundPosition: `${camera.x}px ${camera.y}px`,
-                backgroundSize: bgPattern === 'dotted' ? `${24 * zoom}px ${24 * zoom}px` : bgPattern === 'grid' ? `${40 * zoom}px ${40 * zoom}px` : 'auto'
-            }}
-        >
+        <div className="relative w-full h-full" style={getBackgroundStyle()}>
             {editingText && (
                 <textarea
-                    className="absolute z-50 bg-white/90 border-2 border-indigo-500 shadow-xl rounded outline-none p-1 text-[24px] font-sans resize-none pointer-events-auto"
-                    style={{ top: editingText.y, left: editingText.x, minWidth: '150px' }}
+                    className="absolute z-50 shadow-xl rounded outline-none p-2 text-[20px] font-sans resize-none pointer-events-auto"
+                    style={{
+                        top: editingText.y,
+                        left: editingText.x,
+                        minWidth: '200px',
+                        backgroundColor: activeTool === 'comment' ? '#fef08a' : 'rgba(255,255,255,0.9)',
+                        border: activeTool === 'comment' ? '1px solid #eab308' : '2px solid #6366f1'
+                    }}
                     value={editingText.text}
                     autoFocus
                     onChange={(e) => setEditingText({ ...editingText, text: e.target.value })}
@@ -251,12 +331,7 @@ export default function Board() {
                         stageRef.current?.findOne(`#${editingText.id}`)?.show();
                         saveHistory();
                     }}
-                    onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            e.currentTarget.blur();
-                        }
-                    }}
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
                 />
             )}
 
@@ -264,36 +339,18 @@ export default function Board() {
                 ref={stageRef}
                 width={dimensions.width}
                 height={dimensions.height}
-                className={`touch-none ${getCursorClass()}`}
+                className={`touch-none ${activeTool === 'laser' ? 'cursor-crosshair' : ''}`}
                 x={camera.x}
                 y={camera.y}
                 scaleX={zoom}
                 scaleY={zoom}
                 draggable={activeTool === 'hand'}
                 onWheel={handleWheel}
-                onDragMove={(e) => {
-                    if (e.target === stageRef.current) {
-                        setCamera({ x: e.target.x(), y: e.target.y() });
-                    }
-                }}
+                onDragMove={(e) => { if (e.target === stageRef.current) setCamera({ x: e.target.x(), y: e.target.y() }); }}
                 onMouseDown={handlePointerDown}
                 onMouseMove={handlePointerMove}
                 onMouseUp={handlePointerUp}
-                onTouchStart={handlePointerDown}
-                onTouchMove={handlePointerMove}
-                onTouchEnd={handlePointerUp}
             >
-                <KonvaLayer>
-                    <Rect
-                        name="background"
-                        x={-50000}
-                        y={-50000}
-                        width={100000}
-                        height={100000}
-                        fill={backgroundColor === 'transparent' ? null : backgroundColor}
-                    />
-                </KonvaLayer>
-
                 <KonvaLayer>
                     {layers.map((layer) => {
                         const isSelected = layer.id === selectedLayerId && activeTool === 'select';
@@ -301,28 +358,29 @@ export default function Board() {
                             id: layer.id,
                             draggable: isSelected && !isLocked,
                             name: 'canvas-shape',
-                            onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => {
-                                updateLayer(layer.id, { x: event.target.x(), y: event.target.y() });
-                                saveHistory();
-                            },
-                            onClick: () => {
-                                if (!isLocked && activeTool === 'select') setSelectedLayerId(layer.id);
-                                if (!isLocked && activeTool === 'object-eraser') {
-                                    removeLayer(layer.id);
-                                    saveHistory();
-                                }
-                            },
-                            onTap: () => {
-                                if (!isLocked && activeTool === 'select') setSelectedLayerId(layer.id);
-                                if (!isLocked && activeTool === 'object-eraser') {
-                                    removeLayer(layer.id);
-                                    saveHistory();
-                                }
-                            },
+                            onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => { updateLayer(layer.id, { x: event.target.x(), y: event.target.y() }); saveHistory(); },
+                            onClick: () => { if (!isLocked && activeTool === 'select') setSelectedLayerId(layer.id); if (!isLocked && activeTool === 'object-eraser') { removeLayer(layer.id); saveHistory(); } },
                         };
 
-                        const radius = Math.max(Math.abs(layer.width), Math.abs(layer.height)) / 2;
                         const shapeOpacity = layer.opacity ?? 1;
+                        const radius = Math.max(Math.abs(layer.width), Math.abs(layer.height)) / 2;
+
+                        if (layer.type === 'comment') {
+                            return (
+                                <Group key={layer.id} {...commonProps} x={layer.x} y={layer.y}>
+                                    <Rect width={200} height={100} fill={layer.fill} shadowColor="black" shadowBlur={10} shadowOpacity={0.1} cornerRadius={4} />
+                                    <Text
+                                        x={10}
+                                        y={10}
+                                        text={layer.text}
+                                        fill="#0f172a"
+                                        fontSize={16}
+                                        width={180}
+                                        onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { setEditingText({ id: layer.id, x: event.target.absolutePosition().x, y: event.target.absolutePosition().y, text: layer.text || '' }); event.target.hide(); } }}
+                                    />
+                                </Group>
+                            );
+                        }
 
                         if (layer.type === 'rectangle') return <Rect key={layer.id} {...commonProps} x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill={layer.fill} opacity={shapeOpacity} cornerRadius={4} />;
                         if (layer.type === 'ellipse') return <Ellipse key={layer.id} {...commonProps} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} opacity={shapeOpacity} />;
@@ -336,11 +394,14 @@ export default function Board() {
                         if (layer.type === 'arrow') return <Arrow key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={[0, 0, layer.width, layer.height]} fill={layer.fill} stroke={layer.fill} strokeWidth={layer.penSize || 4} pointerLength={15} pointerWidth={15} opacity={shapeOpacity} />;
 
                         if (layer.type === 'pen') return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={0.5} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
-
                         if (layer.type === 'text') return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={24} fontFamily="sans-serif" opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { setEditingText({ id: layer.id, x: event.target.absolutePosition().x, y: event.target.absolutePosition().y, text: layer.text || '' }); event.target.hide(); } }} />;
                         if (layer.type === 'eraser') return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;
                         return null;
                     })}
+
+                    {laserPoints.length > 0 && (
+                        <Line points={laserPoints} stroke="#ef4444" strokeWidth={6} tension={0.5} lineCap="round" lineJoin="round" shadowColor="#ef4444" shadowBlur={15} />
+                    )}
 
                     {selectionBox && !isLocked && (
                         <Rect
@@ -355,10 +416,7 @@ export default function Board() {
                     )}
 
                     {activeTool === 'select' && selectedLayerId && !isLocked && (
-                        <Transformer
-                            ref={transformerRef}
-                            boundBoxFunc={(oldBox, newBox) => (newBox.width < 5 || newBox.height < 5 ? oldBox : newBox)}
-                        />
+                        <Transformer ref={transformerRef} boundBoxFunc={(oldBox, newBox) => newBox.width < 5 || newBox.height < 5 ? oldBox : newBox} />
                     )}
                 </KonvaLayer>
             </Stage>

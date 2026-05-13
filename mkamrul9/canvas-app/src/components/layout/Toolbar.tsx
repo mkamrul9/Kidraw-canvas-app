@@ -2,7 +2,7 @@
 
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Shapes } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Shapes, Navigation } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Toolbar() {
@@ -28,7 +28,7 @@ export default function Toolbar() {
 
     const toggleMenu = (menu: 'pen' | 'shape' | 'eraser') => setActiveMenu(activeMenu === menu ? null : menu);
     const closeMenu = () => setActiveMenu(null);
-    const handleToolClick = (tool: 'select' | 'hand' | 'pen' | 'shape' | 'text' | 'eraser' | 'object-eraser' | 'comment') => {
+    const handleToolClick = (tool: 'select' | 'hand' | 'pen' | 'shape' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser') => {
         setActiveTool(tool);
         if (tool !== 'shape' && tool !== 'pen' && tool !== 'eraser') {
             closeMenu();
@@ -59,6 +59,10 @@ export default function Toolbar() {
                     </div>
                 )}
             </div>
+
+            <Button variant={activeTool === 'laser' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('laser')} title="Laser Pointer (L)" className="w-10 h-10 rounded-lg">
+                <Navigation className="w-4 h-4" />
+            </Button>
 
             <div className="relative flex items-center">
                 <Button variant={activeTool === 'shape' ? 'default' : 'ghost'} size="icon" onClick={() => { setActiveTool('shape'); toggleMenu('shape'); }} className="w-10 h-10 rounded-lg">
