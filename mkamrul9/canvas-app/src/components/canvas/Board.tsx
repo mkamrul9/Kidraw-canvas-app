@@ -1,6 +1,6 @@
 'use client';
 
-import { Stage, Layer as KonvaLayer, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar } from 'react-konva';
+import { Stage, Layer as KonvaLayer, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar, Arrow } from 'react-konva';
 import Konva from 'konva';
 import { useEffect, useState, useRef } from 'react';
 import { useCanvasStore } from '../../store/useCanvasStore';
@@ -33,6 +33,8 @@ export default function Board() {
         setCamera,
         zoom,
         setZoom,
+        isLocked,
+        activeOpacity,
     } = useCanvasStore();
 
     const stageRef = useRef<Konva.Stage>(null);
@@ -88,6 +90,8 @@ export default function Board() {
     };
 
     const handlePointerDown = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        if (isLocked && activeTool !== 'hand') return;
+
         if (editingText) {
             updateLayer(editingText.id, { text: editingText.text });
             setEditingText(null);
@@ -141,10 +145,12 @@ export default function Board() {
             points: activeTool === 'pen' || activeTool === 'eraser' ? [pos.x, pos.y] : undefined,
             eraserSize: activeTool === 'eraser' ? eraserSize : undefined,
             penSize: activeTool === 'pen' ? penSize : undefined,
+            opacity: activeOpacity,
         });
     };
 
     const handlePointerMove = (e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        if (isLocked && activeTool !== 'hand') return;
         if (!isDrawing) return;
         const stage = e.target.getStage();
         const pos = stage?.getRelativePointerPosition();
@@ -275,22 +281,22 @@ export default function Board() {
                         const isSelected = layer.id === selectedLayerId && activeTool === 'select';
                         const commonProps = {
                             id: layer.id,
-                            draggable: isSelected,
+                            draggable: isSelected && !isLocked,
                             name: 'canvas-shape',
                             onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => {
                                 updateLayer(layer.id, { x: event.target.x(), y: event.target.y() });
                                 saveHistory();
                             },
                             onClick: () => {
-                                if (activeTool === 'select') setSelectedLayerId(layer.id);
-                                if (activeTool === 'object-eraser') {
+                                if (!isLocked && activeTool === 'select') setSelectedLayerId(layer.id);
+                                if (!isLocked && activeTool === 'object-eraser') {
                                     removeLayer(layer.id);
                                     saveHistory();
                                 }
                             },
                             onTap: () => {
-                                if (activeTool === 'select') setSelectedLayerId(layer.id);
-                                if (activeTool === 'object-eraser') {
+                                if (!isLocked && activeTool === 'select') setSelectedLayerId(layer.id);
+                                if (!isLocked && activeTool === 'object-eraser') {
                                     removeLayer(layer.id);
                                     saveHistory();
                                 }
@@ -298,22 +304,27 @@ export default function Board() {
                         };
 
                         const radius = Math.max(Math.abs(layer.width), Math.abs(layer.height)) / 2;
+                        const shapeOpacity = layer.opacity ?? 1;
 
-                        if (layer.type === 'rectangle') return <Rect key={layer.id} {...commonProps} x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill={layer.fill} opacity={0.5} cornerRadius={4} />;
-                        if (layer.type === 'ellipse') return <Ellipse key={layer.id} {...commonProps} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} opacity={0.5} />;
+                        if (layer.type === 'rectangle') return <Rect key={layer.id} {...commonProps} x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill={layer.fill} opacity={shapeOpacity} cornerRadius={4} />;
+                        if (layer.type === 'ellipse') return <Ellipse key={layer.id} {...commonProps} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} opacity={shapeOpacity} />;
 
-                        if (layer.type === 'triangle') return <RegularPolygon key={layer.id} {...commonProps} sides={3} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={0.5} />;
-                        if (layer.type === 'diamond') return <RegularPolygon key={layer.id} {...commonProps} sides={4} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={0.5} />;
-                        if (layer.type === 'star') return <KonvaStar key={layer.id} {...commonProps} numPoints={5} innerRadius={radius / 2} outerRadius={radius} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} fill={layer.fill} opacity={0.5} />;
+                        if (layer.type === 'triangle') return <RegularPolygon key={layer.id} {...commonProps} sides={3} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
+                        if (layer.type === 'diamond') return <RegularPolygon key={layer.id} {...commonProps} sides={4} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
+                        if (layer.type === 'hexagon') return <RegularPolygon key={layer.id} {...commonProps} sides={6} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
+                        if (layer.type === 'star') return <KonvaStar key={layer.id} {...commonProps} numPoints={5} innerRadius={radius / 2} outerRadius={radius} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} fill={layer.fill} opacity={shapeOpacity} />;
 
-                        if (layer.type === 'pen') return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={0.5} lineCap="round" lineJoin="round" />;
+                        if (layer.type === 'straight-line') return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={[0, 0, layer.width, layer.height]} stroke={layer.fill} strokeWidth={layer.penSize || 4} lineCap="round" opacity={shapeOpacity} />;
+                        if (layer.type === 'arrow') return <Arrow key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={[0, 0, layer.width, layer.height]} fill={layer.fill} stroke={layer.fill} strokeWidth={layer.penSize || 4} pointerLength={15} pointerWidth={15} opacity={shapeOpacity} />;
 
-                        if (layer.type === 'text') return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={24} fontFamily="sans-serif" onDblClick={(event) => { if (activeTool === 'select') { setEditingText({ id: layer.id, x: event.target.absolutePosition().x, y: event.target.absolutePosition().y, text: layer.text || '' }); event.target.hide(); } }} />;
+                        if (layer.type === 'pen') return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={0.5} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
+
+                        if (layer.type === 'text') return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={24} fontFamily="sans-serif" opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { setEditingText({ id: layer.id, x: event.target.absolutePosition().x, y: event.target.absolutePosition().y, text: layer.text || '' }); event.target.hide(); } }} />;
                         if (layer.type === 'eraser') return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;
                         return null;
                     })}
 
-                    {selectionBox && (
+                    {selectionBox && !isLocked && (
                         <Rect
                             x={selectionBox.width < 0 ? selectionBox.x + selectionBox.width : selectionBox.x}
                             y={selectionBox.height < 0 ? selectionBox.y + selectionBox.height : selectionBox.y}
@@ -325,7 +336,7 @@ export default function Board() {
                         />
                     )}
 
-                    {activeTool === 'select' && selectedLayerId && (
+                    {activeTool === 'select' && selectedLayerId && !isLocked && (
                         <Transformer
                             ref={transformerRef}
                             boundBoxFunc={(oldBox, newBox) => (newBox.width < 5 || newBox.height < 5 ? oldBox : newBox)}

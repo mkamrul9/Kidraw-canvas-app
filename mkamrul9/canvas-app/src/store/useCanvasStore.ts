@@ -17,8 +17,10 @@ interface CanvasState {
     customColors: string[];
     camera: { x: number; y: number };
     zoom: number;
+    isLocked: boolean;
     activeShape: ShapeType;
     penSize: number;
+    activeOpacity: number;
 
     // History State
     history: Layer[][];
@@ -37,8 +39,10 @@ interface CanvasState {
     removeLayer: (id: string) => void;
     setCamera: (pos: { x: number; y: number }) => void;
     setZoom: (zoom: number) => void;
+    toggleLock: () => void;
     setActiveShape: (shape: ShapeType) => void;
     setPenSize: (size: number) => void;
+    setOpacity: (opacity: number) => void;
 
     addLayer: (layer: Layer) => void;
     updateLayer: (id: string, newAttributes: Partial<Layer>) => void;
@@ -67,8 +71,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     customColors: [],
     camera: { x: 0, y: 0 },
     zoom: 1,
+    isLocked: false,
     activeShape: 'rectangle',
     penSize: 4,
+    activeOpacity: 1,
 
     history: [[]], // Start with one empty state
     historyStep: 0,
@@ -94,8 +100,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     })),
     setCamera: (pos) => set({ camera: pos }),
     setZoom: (zoom) => set({ zoom }),
+    toggleLock: () => set((state) => ({ isLocked: !state.isLocked, selectedLayerId: null })),
     setActiveShape: (shape) => set({ activeShape: shape, activeTool: 'shape' }),
     setPenSize: (size) => set({ penSize: size }),
+    setOpacity: (opacity) => set({ activeOpacity: opacity }),
 
     addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
 

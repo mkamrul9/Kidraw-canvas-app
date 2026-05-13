@@ -1,6 +1,6 @@
 export type Color = string;
-// Added triangle, diamond, and star
-export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star';
+// Added arrow, straight-line, and hexagon
+export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'arrow' | 'straight-line' | 'hexagon';
 export type LayerType = ShapeType | 'pen' | 'text' | 'eraser';
 
 export type Tool = 'select' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser';
@@ -22,5 +22,6 @@ export type Layer = {
     points?: number[];
     text?: string;
     eraserSize?: number;
-    penSize?: number; // Track pen thickness
+    penSize?: number;
+    opacity?: number; // NEW: Track the opacity of individual shapes!
 };
