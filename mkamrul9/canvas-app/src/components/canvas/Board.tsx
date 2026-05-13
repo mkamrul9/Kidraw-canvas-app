@@ -228,11 +228,10 @@ export default function Board() {
 
     return (
         <div
-            className={`relative w-full h-full ${
-                bgPattern === 'dotted' ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)]' :
-                bgPattern === 'grid' ? 'bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)]' :
-                ''
-            }`}
+            className={`relative w-full h-full ${bgPattern === 'dotted' ? 'bg-[radial-gradient(#cbd5e1_1px,transparent_1px)]' :
+                    bgPattern === 'grid' ? 'bg-[linear-gradient(to_right,#cbd5e1_1px,transparent_1px),linear-gradient(to_bottom,#cbd5e1_1px,transparent_1px)]' :
+                        ''
+                }`}
             style={{
                 backgroundColor,
                 backgroundPosition: `${camera.x}px ${camera.y}px`,

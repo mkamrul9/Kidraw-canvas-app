@@ -1,12 +1,13 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect, use } from 'react';
 import Toolbar from '../../../components/layout/Toolbar';
+import ActionToolbar from '../../../components/layout/ActionToolbar';
 import PropertiesPanel from '../../../components/layout/PropertiesPanel';
 import ZoomHUD from '../../../components/layout/ZoomHUD';
+import { useEffect } from 'react';
 import { useCanvasStore } from '../../../store/useCanvasStore';
-
+import { use } from 'react';
 
 const Board = dynamic(() => import('../../../components/canvas/Board'), {
   ssr: false,
@@ -27,11 +28,13 @@ export default function CanvasPage({ params }: { params: Promise<{ id: string }>
   }, [boardId, loadFromCloud, setBoardId]);
 
   return (
-    <main className="h-screen w-screen overflow-hidden relative bg-slate-50 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]">
+    <main className="h-screen w-screen overflow-hidden relative bg-slate-50">
       <Board />
+
       <Toolbar />
-      <ZoomHUD />
+      <ActionToolbar />
       <PropertiesPanel />
+      <ZoomHUD />
     </main>
   );
 }
