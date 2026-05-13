@@ -21,6 +21,7 @@ interface CanvasState {
     activeShape: ShapeType;
     penSize: number;
     activeOpacity: number;
+    permissionRole: 'owner' | 'editor' | 'viewer';
 
     // History State
     history: Layer[][];
@@ -43,6 +44,7 @@ interface CanvasState {
     setActiveShape: (shape: ShapeType) => void;
     setPenSize: (size: number) => void;
     setOpacity: (opacity: number) => void;
+    setPermissionRole: (role: 'owner' | 'editor' | 'viewer') => void;
 
     addLayer: (layer: Layer) => void;
     updateLayer: (id: string, newAttributes: Partial<Layer>) => void;
@@ -75,6 +77,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeShape: 'rectangle',
     penSize: 4,
     activeOpacity: 1,
+    permissionRole: 'owner',
 
     history: [[]], // Start with one empty state
     historyStep: 0,
@@ -104,6 +107,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setActiveShape: (shape) => set({ activeShape: shape, activeTool: 'shape' }),
     setPenSize: (size) => set({ penSize: size }),
     setOpacity: (opacity) => set({ activeOpacity: opacity }),
+    setPermissionRole: (role) => set({ permissionRole: role }),
 
     addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
 

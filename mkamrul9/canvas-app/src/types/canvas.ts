@@ -1,9 +1,9 @@
 export type Color = string;
 // Added arrow, straight-line, and hexagon
 export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'arrow' | 'straight-line' | 'hexagon';
-export type LayerType = ShapeType | 'pen' | 'text' | 'eraser';
+export type LayerType = ShapeType | 'pen' | 'text' | 'eraser' | 'comment';
 
-export type Tool = 'select' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser';
+export type Tool = 'select' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser' | 'comment';
 
 export type Camera = {
     x: number;

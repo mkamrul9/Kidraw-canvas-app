@@ -7,7 +7,15 @@ const DEFAULT_COLORS = ['#0f172a', '#64748b', '#e11d48', '#d97706', '#059669', '
 const OPACITIES = [0.25, 0.5, 0.75, 1];
 
 export default function PropertiesPanel() {
-    const { activeColor, setActiveColor, bgMode, setBgMode, customColors, addCustomColor, activeOpacity, setOpacity } = useCanvasStore();
+    const { activeColor, setActiveColor, bgMode, setBgMode, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory } = useCanvasStore();
+
+    const handleOpacityChange = (op: number) => {
+        setOpacity(op);
+        if (selectedLayerId) {
+            updateLayer(selectedLayerId, { opacity: op });
+            saveHistory();
+        }
+    };
 
     const cycleBackground = () => {
         if (bgMode === 'dotted') setBgMode('white');
@@ -22,7 +30,7 @@ export default function PropertiesPanel() {
                 {OPACITIES.map((op) => (
                     <button
                         key={op}
-                        onClick={() => setOpacity(op)}
+                        onClick={() => handleOpacityChange(op)}
                         className={`w-full py-1 text-[10px] font-bold rounded transition-all ${activeOpacity === op ? 'bg-indigo-500 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
                             }`}
                         title={`${op * 100}%`}

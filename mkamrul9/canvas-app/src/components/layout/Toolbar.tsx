@@ -4,7 +4,7 @@ import { useSession, signIn, signOut } from 'next-auth/react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Lock, Unlock, Share2, Shapes } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Trash2, Download, Cloud, LogIn, LogOut, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Lock, Unlock, Share2, Shapes, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Toolbar() {
@@ -36,7 +36,21 @@ export default function Toolbar() {
 
     const toggleMenu = (menu: 'pen' | 'shape' | 'eraser') => setActiveMenu(activeMenu === menu ? null : menu);
     const closeMenu = () => setActiveMenu(null);
-    const handleToolClick = (tool: 'select' | 'hand' | 'pen' | 'shape' | 'text' | 'eraser' | 'object-eraser') => { setActiveTool(tool); closeMenu(); };
+    const handleToolClick = (tool: 'select' | 'hand' | 'pen' | 'shape' | 'text' | 'eraser' | 'object-eraser' | 'comment') => {
+        setActiveTool(tool);
+        if (tool !== 'shape' && tool !== 'pen' && tool !== 'eraser') {
+            closeMenu();
+        }
+    };
+
+    const handleEraserClick = () => {
+        if (activeTool === 'eraser' || activeTool === 'object-eraser') {
+            setActiveMenu(activeMenu === 'eraser' ? null : 'eraser');
+        } else {
+            setActiveTool(activeEraserType);
+            setActiveMenu('eraser');
+        }
+    };
 
     const handleShare = () => {
         navigator.clipboard.writeText(window.location.href);
@@ -88,9 +102,39 @@ export default function Toolbar() {
 
             <Button variant={activeTool === 'text' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('text')} className="w-10 h-10 rounded-lg"><Type className="w-4 h-4" /></Button>
 
-            <Button variant={(activeTool === 'eraser' || activeTool === 'object-eraser') ? 'default' : 'ghost'} size="icon" onClick={() => { setActiveTool(activeEraserType); toggleMenu('eraser'); }} className="w-10 h-10 rounded-lg">
-                {activeEraserType === 'object-eraser' ? <XSquare className="w-4 h-4" /> : <Eraser className="w-4 h-4" />}
+            <Button variant={activeTool === 'comment' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('comment')} title="Add Comment (C)" className="w-10 h-10 rounded-lg">
+                <MessageSquare className="w-4 h-4" />
             </Button>
+
+            <div className="relative flex items-center">
+                <Button variant={(activeTool === 'eraser' || activeTool === 'object-eraser') ? 'default' : 'ghost'} size="icon" onClick={handleEraserClick} className="w-10 h-10 rounded-lg">
+                    {activeEraserType === 'object-eraser' ? <XSquare className="w-4 h-4" /> : <Eraser className="w-4 h-4" />}
+                </Button>
+                {activeMenu === 'eraser' && (
+                    <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border border-slate-200 p-2 flex flex-col gap-2 min-w-[140px]">
+                        <div className="flex gap-1">
+                            <Button variant={activeEraserType === 'eraser' ? 'secondary' : 'ghost'} size="sm" className="flex-1 text-xs" onClick={() => setActiveEraserType('eraser')}>
+                                Normal
+                            </Button>
+                            <Button variant={activeEraserType === 'object-eraser' ? 'secondary' : 'ghost'} size="sm" className="flex-1 text-xs" onClick={() => setActiveEraserType('object-eraser')}>
+                                Object
+                            </Button>
+                        </div>
+                        {activeEraserType === 'eraser' && (
+                            <div className="flex items-center justify-around py-1 mt-1">
+                                {[10, 20, 50].map((size) => (
+                                    <button
+                                        key={size}
+                                        onClick={() => setEraserSize(size)}
+                                        className={`rounded-full transition-all ${eraserSize === size ? 'bg-indigo-500 ring-2 ring-indigo-200' : 'bg-slate-300 hover:bg-slate-400'}`}
+                                        style={{ width: size === 10 ? 12 : size === 20 ? 18 : 24, height: size === 10 ? 12 : size === 20 ? 18 : 24 }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
 
             <div className="w-[1px] h-8 bg-slate-200 mx-1"></div>
 
