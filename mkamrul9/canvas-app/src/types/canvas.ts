@@ -1,8 +1,9 @@
 export type Color = string;
+export type ShapeType = 'rectangle' | 'ellipse';
+export type LayerType = ShapeType | 'pen' | 'text' | 'eraser';
 
-export type LayerType = 'rectangle' | 'ellipse' | 'pen' | 'text' | 'eraser';
-
-export type Tool = 'select' | 'rectangle' | 'ellipse' | 'pen' | 'text' | 'eraser' | 'object-eraser';
+// Added 'hand' and 'shape'
+export type Tool = 'select' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser';
 
 export type Camera = {
     x: number;
@@ -21,4 +22,5 @@ export type Layer = {
     points?: number[];
     text?: string;
     eraserSize?: number;
+    penSize?: number; // Track pen thickness
 };

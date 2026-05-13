@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
-import { Layer, Color, Tool } from '../types/canvas';
+import { Layer, Color, Tool, ShapeType } from '../types/canvas';
 
 interface CanvasState {
     activeTool: Tool;
@@ -15,6 +15,9 @@ interface CanvasState {
     activeEraserType: 'eraser' | 'object-eraser';
     eraserSize: number;
     customColors: string[];
+    camera: { x: number; y: number };
+    activeShape: ShapeType;
+    penSize: number;
 
     // History State
     history: Layer[][];
@@ -31,6 +34,9 @@ interface CanvasState {
     setEraserSize: (size: number) => void;
     addCustomColor: (color: string) => void;
     removeLayer: (id: string) => void;
+    setCamera: (pos: { x: number; y: number }) => void;
+    setActiveShape: (shape: ShapeType) => void;
+    setPenSize: (size: number) => void;
 
     addLayer: (layer: Layer) => void;
     updateLayer: (id: string, newAttributes: Partial<Layer>) => void;
@@ -57,6 +63,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeEraserType: 'eraser',
     eraserSize: 20,
     customColors: [],
+    camera: { x: 0, y: 0 },
+    activeShape: 'rectangle',
+    penSize: 4,
 
     history: [[]], // Start with one empty state
     historyStep: 0,
@@ -80,6 +89,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     removeLayer: (id) => set((state) => ({
         layers: state.layers.filter((layer) => layer.id !== id),
     })),
+    setCamera: (pos) => set({ camera: pos }),
+    setActiveShape: (shape) => set({ activeShape: shape, activeTool: 'shape' }),
+    setPenSize: (size) => set({ penSize: size }),
 
     addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
 
