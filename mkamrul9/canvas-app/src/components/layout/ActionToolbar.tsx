@@ -24,7 +24,18 @@ export default function ActionToolbar() {
 
             <div className="w-[1px] h-8 bg-slate-200 mx-1"></div>
 
-            <Button variant="ghost" size="icon" onClick={clear} disabled={isLocked} title="Clear Canvas" className="w-10 h-10 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50">
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                    if (window.confirm('Are you sure you want to clear the entire board? This action can be undone.')) {
+                        clear();
+                    }
+                }}
+                disabled={isLocked}
+                title="Clear Canvas"
+                className="w-10 h-10 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50"
+            >
                 <Trash2 className="w-4 h-4" />
             </Button>
 

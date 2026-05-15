@@ -11,6 +11,7 @@ interface CanvasState {
     isSaving: boolean;
     boardId: string | null;
     selectedLayerId: string | null;
+    selectedLayerIds: string[];
     bgPattern: 'solid' | 'dotted' | 'grid';
     activeEraserType: 'eraser' | 'object-eraser';
     eraserSize: number;
@@ -33,6 +34,7 @@ interface CanvasState {
     setIsDrawing: (isDrawing: boolean) => void;
     setBoardId: (id: string) => void;
     setSelectedLayerId: (id: string | null) => void;
+    setSelectedLayerIds: (ids: string[]) => void;
     setBgPattern: (pattern: 'solid' | 'dotted' | 'grid') => void;
     setActiveEraserType: (type: 'eraser' | 'object-eraser') => void;
     setEraserSize: (size: number) => void;
@@ -67,6 +69,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     isSaving: false,
     boardId: null,
     selectedLayerId: null,
+    selectedLayerIds: [],
     bgPattern: 'dotted',
     activeEraserType: 'eraser',
     eraserSize: 20,
@@ -87,7 +90,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setBackgroundColor: (color) => set({ backgroundColor: color }),
     setIsDrawing: (isDrawing) => set({ isDrawing }),
     setBoardId: (id) => set({ boardId: id }),
-    setSelectedLayerId: (id) => set({ selectedLayerId: id }),
+    setSelectedLayerId: (id) => set({ selectedLayerIds: id ? [id] : [], selectedLayerId: id }),
+    setSelectedLayerIds: (ids) => set({ selectedLayerIds: ids }),
     setBgPattern: (pattern) => set({ bgPattern: pattern }),
     setActiveEraserType: (type) => set({ activeEraserType: type, activeTool: type }),
     setEraserSize: (size) => set({ eraserSize: size }),

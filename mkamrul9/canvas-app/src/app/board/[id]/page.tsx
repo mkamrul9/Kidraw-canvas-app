@@ -9,7 +9,7 @@ import { useEffect } from 'react';
 import { useCanvasStore } from '../../../store/useCanvasStore';
 import { use } from 'react';
 
-const Board = dynamic(() => import('../../.././components/canvas/Board'), {
+const Board = dynamic(() => import('../../../components/canvas/Board'), {
   ssr: false,
   loading: () => <div className="h-screen w-screen flex items-center justify-center bg-slate-50">Loading canvas...</div>
 });

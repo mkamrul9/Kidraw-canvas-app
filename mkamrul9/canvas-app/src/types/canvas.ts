@@ -1,9 +1,9 @@
 export type Color = string;
 // Added arrow, straight-line, and hexagon
 export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'arrow' | 'straight-line' | 'hexagon';
-export type LayerType = ShapeType | 'pen' | 'text' | 'eraser' | 'comment';
+export type LayerType = ShapeType | 'pen' | 'text' | 'eraser' | 'comment' | 'image';
 
-export type Tool = 'select' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser';
+export type Tool = 'select' | 'lasso' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'image';
 
 export type Camera = {
     x: number;
@@ -24,4 +24,5 @@ export type Layer = {
     eraserSize?: number;
     penSize?: number;
     opacity?: number; // NEW: Track the opacity of individual shapes!
+    src?: string; // NEW: Store Base64 string for images!
 };

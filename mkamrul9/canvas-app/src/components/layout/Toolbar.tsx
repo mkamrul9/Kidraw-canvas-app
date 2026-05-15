@@ -2,7 +2,7 @@
 
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Shapes, Navigation } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Triangle, Star, Diamond, ArrowUpRight, Minus, Hexagon, Shapes, Wand2, ImagePlus, Lasso } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Toolbar() {
@@ -24,13 +24,13 @@ export default function Toolbar() {
         isLocked,
     } = useCanvasStore();
 
-    const [activeMenu, setActiveMenu] = useState<'pen' | 'shape' | 'eraser' | null>(null);
+    const [activeMenu, setActiveMenu] = useState<'select' | 'pen' | 'shape' | 'eraser' | null>(null);
 
-    const toggleMenu = (menu: 'pen' | 'shape' | 'eraser') => setActiveMenu(activeMenu === menu ? null : menu);
+    const toggleMenu = (menu: 'select' | 'pen' | 'shape' | 'eraser') => setActiveMenu(activeMenu === menu ? null : menu);
     const closeMenu = () => setActiveMenu(null);
-    const handleToolClick = (tool: 'select' | 'hand' | 'pen' | 'shape' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser') => {
+    const handleToolClick = (tool: 'select' | 'lasso' | 'hand' | 'pen' | 'shape' | 'text' | 'image' | 'eraser' | 'object-eraser' | 'comment' | 'laser') => {
         setActiveTool(tool);
-        if (tool !== 'shape' && tool !== 'pen' && tool !== 'eraser') {
+        if (tool !== 'shape' && tool !== 'pen' && tool !== 'eraser' && tool !== 'select') {
             closeMenu();
         }
     };
@@ -46,7 +46,21 @@ export default function Toolbar() {
 
     return (
         <div className="absolute z-50 top-6 left-1/2 -translate-x-1/2 bg-white/80 backdrop-blur-md rounded-2xl shadow-lg border border-slate-200/50 flex items-center gap-1 p-1.5 transition-all">
-            <Button variant={activeTool === 'select' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('select')} title="Select (V)" className="w-10 h-10 rounded-lg"><MousePointer2 className="w-4 h-4" /></Button>
+            <div className="relative flex items-center">
+                <Button variant={activeTool === 'select' || activeTool === 'lasso' ? 'default' : 'ghost'} size="icon" onClick={() => { setActiveTool('select'); toggleMenu('select'); }} title="Select (V)" className="w-10 h-10 rounded-lg">
+                    {activeTool === 'lasso' ? <Lasso className="w-4 h-4" /> : <MousePointer2 className="w-4 h-4" />}
+                </Button>
+                {activeMenu === 'select' && (
+                    <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-white rounded-xl shadow-xl border p-2 flex gap-1">
+                        <Button variant={activeTool === 'select' ? 'secondary' : 'ghost'} size="icon" onClick={() => handleToolClick('select')} title="Select">
+                            <MousePointer2 className="w-4 h-4" />
+                        </Button>
+                        <Button variant={activeTool === 'lasso' ? 'secondary' : 'ghost'} size="icon" onClick={() => handleToolClick('lasso')} title="Lasso">
+                            <Lasso className="w-4 h-4" />
+                        </Button>
+                    </div>
+                )}
+            </div>
             <Button variant={activeTool === 'hand' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('hand')} title="Pan Canvas (H)" className="w-10 h-10 rounded-lg"><Hand className="w-4 h-4" /></Button>
 
             <div className="relative flex items-center">
@@ -59,10 +73,6 @@ export default function Toolbar() {
                     </div>
                 )}
             </div>
-
-            <Button variant={activeTool === 'laser' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('laser')} title="Laser Pointer (L)" className="w-10 h-10 rounded-lg">
-                <Navigation className="w-4 h-4" />
-            </Button>
 
             <div className="relative flex items-center">
                 <Button variant={activeTool === 'shape' ? 'default' : 'ghost'} size="icon" onClick={() => { setActiveTool('shape'); toggleMenu('shape'); }} className="w-10 h-10 rounded-lg">
@@ -83,6 +93,38 @@ export default function Toolbar() {
             </div>
 
             <Button variant={activeTool === 'text' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('text')} className="w-10 h-10 rounded-lg"><Type className="w-4 h-4" /></Button>
+
+            <Button
+                variant={activeTool === 'image' ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.onchange = (event) => {
+                        const file = (event.target as HTMLInputElement).files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (loadEvent) => {
+                            const src = loadEvent.target?.result;
+                            if (typeof src === 'string') {
+                                window.dispatchEvent(new CustomEvent('insert-image', { detail: src }));
+                                setActiveTool('image');
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    };
+                    input.click();
+                }}
+                title="Insert Image"
+                className="w-10 h-10 rounded-lg"
+            >
+                <ImagePlus className="w-4 h-4" />
+            </Button>
+
+            <Button variant={activeTool === 'laser' ? 'default' : 'ghost'} size="icon" onClick={() => handleToolClick('laser')} title="Laser Pointer (L)" className="w-10 h-10 rounded-lg">
+                <Wand2 className="w-4 h-4" />
+            </Button>
 
             <div className="relative flex items-center">
                 <Button variant={(activeTool === 'eraser' || activeTool === 'object-eraser') ? 'default' : 'ghost'} size="icon" onClick={handleEraserClick} className="w-10 h-10 rounded-lg">

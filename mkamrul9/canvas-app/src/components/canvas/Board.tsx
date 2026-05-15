@@ -1,17 +1,23 @@
 'use client';
 
-import { Stage, Layer as KonvaLayer, Group, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar, Arrow } from 'react-konva';
+import { Stage, Layer as KonvaLayer, Group, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar, Arrow, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
 import { useEffect, useState, useRef } from 'react';
-import type React from 'react';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { v4 as uuidv4 } from 'uuid';
-import { toast } from 'sonner';
+import useImage from 'use-image';
+
+const URLImage = ({ layer, ...props }: { layer: { src?: string; x: number; y: number; width: number; height: number; opacity?: number } }) => {
+    const [img] = useImage(layer.src || '');
+    return <KonvaImage image={img} x={layer.x} y={layer.y} width={layer.width} height={layer.height} opacity={layer.opacity} {...props} />;
+};
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
     const [editingText, setEditingText] = useState<{ id: string; x: number; y: number; text: string } | null>(null);
     const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
+
+    const [lassoPoints, setLassoPoints] = useState<number[]>([]);
     const [laserPoints, setLaserPoints] = useState<number[]>([]);
 
     const {
@@ -29,6 +35,8 @@ export default function Board() {
         removeLayer,
         saveHistory,
         selectedLayerId,
+        selectedLayerIds,
+        setSelectedLayerIds,
         setSelectedLayerId,
         eraserSize,
         penSize,
@@ -37,7 +45,6 @@ export default function Board() {
         zoom,
         setZoom,
         isLocked,
-        permissionRole,
     } = useCanvasStore();
 
     const stageRef = useRef<Konva.Stage>(null);
@@ -45,11 +52,36 @@ export default function Board() {
     const currentShapeId = useRef<string | null>(null);
 
     useEffect(() => {
-        const interval = setInterval(() => {
-            setLaserPoints((prev) => (prev.length > 0 ? prev.slice(2) : []));
-        }, 30);
+        const interval = setInterval(() => setLaserPoints((prev) => (prev.length > 0 ? prev.slice(2) : [])), 30);
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        const handleInsertImage = (event: Event) => {
+            const customEvent = event as CustomEvent<string>;
+            const src = customEvent.detail;
+            if (!src) return;
+            const img = new window.Image();
+            img.src = src;
+            img.onload = () => {
+                const scale = Math.min(1, 800 / img.width);
+                addLayer({
+                    id: uuidv4(),
+                    type: 'image',
+                    x: (-camera.x + dimensions.width / 2) / zoom - (img.width * scale) / 2,
+                    y: (-camera.y + dimensions.height / 2) / zoom - (img.height * scale) / 2,
+                    width: img.width * scale,
+                    height: img.height * scale,
+                    fill: 'transparent',
+                    src,
+                    opacity: activeOpacity,
+                });
+                saveHistory();
+            };
+        };
+        window.addEventListener('insert-image', handleInsertImage);
+        return () => window.removeEventListener('insert-image', handleInsertImage);
+    }, [camera, zoom, dimensions, activeOpacity, addLayer, saveHistory]);
 
     useEffect(() => {
         const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
@@ -94,7 +126,6 @@ export default function Board() {
                     const writable = await handle.createWritable();
                     await writable.write(blob);
                     await writable.close();
-                    toast.success('Board downloaded successfully!');
                 } else {
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
@@ -114,14 +145,14 @@ export default function Board() {
     }, [layers, backgroundColor, dimensions]);
 
     useEffect(() => {
-        if (activeTool === 'select' && selectedLayerId && transformerRef.current && stageRef.current) {
-            const selectedNode = stageRef.current.findOne(`#${selectedLayerId}`);
-            if (selectedNode) {
-                transformerRef.current.nodes([selectedNode]);
+        if ((activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && transformerRef.current && stageRef.current) {
+            const nodes = selectedLayerIds.map((id) => stageRef.current?.findOne(`#${id}`)).filter(Boolean) as Konva.Node[];
+            if (nodes.length > 0) {
+                transformerRef.current.nodes(nodes);
                 transformerRef.current.getLayer()?.batchDraw();
             }
         }
-    }, [selectedLayerId, layers, activeTool]);
+    }, [selectedLayerIds, layers, activeTool]);
 
     const handleWheel = (e: Konva.KonvaEventObject<WheelEvent>) => {
         e.evt.preventDefault();
@@ -163,12 +194,7 @@ export default function Board() {
             saveHistory();
             return;
         }
-
         if (isLocked && activeTool !== 'hand') return;
-        if (permissionRole === 'viewer' && activeTool !== 'hand' && activeTool !== 'select') {
-            toast.error('View Only Mode', { description: 'Please sign in or request edit access to draw.' });
-            return;
-        }
 
         const stage = e.target.getStage();
         const pos = stage?.getRelativePointerPosition();
@@ -179,6 +205,15 @@ export default function Board() {
         if (activeTool === 'laser') {
             setIsDrawing(true);
             setLaserPoints([pos.x, pos.y]);
+            return;
+        }
+
+        if (activeTool === 'lasso') {
+            if (e.target === stage || e.target.name() === 'background') {
+                setSelectedLayerIds([]);
+                setLassoPoints([pos.x, pos.y]);
+                setIsDrawing(true);
+            }
             return;
         }
 
@@ -235,15 +270,9 @@ export default function Board() {
         const pos = stage?.getRelativePointerPosition();
         if (!pos) return;
 
-        if (activeTool === 'laser') {
-            setLaserPoints((prev) => [...prev, pos.x, pos.y]);
-            return;
-        }
-
-        if (activeTool === 'select' && selectionBox) {
-            setSelectionBox({ ...selectionBox, width: pos.x - selectionBox.x, height: pos.y - selectionBox.y });
-            return;
-        }
+        if (activeTool === 'laser') { setLaserPoints((prev) => [...prev, pos.x, pos.y]); return; }
+        if (activeTool === 'lasso') { setLassoPoints((prev) => [...prev, pos.x, pos.y]); return; }
+        if (activeTool === 'select' && selectionBox) { setSelectionBox({ ...selectionBox, width: pos.x - selectionBox.x, height: pos.y - selectionBox.y }); return; }
 
         if (!currentShapeId.current) return;
         const currentShape = layers.find((layer) => layer.id === currentShapeId.current);
@@ -256,11 +285,39 @@ export default function Board() {
         }
     };
 
+    const isPointInPolygon = (point: number[], vs: number[]) => {
+        const x = point[0];
+        const y = point[1];
+        let inside = false;
+        for (let i = 0, j = vs.length - 2; i < vs.length; j = i, i += 2) {
+            const xi = vs[i];
+            const yi = vs[i + 1];
+            const xj = vs[j];
+            const yj = vs[j + 1];
+            const intersect = ((yi > y) !== (yj > y)) && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+            if (intersect) inside = !inside;
+        }
+        return inside;
+    };
+
     const handlePointerUp = () => {
         if (!isDrawing) return;
         setIsDrawing(false);
 
         if (activeTool === 'laser') return;
+
+        if (activeTool === 'lasso' && lassoPoints.length > 4) {
+            const capturedIds: string[] = [];
+            layers.forEach((layer) => {
+                const cx = layer.x + (layer.width ? layer.width / 2 : 0);
+                const cy = layer.y + (layer.height ? layer.height / 2 : 0);
+                if (isPointInPolygon([cx, cy], lassoPoints)) capturedIds.push(layer.id);
+            });
+
+            if (capturedIds.length > 0) setSelectedLayerIds(capturedIds);
+            setLassoPoints([]);
+            return;
+        }
 
         if (activeTool === 'select' && selectionBox && stageRef.current) {
             const boxRect = {
@@ -270,22 +327,25 @@ export default function Board() {
                 height: Math.abs(selectionBox.height),
             };
 
-            const capturedLayer = layers.find((layer) => {
-                if (!layer.width && !layer.points) return false;
+            const capturedIds: string[] = [];
+            layers.forEach((layer) => {
+                if (!layer.width && !layer.points) return;
                 const lx = layer.x;
                 const ly = layer.y;
-                return (lx >= boxRect.x && lx <= boxRect.x + boxRect.width && ly >= boxRect.y && ly <= boxRect.y + boxRect.height);
+                if (lx >= boxRect.x && lx <= boxRect.x + boxRect.width && ly >= boxRect.y && ly <= boxRect.y + boxRect.height) {
+                    capturedIds.push(layer.id);
+                }
             });
 
-            if (capturedLayer) setSelectedLayerId(capturedLayer.id);
+            if (capturedIds.length > 0) {
+                setSelectedLayerIds(capturedIds);
+                setSelectedLayerId(capturedIds[0]);
+            }
             setSelectionBox(null);
             return;
         }
 
-        if (currentShapeId.current) {
-            currentShapeId.current = null;
-            saveHistory();
-        }
+        if (currentShapeId.current) { currentShapeId.current = null; saveHistory(); }
     };
 
     const getBackgroundStyle = () => {
@@ -350,10 +410,13 @@ export default function Board() {
                 onMouseDown={handlePointerDown}
                 onMouseMove={handlePointerMove}
                 onMouseUp={handlePointerUp}
+                onTouchStart={handlePointerDown}
+                onTouchMove={handlePointerMove}
+                onTouchEnd={handlePointerUp}
             >
                 <KonvaLayer>
                     {layers.map((layer) => {
-                        const isSelected = layer.id === selectedLayerId && activeTool === 'select';
+                        const isSelected = selectedLayerIds.includes(layer.id) && (activeTool === 'select' || activeTool === 'lasso');
                         const commonProps = {
                             id: layer.id,
                             draggable: isSelected && !isLocked,
@@ -364,6 +427,8 @@ export default function Board() {
 
                         const shapeOpacity = layer.opacity ?? 1;
                         const radius = Math.max(Math.abs(layer.width), Math.abs(layer.height)) / 2;
+
+                        if (layer.type === 'image') return <URLImage key={layer.id} layer={layer} {...commonProps} />;
 
                         if (layer.type === 'comment') {
                             return (
@@ -403,6 +468,10 @@ export default function Board() {
                         <Line points={laserPoints} stroke="#ef4444" strokeWidth={6} tension={0.5} lineCap="round" lineJoin="round" shadowColor="#ef4444" shadowBlur={15} />
                     )}
 
+                    {lassoPoints.length > 0 && !isLocked && (
+                        <Line points={lassoPoints} stroke="#4f46e5" strokeWidth={2} dash={[5, 5]} closed fill="rgba(79, 70, 229, 0.1)" />
+                    )}
+
                     {selectionBox && !isLocked && (
                         <Rect
                             x={selectionBox.width < 0 ? selectionBox.x + selectionBox.width : selectionBox.x}
@@ -415,7 +484,7 @@ export default function Board() {
                         />
                     )}
 
-                    {activeTool === 'select' && selectedLayerId && !isLocked && (
+                    {(activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && !isLocked && (
                         <Transformer ref={transformerRef} boundBoxFunc={(oldBox, newBox) => newBox.width < 5 || newBox.height < 5 ? oldBox : newBox} />
                     )}
                 </KonvaLayer>
