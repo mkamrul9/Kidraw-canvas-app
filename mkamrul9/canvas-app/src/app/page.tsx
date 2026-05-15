@@ -85,6 +85,32 @@ export default async function DashboardOrLanding({ searchParams }: { searchParam
         return (
             <div className="min-h-screen bg-[#0B0F19] text-slate-50 selection:bg-fuchsia-500/30 overflow-x-hidden flex flex-col font-sans">
 
+                <nav className="h-20 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-50">
+                    <div className="flex items-center gap-10">
+                        <Link href="/" className="flex items-center gap-2 cursor-pointer hover:scale-[1.02] transition-transform">
+                            <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-2 rounded-xl shadow-lg shadow-violet-500/20"><Sparkles className="w-5 h-5 text-white" /></div>
+                            <span className="font-extrabold text-xl text-white tracking-tight">Kidraw</span>
+                        </Link>
+
+                        <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
+                            <Link href="#how-it-works" className="hover:text-white transition-colors">How it Works</Link>
+                            <Link href="#use-cases" className="hover:text-white transition-colors">Use Cases</Link>
+                            <Link href="#testimonials" className="hover:text-white transition-colors">Wall of Love</Link>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                        {session?.user ? (
+                            <Link href="/"><Button className="bg-white text-slate-950 hover:bg-slate-200 font-bold rounded-full px-6">Go to Dashboard</Button></Link>
+                        ) : (
+                            <>
+                                <Link href="/api/auth/signin"><Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 font-medium">Log in</Button></Link>
+                                <Link href="/api/auth/signin"><Button className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:from-violet-500 hover:to-fuchsia-500 font-bold rounded-full px-6">Sign up free</Button></Link>
+                            </>
+                        )}
+                    </div>
+                </nav>
+
                 {/* HERO SECTION WITH FLOATING MOCKUP */}
                 <div className="relative pt-32 pb-32 overflow-hidden flex-1">
                     {/* Animated Glows */}
@@ -142,7 +168,7 @@ export default async function DashboardOrLanding({ searchParams }: { searchParam
                 </div>
 
                 {/* HOW TO USE SECTION (Dark Slate Tint) */}
-                <div className="bg-[#0F172A] py-24 relative z-10 border-t border-white/5">
+                <div id="how-it-works" className="bg-[#0F172A] py-24 relative z-10 border-t border-white/5">
                     <div className="max-w-6xl mx-auto px-6">
                         <div className="text-center mb-16">
                             <h2 className="text-3xl md:text-5xl font-extrabold mb-4">How it works</h2>
@@ -175,7 +201,7 @@ export default async function DashboardOrLanding({ searchParams }: { searchParam
                 </div>
 
                 {/* WHO IS IT FOR SECTION (Midnight Base) */}
-                <div className="bg-[#0B0F19] max-w-6xl mx-auto px-6 py-24 relative z-10 w-full">
+                <div id="use-cases" className="bg-[#0B0F19] max-w-6xl mx-auto px-6 py-24 relative z-10 w-full">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-5xl font-extrabold mb-4">Built for builders.</h2>
                     </div>
@@ -204,7 +230,7 @@ export default async function DashboardOrLanding({ searchParams }: { searchParam
                 </div>
 
                 {/* TESTIMONIALS SECTION (Deep Violet Tint) */}
-                <div className="bg-[#0D0B1A] py-24 relative z-10 border-t border-white/5">
+                <div id="testimonials" className="bg-[#0D0B1A] py-24 relative z-10 border-t border-white/5">
                     <div className="max-w-6xl mx-auto px-6">
                         <h2 className="text-3xl md:text-5xl font-extrabold mb-12 text-center">Wall of Love</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">

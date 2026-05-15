@@ -96,8 +96,13 @@ export default function Board() {
             try {
                 let blob: Blob;
 
+                const bgRect = stageRef.current.findOne('[name="background"]');
+                const originalFill = bgRect?.fill();
+                const exportColor = (backgroundColor === 'transparent' || !backgroundColor) ? '#ffffff' : backgroundColor;
+                bgRect?.fill(exportColor);
+
                 if (format === 'svg') {
-                    let svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" style="background-color:${backgroundColor}">`;
+                    let svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" style="background-color:${exportColor}">`;
                     layers.forEach((layer) => {
                         const op = layer.opacity ?? 1;
                         if (layer.type === 'rectangle') {
@@ -114,6 +119,8 @@ export default function Board() {
                     const dataURL = stageRef.current.toDataURL({ pixelRatio: 2, mimeType });
                     blob = await (await fetch(dataURL)).blob();
                 }
+
+                bgRect?.fill(originalFill);
 
                 if ('showSaveFilePicker' in window) {
                     const handle = await (window as { showSaveFilePicker: (options: unknown) => Promise<any> }).showSaveFilePicker({
@@ -371,7 +378,7 @@ export default function Board() {
     };
 
     return (
-        <div className="relative w-full h-full" style={getBackgroundStyle()}>
+        <div className={`relative w-full h-full ${activeTool === 'hand' ? (isDrawing ? 'cursor-grabbing' : 'cursor-grab') : ''}`} style={getBackgroundStyle()}>
             {editingText && (
                 <textarea
                     className="absolute z-50 shadow-xl rounded outline-none p-2 text-[20px] font-sans resize-none pointer-events-auto"

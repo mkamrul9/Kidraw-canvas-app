@@ -3,9 +3,11 @@
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import type { ReactNode } from 'react';
+import { useState } from 'react';
 import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 
 type ToolBtnProps = {
     icon: ReactNode;
@@ -35,6 +37,7 @@ function ToolBtn({ icon, label, onClick, isActive = false, className = "" }: Too
 
 export default function ActionToolbar() {
     const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock } = useCanvasStore();
+    const [resetOpen, setResetOpen] = useState(false);
 
     const handleExport = (format: 'png' | 'jpeg' | 'svg') => {
         window.dispatchEvent(new CustomEvent('export-canvas', { detail: format }));
@@ -48,7 +51,27 @@ export default function ActionToolbar() {
 
                 <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
 
-                <ToolBtn icon={<RefreshCcw className="w-4 h-4" />} label="Reset Board" onClick={() => { if (window.confirm("Are you sure you want to reset the board?")) clear(); }} className="hover:!text-red-400 hover:!bg-red-500/10" />
+                <Dialog open={resetOpen} onOpenChange={setResetOpen}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <DialogTrigger asChild>
+                                <Button variant="ghost" size="icon" disabled={isLocked} className="w-10 h-10 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10"><RefreshCcw className="w-4 h-4" /></Button>
+                            </DialogTrigger>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Reset Board</TooltipContent>
+                    </Tooltip>
+
+                    <DialogContent className="bg-[#0B0F19] border-slate-700 text-slate-50">
+                        <DialogHeader>
+                            <DialogTitle className="text-white text-xl">Reset Canvas?</DialogTitle>
+                            <DialogDescription className="text-slate-400">This will permanently clear all layers, images, and text. This action cannot be undone.</DialogDescription>
+                        </DialogHeader>
+                        <DialogFooter className="mt-4 gap-2 sm:gap-0">
+                            <Button variant="ghost" onClick={() => setResetOpen(false)} className="text-slate-300 hover:text-white hover:bg-white/10">Cancel</Button>
+                            <Button onClick={() => { clear(); setResetOpen(false); }} className="bg-red-600 text-white hover:bg-red-700">Yes, Clear Everything</Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
 
                 <DropdownMenu>
                     <Tooltip>
