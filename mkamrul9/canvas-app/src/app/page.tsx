@@ -85,7 +85,7 @@ export default async function DashboardOrLanding({ searchParams }: { searchParam
         return (
             <div className="min-h-screen bg-[#0B0F19] text-slate-50 selection:bg-fuchsia-500/30 overflow-x-hidden flex flex-col font-sans">
 
-                <nav className="h-20 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-50">
+                <nav className="h-20 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl px-8 flex items-center justify-between fixed top-0 w-full z-50">
                     <div className="flex items-center gap-10">
                         <Link href="/" className="flex items-center gap-2 cursor-pointer hover:scale-[1.02] transition-transform">
                             <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-2 rounded-xl shadow-lg shadow-violet-500/20"><Sparkles className="w-5 h-5 text-white" /></div>
@@ -112,7 +112,7 @@ export default async function DashboardOrLanding({ searchParams }: { searchParam
                 </nav>
 
                 {/* HERO SECTION WITH FLOATING MOCKUP */}
-                <div className="relative pt-32 pb-32 overflow-hidden flex-1">
+                <div className="relative pt-32 pb-32 overflow-hidden flex-1 mt-20">
                     {/* Animated Glows */}
                     <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-tr from-violet-600 via-fuchsia-600 to-amber-500 blur-[150px] opacity-20 rounded-full animate-pulse"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
@@ -288,6 +288,12 @@ export default async function DashboardOrLanding({ searchParams }: { searchParam
                             </div>
                         </DropdownMenuLabel>
 
+                        <DropdownMenuSeparator className="bg-white/10" />
+                        <DropdownMenuGroup className="py-1">
+                            <Link href="/?view=landing">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><Sparkles className="w-4 h-4 mr-2" /> View Landing Page</DropdownMenuItem>
+                            </Link>
+                        </DropdownMenuGroup>
                         <DropdownMenuSeparator className="bg-white/10" />
                         <DropdownMenuGroup className="py-1">
                             {/* Note the focus classes used here to override Shadcn's default light-mode focus colors */}

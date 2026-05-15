@@ -101,6 +101,29 @@ export default function Board() {
                 const exportColor = (backgroundColor === 'transparent' || !backgroundColor) ? '#ffffff' : backgroundColor;
                 bgRect?.fill(exportColor);
 
+                let patternCanvas: HTMLCanvasElement | null = null;
+                if (bgPattern !== 'solid') {
+                    patternCanvas = document.createElement('canvas');
+                    const size = bgPattern === 'grid' ? 40 * zoom : 24 * zoom;
+                    patternCanvas.width = size;
+                    patternCanvas.height = size;
+                    const ctx = patternCanvas.getContext('2d');
+                    if (ctx) {
+                        ctx.fillStyle = '#94a3b8';
+                        if (bgPattern === 'grid') {
+                            ctx.fillRect(0, 0, size, 1);
+                            ctx.fillRect(0, 0, 1, size);
+                        } else if (bgPattern === 'dotted') {
+                            ctx.beginPath();
+                            ctx.arc(2, 2, 1.5, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                        bgRect?.fillPriority('pattern');
+                        bgRect?.fillPatternImage(patternCanvas);
+                        bgRect?.fillPatternRepeat('repeat');
+                    }
+                }
+
                 if (format === 'svg') {
                     let svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" style="background-color:${exportColor}">`;
                     layers.forEach((layer) => {
@@ -120,7 +143,9 @@ export default function Board() {
                     blob = await (await fetch(dataURL)).blob();
                 }
 
+                bgRect?.fillPriority('color');
                 bgRect?.fill(originalFill);
+                bgRect?.fillPatternImage(null);
 
                 if ('showSaveFilePicker' in window) {
                     const handle = await (window as { showSaveFilePicker: (options: unknown) => Promise<any> }).showSaveFilePicker({
@@ -149,7 +174,7 @@ export default function Board() {
             window.removeEventListener('resize', handleResize);
             window.removeEventListener('export-canvas', handleExport);
         };
-    }, [layers, backgroundColor, dimensions]);
+    }, [layers, backgroundColor, bgPattern, zoom, dimensions]);
 
     useEffect(() => {
         if ((activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && transformerRef.current && stageRef.current) {

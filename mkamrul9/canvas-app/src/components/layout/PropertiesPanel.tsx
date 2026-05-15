@@ -8,6 +8,26 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 const DEFAULT_COLORS = ['#0f172a', '#64748b', '#e11d48', '#d97706', '#059669', '#4f46e5', '#7c3aed', '#ffffff'];
 
+type ToolBtnProps = {
+    icon: React.ReactNode;
+    label: string;
+    onClick: () => void;
+    isActive: boolean;
+};
+
+function ToolBtn({ icon, label, onClick, isActive }: ToolBtnProps) {
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <Button variant="ghost" size="icon" onClick={onClick} className={`w-10 h-10 rounded-lg transition-colors ${isActive ? 'bg-violet-600 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'}`}>
+                    {icon}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="bg-slate-900 border-slate-700 text-white text-xs mr-2">{label}</TooltipContent>
+        </Tooltip>
+    );
+}
+
 export default function PropertiesPanel() {
     const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory } = useCanvasStore();
 
@@ -21,63 +41,37 @@ export default function PropertiesPanel() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-50 right-6 top-1/2 -translate-y-1/2 bg-[#0B0F19]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 w-14 flex flex-col items-center py-3 gap-2 transition-all">
-                <div className="relative">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => setActiveMenu(activeMenu === 'opacity' ? null : 'opacity')} className={`w-10 h-10 rounded-lg ${activeMenu === 'opacity' ? 'bg-slate-100' : ''}`}>
-                                <Blend className="w-4 h-4 text-slate-600" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Opacity</TooltipContent>
-                    </Tooltip>
+            <div className="absolute z-50 right-6 top-1/2 -translate-y-1/2 bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-700 w-14 flex flex-col items-center py-3 gap-2 transition-all">
+                <div className="relative w-full flex justify-center">
+                    <ToolBtn icon={<Blend className="w-4 h-4" />} label="Opacity Settings" onClick={() => setActiveMenu(activeMenu === 'opacity' ? null : 'opacity')} isActive={activeMenu === 'opacity'} />
                     {activeMenu === 'opacity' && (
-                        <div className="absolute right-14 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-white/10 p-3 w-48 flex flex-col gap-2">
-                            <div className="flex justify-between items-center text-xs font-bold text-slate-400">
+                        <div className="absolute right-16 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-4 w-56 flex flex-col gap-4 z-50">
+                            <div className="flex justify-between items-center text-sm font-bold text-white border-b border-slate-800 pb-2">
                                 <span>Opacity</span>
-                                <span>{Math.round(activeOpacity * 100)}%</span>
+                                <span className="text-violet-400">{Math.round(activeOpacity * 100)}%</span>
                             </div>
-                            <input
-                                type="range"
-                                min="0.1"
-                                max="1"
-                                step="0.05"
-                                value={activeOpacity}
-                                onChange={handleOpacityChange}
-                                className="w-full cursor-pointer accent-indigo-500"
-                            />
+                            <input type="range" min="0.1" max="1" step="0.05" value={activeOpacity} onChange={handleOpacityChange} className="w-full cursor-pointer accent-violet-500 h-2 bg-slate-800 rounded-lg appearance-none" />
                         </div>
                     )}
                 </div>
 
-                <div className="relative">
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => setActiveMenu(activeMenu === 'bg' ? null : 'bg')} className={`w-10 h-10 rounded-lg ${activeMenu === 'bg' ? 'bg-slate-100' : ''}`}>
-                                <Grid className="w-4 h-4 text-slate-600" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Background</TooltipContent>
-                    </Tooltip>
+                <div className="relative w-full flex justify-center">
+                    <ToolBtn icon={<Grid className="w-4 h-4" />} label="Background Settings" onClick={() => setActiveMenu(activeMenu === 'bg' ? null : 'bg')} isActive={activeMenu === 'bg'} />
                     {activeMenu === 'bg' && (
-                        <div className="absolute right-14 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-white/10 p-3 w-40 flex flex-col gap-3">
-                            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Pattern</span>
-                            <div className="flex bg-white/5 p-1 rounded-lg">
+                        <div className="absolute right-16 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-4 w-60 flex flex-col gap-4 z-50">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Canvas Pattern</span>
+                            <div className="flex bg-[#05070B] p-1 rounded-lg border border-slate-800">
                                 {['solid', 'dotted', 'grid'].map((pat) => (
-                                    <button
-                                        key={pat}
-                                        onClick={() => setBgPattern(pat as 'solid' | 'dotted' | 'grid')}
-                                        className={`flex-1 py-1 text-[10px] font-bold rounded capitalize transition-all ${bgPattern === pat ? 'bg-violet-600 shadow-sm text-white' : 'text-slate-400 hover:text-white'}`}
-                                    >
+                                    <button key={pat} onClick={() => setBgPattern(pat as 'solid' | 'dotted' | 'grid')} className={`flex-1 py-1.5 text-xs font-bold rounded-md capitalize transition-all ${bgPattern === pat ? 'bg-violet-600 shadow-md text-white' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}>
                                         {pat}
                                     </button>
                                 ))}
                             </div>
 
-                            <div className="h-[1px] bg-white/10"></div>
+                            <div className="h-[1px] bg-slate-800 w-full"></div>
 
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Canvas Color</span>
-                            <label className="w-full h-8 rounded-md border border-slate-300 cursor-pointer overflow-hidden relative shadow-sm hover:border-indigo-400 transition-colors">
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Canvas Color</span>
+                            <label className="w-full h-10 rounded-lg border-2 border-slate-700 cursor-pointer overflow-hidden relative shadow-inner hover:border-violet-500 transition-colors">
                                 <div className="absolute inset-0" style={{ backgroundColor }}></div>
                                 <input type="color" value={backgroundColor === 'transparent' ? '#ffffff' : backgroundColor} className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" onChange={(e) => setBackgroundColor(e.target.value)} />
                             </label>
@@ -85,22 +79,22 @@ export default function PropertiesPanel() {
                     )}
                 </div>
 
-                <div className="w-8 h-[1px] bg-white/10 my-1"></div>
+                <div className="w-8 h-[1px] bg-slate-700 my-1"></div>
 
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <label className="relative w-8 h-8 rounded-full cursor-pointer flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
-                            <div className="absolute inset-0 rounded-full bg-[conic-gradient(red,yellow,green,blue,magenta,red)] opacity-80"></div>
-                            <div className="absolute inset-[2px] bg-white rounded-full flex items-center justify-center"><Plus className="w-3 h-3 text-slate-600" /></div>
+                        <label className="relative w-8 h-8 rounded-full cursor-pointer flex items-center justify-center shadow-lg hover:scale-110 transition-transform">
+                            <div className="absolute inset-0 rounded-full bg-[conic-gradient(red,yellow,green,blue,magenta,red)] opacity-90"></div>
+                            <div className="absolute inset-[3px] bg-[#0B0F19] rounded-full flex items-center justify-center"><Plus className="w-3 h-3 text-white" /></div>
                             <input type="color" className="opacity-0 absolute inset-0 w-full h-full cursor-pointer" onInput={(e) => setActiveColor((e.target as HTMLInputElement).value)} onBlur={(e) => addCustomColor((e.target as HTMLInputElement).value)} />
                         </label>
                     </TooltipTrigger>
-                    <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Custom Color</TooltipContent>
+                    <TooltipContent side="left" className="bg-slate-900 border-slate-700 text-white text-xs mr-2">Custom Color</TooltipContent>
                 </Tooltip>
 
-                <div className="flex flex-col gap-1.5 mt-1">
+                <div className="flex flex-col gap-2 mt-2">
                     {[...customColors, ...DEFAULT_COLORS].slice(0, 6).map((color, index) => (
-                        <button key={`${color}-${index}`} onClick={() => setActiveColor(color)} className={`w-6 h-6 rounded-full border-2 transition-all shadow-sm ${activeColor === color ? 'border-indigo-500 scale-125' : 'border-slate-100 hover:scale-110'}`} style={{ backgroundColor: color }} />
+                        <button key={`${color}-${index}`} onClick={() => setActiveColor(color)} className={`w-6 h-6 rounded-full border-2 transition-all shadow-md ${activeColor === color ? 'border-violet-500 scale-125' : 'border-slate-700 hover:scale-110'}`} style={{ backgroundColor: color }} />
                     ))}
                 </div>
             </div>

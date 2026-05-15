@@ -120,7 +120,6 @@ export default function Toolbar() {
                     label="Insert Image"
                     onClick={() => document.getElementById('image-upload')?.click()}
                     isActive={activeTool === 'image'}
-                    className="!text-emerald-400 hover:!bg-emerald-500/10"
                 />
                 <input
                     id="image-upload"
@@ -139,7 +138,7 @@ export default function Toolbar() {
                     }}
                 />
 
-                <ToolBtn icon={<Wand2 className="w-4 h-4" />} label="Laser Pointer" onClick={() => handleToolClick('laser')} isActive={activeTool === 'laser'} className="!text-rose-400 hover:!bg-rose-500/10" />
+                <ToolBtn icon={<Wand2 className="w-4 h-4" />} label="Laser Pointer" onClick={() => handleToolClick('laser')} isActive={activeTool === 'laser'} />
 
                 <div className="relative flex items-center">
                     <ToolBtn icon={activeEraserType === 'object-eraser' ? <XSquare className="w-4 h-4" /> : <Eraser className="w-4 h-4" />} label="Eraser (E)" onClick={() => { setActiveTool(activeEraserType); toggleMenu('eraser'); }} isActive={activeTool === 'eraser' || activeTool === 'object-eraser'} />

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Sparkles, User, Settings, LayoutDashboard } from "lucide-react";
+import { Sparkles, User, Settings, LayoutDashboard, CreditCard } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -47,12 +47,14 @@ export default function NavigationHUD() {
 
                         <DropdownMenuSeparator className="bg-slate-700" />
                         <DropdownMenuGroup className="py-1">
-                            <Link href="/"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><LayoutDashboard className="w-4 h-4 mr-2" /> View Dashboard</DropdownMenuItem></Link>
+                            <Link href="/"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><LayoutDashboard className="w-4 h-4 mr-2" /> Dashboard</DropdownMenuItem></Link>
+                            <Link href="/?view=landing"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><Sparkles className="w-4 h-4 mr-2" /> Landing Page</DropdownMenuItem></Link>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator className="bg-slate-700" />
                         <DropdownMenuGroup className="py-1">
-                            <Link href="/info/profile"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem></Link>
-                            <Link href="/info/settings"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><Settings className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem></Link>
+                            <Link href="/info/profile"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem></Link>
+                            <Link href="/info/settings"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><Settings className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem></Link>
+                            <Link href="/info/billing"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><CreditCard className="w-4 h-4 mr-2" /> Billing</DropdownMenuItem></Link>
                         </DropdownMenuGroup>
                     </DropdownMenuContent>
                 </DropdownMenu>

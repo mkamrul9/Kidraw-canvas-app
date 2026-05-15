@@ -1,8 +1,12 @@
+'use client';
 import Link from "next/link";
 import { ArrowLeft, Bell, Monitor, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function SettingsPage() {
+    const [theme, setTheme] = useState('dark');
+    const [emails, setEmails] = useState(true);
     return (
         <div className="min-h-screen bg-[#0B0F19] text-slate-50 relative overflow-hidden">
             <nav className="h-16 border-b border-white/10 bg-white/[0.02] backdrop-blur-md px-8 flex items-center">
@@ -16,7 +20,10 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-3 mb-4"><Monitor className="w-5 h-5 text-violet-400" /> <h3 className="text-lg font-bold">Preferences</h3></div>
                         <div className="flex items-center justify-between p-4 bg-[#06090F] rounded-lg border border-white/10">
                             <div><p className="font-bold">Theme Mode</p><p className="text-sm text-slate-400">Kidraw defaults to Dark Aurora.</p></div>
-                            <div className="flex gap-2"><Button className="bg-violet-600 text-white">Dark</Button><Button variant="outline" className="bg-transparent border-white/20 text-slate-400">Light</Button></div>
+                            <div className="flex gap-2">
+                                <Button onClick={() => setTheme('dark')} className={theme === 'dark' ? "bg-violet-600 text-white" : "bg-transparent border border-white/20 text-slate-400"}>Dark</Button>
+                                <Button onClick={() => setTheme('light')} className={theme === 'light' ? "bg-violet-600 text-white" : "bg-transparent border border-white/20 text-slate-400"}>Light</Button>
+                            </div>
                         </div>
                     </div>
 
@@ -24,7 +31,7 @@ export default function SettingsPage() {
                         <div className="flex items-center gap-3 mb-4"><Bell className="w-5 h-5 text-amber-400" /> <h3 className="text-lg font-bold">Notifications</h3></div>
                         <div className="flex items-center justify-between p-4 bg-[#06090F] rounded-lg border border-white/10 mb-2">
                             <div><p className="font-bold">Email Updates</p><p className="text-sm text-slate-400">Receive feature announcements.</p></div>
-                            <input type="checkbox" className="w-5 h-5 accent-violet-500" defaultChecked />
+                            <input type="checkbox" checked={emails} onChange={(e) => setEmails(e.target.checked)} className="w-5 h-5 accent-violet-500 cursor-pointer" />
                         </div>
                     </div>
 
