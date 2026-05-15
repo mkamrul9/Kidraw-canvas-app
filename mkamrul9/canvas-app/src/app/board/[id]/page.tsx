@@ -8,6 +8,7 @@ import ZoomHUD from '../../../components/layout/ZoomHUD';
 import { useEffect } from 'react';
 import { useCanvasStore } from '../../../store/useCanvasStore';
 import { use } from 'react';
+import NavigationHUD from '@/src/components/layout/NavigationHUD';
 
 const Board = dynamic(() => import('../../../components/canvas/Board'), {
   ssr: false,
@@ -30,7 +31,7 @@ export default function CanvasPage({ params }: { params: Promise<{ id: string }>
   return (
     <main className="h-screen w-screen overflow-hidden relative bg-slate-50">
       <Board />
-
+      <NavigationHUD />
       <Toolbar />
       <ActionToolbar />
       <PropertiesPanel />

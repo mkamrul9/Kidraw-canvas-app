@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import BoardGrid from "../components/dashboard/BoardGrid";
 
 export default async function DashboardOrLanding() {
     const session = await getServerSession(authOptions);
@@ -234,7 +235,7 @@ export default async function DashboardOrLanding() {
     const boards = await prisma.board.findMany({ where: { authorId: session.user.id }, orderBy: { updatedAt: 'desc' } });
 
     return (
-        <div className="min-h-screen bg-[#0B0F19] text-slate-50 flex flex-col font-sans relative overflow-x-hidden">
+        <div className="min-h-screen bg-[#05070B] text-slate-50 flex flex-col font-sans relative overflow-x-hidden">
             <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-violet-600/10 blur-[120px] rounded-full pointer-events-none"></div>
 
             <nav className="h-16 border-b border-white/10 bg-[#0B0F19]/50 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-50">
@@ -322,45 +323,17 @@ export default async function DashboardOrLanding() {
                     </Dialog>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {boards.length === 0 ? (
-                        <div className="col-span-full py-32 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-3xl bg-white/[0.01] backdrop-blur-sm">
-                            <div className="bg-violet-500/10 p-5 rounded-2xl mb-6 border border-violet-500/20 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
-                                <LayoutDashboard className="w-10 h-10 text-violet-400" />
-                            </div>
-                            <p className="text-slate-300 font-medium mb-2 text-xl">Your workspace is empty.</p>
-                            <p className="text-slate-500 mb-8 max-w-sm text-center">Create a new board to start mapping out your ideas, wireframing, or collaborating with your team.</p>
+                {boards.length === 0 ? (
+                    <div className="py-32 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-3xl bg-white/[0.01] backdrop-blur-sm">
+                        <div className="bg-violet-500/10 p-5 rounded-2xl mb-6 border border-violet-500/20 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
+                            <LayoutDashboard className="w-10 h-10 text-violet-400" />
                         </div>
-                    ) : (
-                        boards.map((board) => (
-                            <Link key={board.id} href={`/board/${board.id}`} className="group block h-full">
-                                <div className="bg-white/[0.02] rounded-3xl border border-white/10 shadow-lg overflow-hidden hover:shadow-[0_0_40px_rgba(139,92,246,0.1)] hover:border-violet-500/40 hover:bg-white/[0.04] transition-all duration-300 h-full flex flex-col group-hover:-translate-y-1.5 backdrop-blur-md">
-                                    <div className="h-40 bg-[#06090F] border-b border-white/5 flex items-center justify-center relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-[radial-gradient(#475569_1px,transparent_1px)] [background-size:16px_16px] opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-24 h-24 bg-violet-500/20 blur-2xl rounded-full group-hover:bg-violet-400/30 transition-colors"></div>
-                                        <LayoutDashboard className="w-10 h-10 text-slate-500 group-hover:text-violet-300 transition-colors z-10 drop-shadow-lg" />
-                                    </div>
-                                    <div className="p-6 flex-1 flex flex-col relative z-20">
-                                        <h3 className="font-bold text-white truncate text-xl mb-1 group-hover:text-violet-100 transition-colors">{board.title}</h3>
-                                        {board.description ? (
-                                            <p className="text-sm text-slate-400 mt-1 line-clamp-2 leading-relaxed">{board.description}</p>
-                                        ) : (
-                                            <p className="text-sm text-slate-600 mt-1 italic">No description provided.</p>
-                                        )}
-                                        <div className="flex items-center justify-between mt-auto pt-6">
-                                            <span className="text-xs font-semibold text-slate-400 bg-white/5 border border-white/10 px-3 py-1.5 rounded-lg backdrop-blur-sm">
-                                                {new Date(board.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                            </span>
-                                            <div className="bg-white/5 p-2 rounded-lg border border-white/5 group-hover:bg-violet-500 group-hover:border-violet-400 transition-all">
-                                                <ArrowRight className="w-4 h-4 text-slate-500 group-hover:text-white transition-colors" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </Link>
-                        ))
-                    )}
-                </div>
+                        <p className="text-slate-300 font-medium mb-2 text-xl">Your workspace is empty.</p>
+                        <p className="text-slate-500 mb-8 max-w-sm text-center">Create a new board to start mapping out your ideas, wireframing, or collaborating with your team.</p>
+                    </div>
+                ) : (
+                    <BoardGrid boards={boards} />
+                )}
             </main>
             <Footer />
         </div>
