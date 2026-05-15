@@ -38,12 +38,12 @@ export default function ZoomHUD() {
     return (
         <div className="absolute z-50 bottom-6 left-6 flex flex-col gap-2">
             {showMinimap && (
-                <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200/50 p-2 w-56 h-36 relative overflow-hidden select-none">
+                <div className="bg-[#0B0F19]/80 backdrop-blur-md rounded-xl shadow-2xl border border-white/10 p-2 w-56 h-36 relative overflow-hidden select-none">
                     <div className="text-[10px] font-bold text-slate-400 absolute top-2 left-2 z-10 pointer-events-none">MINIMAP</div>
 
                     <div
                         ref={mapRef}
-                        className="absolute inset-0 m-4 border border-slate-200 bg-slate-50 overflow-hidden rounded cursor-crosshair touch-none"
+                        className="absolute inset-0 m-4 border border-white/10 bg-[#06090F] overflow-hidden rounded cursor-crosshair touch-none"
                         onPointerDown={(e) => { setIsDraggingMap(true); navigateMinimap(e); e.currentTarget.setPointerCapture(e.pointerId); }}
                         onPointerMove={(e) => { if (isDraggingMap) navigateMinimap(e); }}
                         onPointerUp={(e) => { setIsDraggingMap(false); e.currentTarget.releasePointerCapture(e.pointerId); }}
@@ -69,17 +69,17 @@ export default function ZoomHUD() {
                 </div>
             )}
 
-            <div className="bg-white/90 backdrop-blur-md rounded-xl shadow-lg border border-slate-200/50 p-2 flex items-center gap-1">
+            <div className="bg-[#0B0F19]/80 backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 p-2 flex items-center gap-1">
                 <Dialog>
                     <DialogTrigger asChild>
                         <Button variant="default" size="sm" className="h-8 bg-emerald-600 hover:bg-emerald-700 text-xs px-2 mr-1"><Share2 className="w-3 h-3 mr-1" /> Share</Button>
                     </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader><DialogTitle>Share this Whiteboard</DialogTitle></DialogHeader>
+                    <DialogContent className="bg-[#0B0F19] border border-white/10 text-slate-50">
+                        <DialogHeader><DialogTitle className="text-white">Share this Whiteboard</DialogTitle></DialogHeader>
                         <div className="flex flex-col gap-4 py-4">
                             <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">Link Access:</span>
-                                <select className="border rounded p-1 text-sm outline-none" value={shareSetting} onChange={(e) => setShareSetting(e.target.value)}>
+                                <span className="text-sm font-medium text-slate-300">Link Access:</span>
+                                <select className="border border-white/10 bg-[#0B0F19] text-white rounded p-2 text-sm outline-none" value={shareSetting} onChange={(e) => setShareSetting(e.target.value)}>
                                     <option value="VIEW">Can View</option>
                                     <option value="COMMENT">Can Comment</option>
                                     <option value="EDIT">Can Edit</option>

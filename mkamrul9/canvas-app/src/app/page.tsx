@@ -238,11 +238,11 @@ export default async function DashboardOrLanding() {
         <div className="min-h-screen bg-[#05070B] text-slate-50 flex flex-col font-sans relative overflow-x-hidden">
             <div className="absolute top-0 right-0 w-[600px] h-[400px] bg-violet-600/10 blur-[120px] rounded-full pointer-events-none"></div>
 
-            <nav className="h-16 border-b border-white/10 bg-[#0B0F19]/50 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-50">
-                <div className="flex items-center gap-3">
+            <nav className="h-16 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl px-8 flex items-center justify-between sticky top-0 z-50">
+                <Link href="/" className="flex items-center gap-3 cursor-pointer hover:scale-[1.02] transition-transform">
                     <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-2 rounded-xl shadow-lg shadow-violet-500/20"><Sparkles className="w-5 h-5 text-white" /></div>
                     <span className="font-extrabold text-xl text-white tracking-tight">Kidraw</span>
-                </div>
+                </Link>
 
                 {/* DROPDOWN MENU WITH FIXED HOVER STYLES & REAL ROUTES */}
                 <DropdownMenu>
