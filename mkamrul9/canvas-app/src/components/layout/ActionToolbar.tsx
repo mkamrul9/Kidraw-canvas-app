@@ -4,6 +4,7 @@ import { useCanvasStore } from '../../store/useCanvasStore';
 import { Button } from '@/components/ui/button';
 import type { ReactNode } from 'react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -51,24 +52,20 @@ export default function ActionToolbar() {
 
                 <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
 
+                {/* CUSTOM RESET DIALOG */}
                 <Dialog open={resetOpen} onOpenChange={setResetOpen}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <DialogTrigger asChild>
-                                <Button variant="ghost" size="icon" disabled={isLocked} className="w-10 h-10 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10"><RefreshCcw className="w-4 h-4" /></Button>
-                            </DialogTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Reset Board</TooltipContent>
-                    </Tooltip>
+                    <Tooltip><TooltipTrigger asChild><DialogTrigger asChild>
+                        <Button variant="ghost" size="icon" disabled={isLocked} className="w-10 h-10 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10"><RefreshCcw className="w-4 h-4" /></Button>
+                    </DialogTrigger></TooltipTrigger><TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Reset Board</TooltipContent></Tooltip>
 
-                    <DialogContent className="bg-[#0B0F19] border-slate-700 text-slate-50">
-                        <DialogHeader>
-                            <DialogTitle className="text-white text-xl">Reset Canvas?</DialogTitle>
-                            <DialogDescription className="text-slate-400">This will permanently clear all layers, images, and text. This action cannot be undone.</DialogDescription>
+                    <DialogContent className="bg-[#0B0F19] border border-white/10 text-slate-50 sm:max-w-[450px] shadow-[0_0_100px_rgba(239,68,68,0.15)] rounded-2xl p-0 overflow-hidden">
+                        <DialogHeader className="px-6 pt-6 mb-2">
+                            <DialogTitle className="text-2xl font-bold text-white">Reset Workspace?</DialogTitle>
+                            <DialogDescription className="text-slate-400">This will permanently clear all shapes, images, and text from the canvas. This action cannot be undone.</DialogDescription>
                         </DialogHeader>
-                        <DialogFooter className="mt-4 gap-2 sm:gap-0">
-                            <Button variant="ghost" onClick={() => setResetOpen(false)} className="text-slate-300 hover:text-white hover:bg-white/10">Cancel</Button>
-                            <Button onClick={() => { clear(); setResetOpen(false); }} className="bg-red-600 text-white hover:bg-red-700">Yes, Clear Everything</Button>
+                        <DialogFooter className="px-6 py-4 border-t border-white/5 bg-[#05070B] flex gap-2 sm:justify-end">
+                            <Button variant="ghost" onClick={() => setResetOpen(false)} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-xl">Cancel</Button>
+                            <Button onClick={() => { clear(); setResetOpen(false); toast.success("Workspace reset."); }} className="bg-red-600 text-white hover:bg-red-700 rounded-xl font-bold">Yes, Reset Canvas</Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>

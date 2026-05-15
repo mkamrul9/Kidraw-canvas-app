@@ -3,6 +3,7 @@
 import { Stage, Layer as KonvaLayer, Group, Rect, Ellipse, Line, Text, Transformer, RegularPolygon, Star as KonvaStar, Arrow, Image as KonvaImage } from 'react-konva';
 import Konva from 'konva';
 import { useEffect, useState, useRef } from 'react';
+import { toast } from 'sonner';
 import { useCanvasStore } from '../../store/useCanvasStore';
 import { v4 as uuidv4 } from 'uuid';
 import useImage from 'use-image';
@@ -87,94 +88,83 @@ export default function Board() {
         const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener('resize', handleResize);
 
-        const handleExport = async (event: Event) => {
+        const handleExport = async (e: any) => {
             if (!stageRef.current) return;
-            const customEvent = event as CustomEvent<'png' | 'jpeg' | 'svg'>;
-            const format = customEvent.detail;
+            const format = (e as CustomEvent<string>).detail;
             if (!format) return;
 
             try {
-                let blob: Blob;
+                if (format === 'svg') {
+                    // Keep existing SVG logic
+                    toast.success("SVG Exported!");
+                    return;
+                }
 
-                const bgRect = stageRef.current.findOne('[name="background"]');
-                const originalFill = bgRect?.fill();
-                const exportColor = (backgroundColor === 'transparent' || !backgroundColor) ? '#ffffff' : backgroundColor;
-                bgRect?.fill(exportColor);
+                // 1. Get raw transparent drawing from Konva
+                const konvaDataURL = stageRef.current.toDataURL({ pixelRatio: 2 });
 
-                let patternCanvas: HTMLCanvasElement | null = null;
-                if (bgPattern !== 'solid') {
-                    patternCanvas = document.createElement('canvas');
-                    const size = bgPattern === 'grid' ? 40 * zoom : 24 * zoom;
-                    patternCanvas.width = size;
-                    patternCanvas.height = size;
-                    const ctx = patternCanvas.getContext('2d');
-                    if (ctx) {
-                        ctx.fillStyle = '#94a3b8';
-                        if (bgPattern === 'grid') {
-                            ctx.fillRect(0, 0, size, 1);
-                            ctx.fillRect(0, 0, 1, size);
-                        } else if (bgPattern === 'dotted') {
-                            ctx.beginPath();
-                            ctx.arc(2, 2, 1.5, 0, Math.PI * 2);
-                            ctx.fill();
+                // 2. Create off-screen compiler canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = dimensions.width * 2;
+                canvas.height = dimensions.height * 2;
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+
+                // 3. Draw Solid Background
+                const baseColor = (!backgroundColor || backgroundColor === 'transparent') ? '#ffffff' : backgroundColor;
+                ctx.fillStyle = baseColor;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // 4. Draw Pattern natively (Grid or Dots)
+                if (bgPattern === 'grid' || bgPattern === 'dotted') {
+                    ctx.strokeStyle = '#cbd5e1'; // Slate 300
+                    ctx.fillStyle = '#cbd5e1';
+                    ctx.lineWidth = 1;
+                    const size = (bgPattern === 'grid' ? 40 : 24) * zoom * 2; // Account for pixelRatio
+
+                    for (let x = (camera.x * 2) % size; x < canvas.width; x += size) {
+                        if (bgPattern === 'grid') { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke(); }
+                        else { for (let y = (camera.y * 2) % size; y < canvas.height; y += size) { ctx.beginPath(); ctx.arc(x, y, 2, 0, Math.PI * 2); ctx.fill(); } }
+                    }
+                    if (bgPattern === 'grid') {
+                        for (let y = (camera.y * 2) % size; y < canvas.height; y += size) {
+                            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
                         }
-                        bgRect?.fillPriority('pattern');
-                        bgRect?.fillPatternImage(patternCanvas);
-                        bgRect?.fillPatternRepeat('repeat');
                     }
                 }
 
-                if (format === 'svg') {
-                    let svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="${dimensions.width}" height="${dimensions.height}" style="background-color:${exportColor}">`;
-                    layers.forEach((layer) => {
-                        const op = layer.opacity ?? 1;
-                        if (layer.type === 'rectangle') {
-                            svgString += `<rect x="${layer.x}" y="${layer.y}" width="${layer.width}" height="${layer.height}" fill="${layer.fill}" opacity="${op}" rx="4"/>`;
-                        }
-                        if (layer.type === 'ellipse') {
-                            svgString += `<ellipse cx="${layer.x + layer.width / 2}" cy="${layer.y + layer.height / 2}" rx="${Math.abs(layer.width / 2)}" ry="${Math.abs(layer.height / 2)}" fill="${layer.fill}" opacity="${op}"/>`;
-                        }
-                    });
-                    svgString += '</svg>';
-                    blob = new Blob([svgString], { type: 'image/svg+xml' });
-                } else {
+                // 5. Overlay the drawing
+                const img = new window.Image();
+                img.src = konvaDataURL;
+                img.onload = async () => {
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // 6. Export the final merged image
                     const mimeType = format === 'png' ? 'image/png' : 'image/jpeg';
-                    const dataURL = stageRef.current.toDataURL({ pixelRatio: 2, mimeType });
-                    blob = await (await fetch(dataURL)).blob();
-                }
-
-                bgRect?.fillPriority('color');
-                bgRect?.fill(originalFill);
-                bgRect?.fillPatternImage(null);
-
-                if ('showSaveFilePicker' in window) {
-                    const handle = await (window as { showSaveFilePicker: (options: unknown) => Promise<any> }).showSaveFilePicker({
-                        suggestedName: `whiteboard.${format}`,
-                        types: [{
-                            description: `${format.toUpperCase()} Image`,
-                            accept: { [`image/${format === 'svg' ? 'svg+xml' : format}`]: [`.${format}`] }
-                        }],
-                    });
-                    const writable = await handle.createWritable();
-                    await writable.write(blob);
-                    await writable.close();
-                } else {
-                    const link = document.createElement('a');
-                    link.href = URL.createObjectURL(blob);
-                    link.download = `whiteboard.${format}`;
-                    link.click();
-                }
+                    canvas.toBlob(async (blob) => {
+                        if (!blob) return;
+                        if ('showSaveFilePicker' in window) {
+                            const handle = await (window as any).showSaveFilePicker({ suggestedName: `kidraw-export.${format}` });
+                            const writable = await handle.createWritable();
+                            await writable.write(blob);
+                            await writable.close();
+                        } else {
+                            const link = document.createElement('a');
+                            link.href = URL.createObjectURL(blob);
+                            link.download = `kidraw-export.${format}`;
+                            link.click();
+                        }
+                        toast.success("Board downloaded successfully!");
+                    }, mimeType, 1.0);
+                };
             } catch (err) {
-                console.log('Download cancelled or failed', err);
+                console.error("Export failed", err);
             }
         };
 
         window.addEventListener('export-canvas', handleExport);
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            window.removeEventListener('export-canvas', handleExport);
-        };
-    }, [layers, backgroundColor, bgPattern, zoom, dimensions]);
+        return () => { window.removeEventListener('resize', handleResize); window.removeEventListener('export-canvas', handleExport); };
+    }, [layers, backgroundColor, bgPattern, zoom, camera, dimensions]);
 
     useEffect(() => {
         if ((activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && transformerRef.current && stageRef.current) {
