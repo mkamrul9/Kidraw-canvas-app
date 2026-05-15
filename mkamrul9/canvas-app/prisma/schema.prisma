@@ -5,6 +5,7 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -48,10 +49,10 @@ model Session {
 model Board {
   id              String   @id @default(cuid())
   title           String   @default("Untitled Whiteboard")
+  description     String?  // NEW: Optional description
   backgroundColor String   @default("#ffffff")
   layers          Json     @default("[]")
   
-  // Link this board to the user who created it
   authorId        String?
   author          User?    @relation(fields: [authorId], references: [id])
   

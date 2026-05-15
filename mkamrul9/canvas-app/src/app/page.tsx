@@ -3,22 +3,35 @@ import { authOptions } from "../lib/auth";
 import prisma from "../lib/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { LogIn, Plus, LayoutDashboard, FileEdit, Sparkles, Layers, Zap, Infinity, ArrowRight, Share2, MousePointer2 } from "lucide-react";
+import { LogIn, Plus, LayoutDashboard, Sparkles, Layers, Zap, Infinity, ArrowRight, Share2 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { redirect } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 
 export default async function DashboardOrLanding() {
     const session = await getServerSession(authOptions);
 
-    async function createNewBoard() {
+    // SERVER ACTION: Accepts form data for title and description
+    async function createNewBoard(formData: FormData) {
         'use server';
         const currentSession = await getServerSession(authOptions);
         if (!currentSession?.user?.id) return;
+
+        const title = formData.get('title') as string || "Untitled Whiteboard";
+        const description = formData.get('description') as string;
         const newId = uuidv4();
+
         await prisma.board.create({
-            data: { id: newId, authorId: currentSession.user.id, title: "Untitled Whiteboard", layers: [], backgroundColor: "#ffffff" }
+            data: {
+                id: newId,
+                authorId: currentSession.user.id,
+                title,
+                description,
+                layers: [],
+                backgroundColor: "#ffffff"
+            }
         });
         redirect(`/board/${newId}`);
     }
@@ -29,16 +42,13 @@ export default async function DashboardOrLanding() {
     if (!session?.user) {
         return (
             <div className="min-h-screen bg-slate-950 text-slate-50 selection:bg-fuchsia-500/30 overflow-x-hidden">
-
-                {/* HERO SECTION with Mesh Gradient */}
                 <div className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
-                    {/* Animated Background Glow */}
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-violet-600 via-fuchsia-600 to-amber-500 blur-[120px] opacity-20 rounded-full animate-pulse"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
 
                     <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-fuchsia-300 mb-8 backdrop-blur-md">
-                            <Sparkles className="w-3 h-3" /> Canvas Pro v2.0 is now live
+                            <Sparkles className="w-3 h-3" /> Kidraw v2.0 is now live
                         </div>
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
                             The infinite canvas for <br />
@@ -47,7 +57,7 @@ export default async function DashboardOrLanding() {
                             </span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                            From mapping out complex websocket architecture for KanbanSync to wireframing payment flows for Funding Panda, Canvas Pro gives you the tools to visually engineer your next big idea.
+                            Visually engineer your next big idea. Map out complex architectures, wireframe user flows, and collaborate in real-time.
                         </p>
                         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                             <Link href="/api/auth/signin">
@@ -59,7 +69,6 @@ export default async function DashboardOrLanding() {
                     </div>
                 </div>
 
-                {/* BENTO GRID FEATURES SECTION */}
                 <div className="max-w-6xl mx-auto px-6 py-24">
                     <div className="text-center mb-16">
                         <h2 className="text-3xl md:text-4xl font-bold mb-4">Everything you need. <span className="text-slate-500">Nothing you don't.</span></h2>
@@ -89,13 +98,11 @@ export default async function DashboardOrLanding() {
                     </div>
                 </div>
 
-                {/* PRICING / FOOTER CTA */}
                 <div className="border-t border-slate-800/50 bg-slate-900/20 py-24 text-center">
                     <h2 className="text-3xl font-bold mb-6">100% Free. Built for Builders.</h2>
-                    <p className="text-slate-400 mb-8 max-w-md mx-auto">No paywalls. No credit cards. Just a pure, high-performance canvas waiting for your ideas.</p>
                     <Link href="/api/auth/signin">
                         <Button size="lg" className="bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-500 hover:to-fuchsia-500 text-white border-0 px-8 rounded-full shadow-lg transition-transform hover:scale-105 h-12">
-                            <LogIn className="w-4 h-4 mr-2" /> Login to Canvas Pro
+                            <LogIn className="w-4 h-4 mr-2" /> Login to Kidraw
                         </Button>
                     </Link>
                 </div>
@@ -104,7 +111,7 @@ export default async function DashboardOrLanding() {
     }
 
     // ==========================================
-    // VIEW 2: THE LOGGED-IN DASHBOARD
+    // VIEW 2: THE LOGGED-IN DARK AURORA DASHBOARD
     // ==========================================
     const boards = await prisma.board.findMany({
         where: { authorId: session.user.id },
@@ -112,35 +119,40 @@ export default async function DashboardOrLanding() {
     });
 
     return (
-        <div className="min-h-screen bg-slate-50 flex flex-col font-sans">
+        <div className="min-h-screen bg-slate-950 text-slate-50 flex flex-col font-sans relative overflow-hidden">
+
+            {/* Subtle Background Glow for Dashboard */}
+            <div className="absolute top-0 right-0 w-[500px] h-[300px] bg-violet-600/10 blur-[100px] rounded-full pointer-events-none"></div>
+            <div className="absolute bottom-0 left-0 w-[500px] h-[300px] bg-fuchsia-600/10 blur-[100px] rounded-full pointer-events-none"></div>
+
             {/* Top Navigation Bar */}
-            <nav className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-50">
+            <nav className="h-16 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md px-8 flex items-center justify-between sticky top-0 z-50">
                 <div className="flex items-center gap-3">
                     <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-2 rounded-xl shadow-sm">
-                        <MousePointer2 className="w-5 h-5 text-white" />
+                        <Sparkles className="w-5 h-5 text-white" />
                     </div>
-                    <span className="font-extrabold text-xl text-slate-900 tracking-tight">Canvas Pro</span>
+                    <span className="font-extrabold text-xl text-white tracking-tight">Kidraw</span>
                 </div>
 
                 <DropdownMenu>
                     <DropdownMenuTrigger className="outline-none">
-                        <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-2 ring-slate-100 hover:ring-violet-500 transition-all cursor-pointer">
+                        <Avatar className="h-10 w-10 border-2 border-slate-800 shadow-sm ring-2 ring-transparent hover:ring-violet-500 transition-all cursor-pointer">
                             <AvatarImage src={session.user.image || ""} />
-                            <AvatarFallback className="bg-violet-100 text-violet-700 font-bold">
+                            <AvatarFallback className="bg-slate-800 text-violet-400 font-bold">
                                 {session.user.name?.charAt(0) || "U"}
                             </AvatarFallback>
                         </Avatar>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-64 p-2 rounded-xl">
+                    <DropdownMenuContent align="end" className="w-64 p-2 rounded-xl bg-slate-900 border-slate-800 text-slate-50">
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none text-slate-900">{session.user.name}</p>
-                                <p className="text-xs leading-none text-slate-500">{session.user.email}</p>
+                                <p className="text-sm font-medium leading-none text-white">{session.user.name}</p>
+                                <p className="text-xs leading-none text-slate-400">{session.user.email}</p>
                             </div>
                         </DropdownMenuLabel>
-                        <DropdownMenuSeparator className="my-2" />
+                        <DropdownMenuSeparator className="my-2 bg-slate-800" />
                         <Link href="/api/auth/signout">
-                            <DropdownMenuItem className="text-red-600 font-medium cursor-pointer rounded-md hover:bg-red-50 focus:bg-red-50 focus:text-red-700">
+                            <DropdownMenuItem className="text-red-400 font-medium cursor-pointer rounded-md hover:bg-red-950 focus:bg-red-950 focus:text-red-400">
                                 Log out
                             </DropdownMenuItem>
                         </Link>
@@ -149,51 +161,76 @@ export default async function DashboardOrLanding() {
             </nav>
 
             {/* Main Content */}
-            <main className="flex-1 max-w-7xl w-full mx-auto p-8">
+            <main className="flex-1 max-w-7xl w-full mx-auto p-8 relative z-10">
                 <div className="flex justify-between items-end mb-10 mt-6">
                     <div>
-                        <h1 className="text-3xl font-extrabold text-slate-900 mb-2">My Whiteboards</h1>
-                        <p className="text-slate-500">Manage your projects and collaborative sessions.</p>
+                        <h1 className="text-3xl font-extrabold text-white mb-2">My Workspaces</h1>
+                        <p className="text-slate-400">Manage your projects and collaborative sessions.</p>
                     </div>
-                    <form action={createNewBoard}>
-                        <Button type="submit" className="bg-slate-900 hover:bg-slate-800 text-white rounded-full px-6 shadow-md transition-all hover:shadow-lg hover:-translate-y-0.5 h-11 font-medium">
-                            <Plus className="w-4 h-4 mr-2" /> New Board
-                        </Button>
-                    </form>
+
+                    {/* NEW BOARD DIALOG */}
+                    <Dialog>
+                        <DialogTrigger asChild>
+                            <Button className="bg-white text-slate-950 hover:bg-slate-200 rounded-full px-6 shadow-[0_0_20px_rgba(217,70,239,0.15)] transition-all hover:scale-105 h-11 font-bold">
+                                <Plus className="w-4 h-4 mr-2" /> New Board
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent className="bg-slate-900 border-slate-800 text-slate-50 sm:max-w-[425px]">
+                            <form action={createNewBoard}>
+                                <DialogHeader>
+                                    <DialogTitle className="text-xl">Create New Board</DialogTitle>
+                                    <DialogDescription className="text-slate-400">
+                                        Give your whiteboard a name and an optional description to keep your workspace organized.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <div className="grid gap-4 py-6">
+                                    <div className="grid gap-2">
+                                        <label htmlFor="title" className="text-sm font-medium text-slate-200">Title</label>
+                                        <input id="title" name="title" required placeholder="e.g. System Architecture Diagram" className="flex h-10 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent" />
+                                    </div>
+                                    <div className="grid gap-2">
+                                        <label htmlFor="description" className="text-sm font-medium text-slate-200">Description (Optional)</label>
+                                        <textarea id="description" name="description" placeholder="Briefly describe the purpose of this board..." className="flex min-h-[80px] w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-50 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent resize-none" />
+                                    </div>
+                                </div>
+                                <DialogFooter>
+                                    <Button type="submit" className="bg-violet-600 text-white hover:bg-violet-700 w-full rounded-lg">Create Workspace</Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     {boards.length === 0 ? (
-                        <div className="col-span-full py-24 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-3xl bg-white/50 backdrop-blur-sm">
-                            <div className="bg-violet-100 p-4 rounded-full mb-4">
-                                <FileEdit className="w-8 h-8 text-violet-600" />
+                        <div className="col-span-full py-24 flex flex-col items-center justify-center border-2 border-dashed border-slate-800 rounded-3xl bg-slate-900/30 backdrop-blur-sm">
+                            <div className="bg-violet-500/10 p-4 rounded-full mb-4 border border-violet-500/20">
+                                <Sparkles className="w-8 h-8 text-violet-400" />
                             </div>
-                            <p className="text-slate-600 font-medium mb-6 text-lg">Your workspace is empty.</p>
-                            <form action={createNewBoard}>
-                                <Button type="submit" className="rounded-full shadow-sm" variant="outline">Create your first board</Button>
-                            </form>
+                            <p className="text-slate-300 font-medium mb-6 text-lg">Your workspace is empty.</p>
                         </div>
                     ) : (
                         boards.map((board) => (
                             <Link key={board.id} href={`/board/${board.id}`} className="group block h-full">
-                                <div className="bg-white rounded-2xl border border-slate-200/60 shadow-sm overflow-hidden hover:shadow-xl hover:border-violet-300 transition-all duration-300 h-full flex flex-col group-hover:-translate-y-1">
+                                <div className="bg-slate-900/50 rounded-2xl border border-slate-800 shadow-sm overflow-hidden hover:shadow-xl hover:border-violet-500/50 transition-all duration-300 h-full flex flex-col group-hover:-translate-y-1 backdrop-blur-sm">
 
-                                    {/* Thumbnail */}
-                                    <div className="h-40 bg-slate-50 border-b border-slate-100 flex items-center justify-center relative overflow-hidden">
-                                        {/* Dashboard Mini-Grid */}
-                                        <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:12px_12px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
-                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-100/50 to-transparent"></div>
-                                        <LayoutDashboard className="w-10 h-10 text-slate-300 group-hover:text-violet-500 transition-colors z-10" />
+                                    {/* Thumbnail Area */}
+                                    <div className="h-32 bg-slate-950 border-b border-slate-800 flex items-center justify-center relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-[radial-gradient(#475569_1px,transparent_1px)] [background-size:12px_12px] opacity-20 group-hover:opacity-40 transition-opacity"></div>
+                                        <LayoutDashboard className="w-8 h-8 text-slate-600 group-hover:text-violet-400 transition-colors z-10" />
                                     </div>
 
                                     {/* Card Body */}
-                                    <div className="p-5 flex-1 flex flex-col justify-between bg-white relative z-20">
-                                        <h3 className="font-bold text-slate-900 truncate text-lg">{board.title}</h3>
-                                        <div className="flex items-center justify-between mt-4">
-                                            <span className="text-xs font-medium text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
+                                    <div className="p-5 flex-1 flex flex-col bg-slate-900/50 relative z-20">
+                                        <h3 className="font-bold text-white truncate text-lg">{board.title}</h3>
+                                        {board.description && (
+                                            <p className="text-xs text-slate-400 mt-1 line-clamp-2">{board.description}</p>
+                                        )}
+                                        <div className="flex items-center justify-between mt-auto pt-4">
+                                            <span className="text-xs font-medium text-slate-500 bg-slate-950 border border-slate-800 px-2 py-1 rounded-md">
                                                 {new Date(board.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                             </span>
-                                            <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-violet-500 transition-colors -translate-x-2 group-hover:translate-x-0 opacity-0 group-hover:opacity-100" />
+                                            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:text-violet-400 transition-colors -translate-x-2 group-hover:translate-x-0 opacity-0 group-hover:opacity-100" />
                                         </div>
                                     </div>
                                 </div>
