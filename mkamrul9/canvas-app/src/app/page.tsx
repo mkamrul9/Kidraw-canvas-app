@@ -3,7 +3,7 @@ import { authOptions } from "../lib/auth";
 import prisma from "../lib/prisma";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { LogIn, Plus, LayoutDashboard, Sparkles, Layers, Zap, Infinity, ArrowRight, Share2, MousePointer2, User, Settings, CreditCard, Keyboard, HeartHandshake, ShieldCheck, Zap as FastIcon } from "lucide-react";
+import { LogIn, Plus, LayoutDashboard, Sparkles, Layers, Zap, Infinity, ArrowRight, Share2, MousePointer2, User, Settings, CreditCard, Keyboard, HeartHandshake, ShieldCheck, Zap as FastIcon, Shapes, Type, ArrowUpRight } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { redirect } from "next/navigation";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -25,21 +25,25 @@ export default async function DashboardOrLanding() {
     }
 
     // ==========================================
-    // SHARED PROFESSIONAL FOOTER
+    // SHARED DISTINCT FOOTER
     // ==========================================
     const Footer = () => (
-        <footer className="border-t border-white/10 bg-[#06090F] pt-20 pb-10 text-slate-400 relative z-10">
-            <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16">
+        // Distinct pure black background with a glowing top border to separate it from the main page
+        <footer className="relative bg-black pt-20 pb-10 text-slate-300 z-10 overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-violet-500 to-transparent opacity-50"></div>
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[100px] bg-violet-600/20 blur-[80px] pointer-events-none"></div>
+
+            <div className="max-w-7xl mx-auto px-8 grid grid-cols-1 md:grid-cols-4 gap-12 mb-16 relative z-10">
                 <div className="col-span-1 md:col-span-1">
                     <div className="flex items-center gap-2 mb-6">
-                        <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-1.5 rounded-lg"><Sparkles className="w-4 h-4 text-white" /></div>
-                        <span className="font-extrabold text-xl text-white tracking-tight">Kidraw</span>
+                        <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-1.5 rounded-lg"><Sparkles className="w-5 h-5 text-white" /></div>
+                        <span className="font-extrabold text-2xl text-white tracking-tight">Kidraw</span>
                     </div>
-                    <p className="text-sm text-slate-500 mb-6">The visual workspace for modern engineering teams. Map, wireframe, and collaborate in real-time.</p>
+                    <p className="text-sm text-slate-400 mb-6 leading-relaxed">The visual workspace for modern engineering teams. Map, wireframe, and collaborate in real-time on an infinite canvas.</p>
                 </div>
                 <div>
-                    <h4 className="text-white font-semibold mb-4">Product</h4>
-                    <ul className="space-y-3 text-sm">
+                    <h4 className="text-white font-bold mb-6 tracking-wide">PRODUCT</h4>
+                    <ul className="space-y-4 text-sm font-medium">
                         <li><Link href="/info/features" className="hover:text-violet-400 transition-colors">Features</Link></li>
                         <li><Link href="/info/templates" className="hover:text-violet-400 transition-colors">Templates</Link></li>
                         <li><Link href="/info/integrations" className="hover:text-violet-400 transition-colors">Integrations</Link></li>
@@ -47,8 +51,8 @@ export default async function DashboardOrLanding() {
                     </ul>
                 </div>
                 <div>
-                    <h4 className="text-white font-semibold mb-4">Resources</h4>
-                    <ul className="space-y-3 text-sm">
+                    <h4 className="text-white font-bold mb-6 tracking-wide">RESOURCES</h4>
+                    <ul className="space-y-4 text-sm font-medium">
                         <li><Link href="/info/help-center" className="hover:text-violet-400 transition-colors">Help Center</Link></li>
                         <li><Link href="/info/community" className="hover:text-violet-400 transition-colors">Community</Link></li>
                         <li><Link href="/info/blog" className="hover:text-violet-400 transition-colors">Blog</Link></li>
@@ -56,8 +60,8 @@ export default async function DashboardOrLanding() {
                     </ul>
                 </div>
                 <div>
-                    <h4 className="text-white font-semibold mb-4">Legal</h4>
-                    <ul className="space-y-3 text-sm">
+                    <h4 className="text-white font-bold mb-6 tracking-wide">LEGAL</h4>
+                    <ul className="space-y-4 text-sm font-medium">
                         <li><Link href="/info/privacy-policy" className="hover:text-violet-400 transition-colors">Privacy Policy</Link></li>
                         <li><Link href="/info/terms-of-service" className="hover:text-violet-400 transition-colors">Terms of Service</Link></li>
                         <li><Link href="/info/cookie-policy" className="hover:text-violet-400 transition-colors">Cookie Policy</Link></li>
@@ -65,126 +69,154 @@ export default async function DashboardOrLanding() {
                     </ul>
                 </div>
             </div>
-            <div className="max-w-7xl mx-auto px-8 border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-600">
+            <div className="max-w-7xl mx-auto px-8 border-t border-white/10 pt-8 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500 font-medium">
                 <p>© {new Date().getFullYear()} Kidraw Inc. All rights reserved.</p>
             </div>
         </footer>
     );
 
     // ==========================================
-    // VIEW 1: THE SAAS LANDING PAGE
+    // VIEW 1: THE ANIMATED SAAS LANDING PAGE
     // ==========================================
     if (!session?.user) {
         return (
-            <div className="min-h-screen bg-[#0B0F19] text-slate-50 selection:bg-fuchsia-500/30 overflow-x-hidden flex flex-col">
+            <div className="min-h-screen bg-[#0B0F19] text-slate-50 selection:bg-fuchsia-500/30 overflow-x-hidden flex flex-col font-sans">
 
-                {/* HERO SECTION */}
-                <div className="relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden flex-1">
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-gradient-to-tr from-violet-600 via-fuchsia-600 to-amber-500 blur-[150px] opacity-20 rounded-full animate-pulse"></div>
+                {/* HERO SECTION WITH FLOATING MOCKUP */}
+                <div className="relative pt-32 pb-32 overflow-hidden flex-1">
+                    {/* Animated Glows */}
+                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-tr from-violet-600 via-fuchsia-600 to-amber-500 blur-[150px] opacity-20 rounded-full animate-pulse"></div>
                     <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
 
-                    <div className="relative z-10 max-w-5xl mx-auto px-6 text-center">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-fuchsia-300 mb-8 backdrop-blur-md">
-                            <Sparkles className="w-3 h-3" /> Kidraw v2.0 is now live
+                    <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-fuchsia-300 mb-8 backdrop-blur-md shadow-lg shadow-fuchsia-500/10">
+                            <Sparkles className="w-4 h-4" /> Kidraw v2.0 is now live
                         </div>
                         <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
-                            The infinite canvas for <br />
+                            Where engineering teams <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-400">
-                                limitless engineering.
+                                think out loud.
                             </span>
                         </h1>
                         <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                            What is Kidraw? It's your ultimate visual workspace. Map out complex architectures, wireframe user flows, and collaborate in real-time without constraints.
+                            The ultimate visual workspace. Map complex architectures, wireframe user flows, and collaborate in real-time on an infinite, blazing-fast canvas.
                         </p>
-                        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+                        <div className="flex justify-center mb-20">
                             <Link href="/api/auth/signin">
-                                <Button size="lg" className="bg-white text-slate-950 hover:bg-slate-200 text-md px-8 rounded-full shadow-[0_0_40px_rgba(217,70,239,0.3)] transition-all hover:scale-105 font-bold h-14">
+                                <Button size="lg" className="bg-white text-slate-950 hover:bg-slate-200 text-lg px-10 py-7 rounded-full shadow-[0_0_50px_rgba(217,70,239,0.3)] transition-all hover:scale-105 font-bold">
                                     Start Drawing Free <ArrowRight className="w-5 h-5 ml-2" />
                                 </Button>
                             </Link>
                         </div>
+
+                        {/* THE VISUAL SHOWCASE (3D Floating Canvas) */}
+                        <div className="relative mx-auto w-full max-w-5xl hidden md:block" style={{ perspective: '1200px' }}>
+                            <div className="relative rounded-2xl border border-white/10 bg-[#0F172A]/80 backdrop-blur-xl shadow-2xl overflow-hidden h-[500px] w-full transform rotate-x-[10deg] rotate-y-[-5deg] hover:rotate-x-0 hover:rotate-y-0 transition-transform duration-700 ease-out flex items-center justify-center">
+                                {/* Simulated Canvas Background */}
+                                <div className="absolute inset-0 bg-[radial-gradient(#ffffff20_1px,transparent_1px)] [background-size:20px_20px]"></div>
+
+                                {/* Simulated Floating UI Tools */}
+                                <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 flex gap-2">
+                                    <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center"><MousePointer2 className="w-4 h-4 text-white" /></div>
+                                    <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center"><Shapes className="w-4 h-4 text-white" /></div>
+                                    <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center"><Type className="w-4 h-4 text-white" /></div>
+                                </div>
+
+                                {/* Simulated Shapes */}
+                                <div className="absolute top-[30%] left-[20%] w-48 h-32 bg-indigo-500/30 border-2 border-indigo-400 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-lg shadow-indigo-500/20 animate-pulse">
+                                    <span className="font-bold text-indigo-200">Database Layer</span>
+                                </div>
+                                <div className="absolute top-[40%] right-[25%] w-40 h-40 bg-fuchsia-500/30 border-2 border-fuchsia-400 rounded-full flex items-center justify-center backdrop-blur-sm shadow-lg shadow-fuchsia-500/20">
+                                    <span className="font-bold text-fuchsia-200">Load Balancer</span>
+                                </div>
+                                {/* Simulated Arrow */}
+                                <div className="absolute top-[40%] left-[45%] w-32 h-[2px] bg-white/50 rotate-12"></div>
+                                <ArrowUpRight className="absolute top-[42%] left-[58%] w-6 h-6 text-white/50" />
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
-                {/* HOW TO USE / STEPS SECTION */}
-                <div className="bg-[#06090F] py-24 relative z-10 border-y border-white/5">
+                {/* HOW TO USE SECTION (Dark Slate Tint) */}
+                <div className="bg-[#0F172A] py-24 relative z-10 border-t border-white/5">
                     <div className="max-w-6xl mx-auto px-6">
                         <div className="text-center mb-16">
-                            <h2 className="text-3xl md:text-4xl font-bold mb-4">How to use Kidraw</h2>
-                            <p className="text-slate-400 text-lg">Go from idea to execution in three simple steps.</p>
+                            <h2 className="text-3xl md:text-5xl font-extrabold mb-4">How it works</h2>
+                            <p className="text-slate-400 text-xl">Go from chaos to clarity in three simple steps.</p>
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                            <div className="text-center p-6">
-                                <div className="w-16 h-16 mx-auto bg-violet-500/10 border border-violet-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(139,92,246,0.1)]">
-                                    <LayoutDashboard className="w-8 h-8 text-violet-400" />
+                            <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
+                                <div className="w-14 h-14 bg-violet-500/20 border border-violet-500/30 rounded-2xl flex items-center justify-center mb-6">
+                                    <LayoutDashboard className="w-6 h-6 text-violet-400" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-2">1. Initialize Workspace</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">Create a new boundless canvas. Set your environment to dark mode, dotted grid, or solid colors to match your focus.</p>
+                                <h3 className="text-2xl font-bold mb-3">1. Initialize</h3>
+                                <p className="text-slate-400 text-base leading-relaxed">Create a boundless canvas. Set your environment to dark mode, dotted grid, or solid colors to match your team's focus.</p>
                             </div>
-                            <div className="text-center p-6">
-                                <div className="w-16 h-16 mx-auto bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(217,70,239,0.1)]">
-                                    <Layers className="w-8 h-8 text-fuchsia-400" />
+                            <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
+                                <div className="w-14 h-14 bg-fuchsia-500/20 border border-fuchsia-500/30 rounded-2xl flex items-center justify-center mb-6">
+                                    <Layers className="w-6 h-6 text-fuchsia-400" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-2">2. Map Architecture</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">Utilize our smart geometry, freehand pens, and image uploads to wireframe your databases, UI flows, or logic trees.</p>
+                                <h3 className="text-2xl font-bold mb-3">2. Architect</h3>
+                                <p className="text-slate-400 text-base leading-relaxed">Utilize our smart geometry, freehand pens, and image uploads to wireframe databases, UI flows, and logic trees instantly.</p>
                             </div>
-                            <div className="text-center p-6">
-                                <div className="w-16 h-16 mx-auto bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(16,185,129,0.1)]">
-                                    <Share2 className="w-8 h-8 text-emerald-400" />
+                            <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
+                                <div className="w-14 h-14 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center mb-6">
+                                    <Share2 className="w-6 h-6 text-emerald-400" />
                                 </div>
-                                <h3 className="text-xl font-bold mb-2">3. Securely Collaborate</h3>
-                                <p className="text-slate-400 text-sm leading-relaxed">Generate role-based share links. Let stakeholders view, or invite other engineers to edit and comment in real-time.</p>
+                                <h3 className="text-2xl font-bold mb-3">3. Collaborate</h3>
+                                <p className="text-slate-400 text-base leading-relaxed">Generate role-based share links. Let stakeholders view, or invite engineers to edit and drop sticky-note comments in real-time.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {/* WHO IS IT FOR SECTION */}
-                <div className="max-w-6xl mx-auto px-6 py-24 relative z-10">
+                {/* WHO IS IT FOR SECTION (Midnight Base) */}
+                <div className="bg-[#0B0F19] max-w-6xl mx-auto px-6 py-24 relative z-10 w-full">
                     <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-4">Built for builders.</h2>
+                        <h2 className="text-3xl md:text-5xl font-extrabold mb-4">Built for builders.</h2>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                            <FastIcon className="w-8 h-8 text-amber-400 mb-4" />
-                            <h3 className="text-lg font-bold mb-2">Full-Stack Engineers</h3>
-                            <p className="text-slate-400 text-sm">Visualize complex Next.js, Prisma, and PostgreSQL data schemas before writing a single line of code.</p>
+                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
+                            <FastIcon className="w-10 h-10 text-amber-400 mb-6" />
+                            <h3 className="text-xl font-bold mb-3">Full-Stack Devs</h3>
+                            <p className="text-slate-400 text-sm">Visualize complex Next.js, Prisma, and PostgreSQL data schemas before writing code.</p>
                         </div>
-                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                            <ShieldCheck className="w-8 h-8 text-emerald-400 mb-4" />
-                            <h3 className="text-lg font-bold mb-2">System Architects</h3>
+                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
+                            <ShieldCheck className="w-10 h-10 text-emerald-400 mb-6" />
+                            <h3 className="text-xl font-bold mb-3">System Architects</h3>
                             <p className="text-slate-400 text-sm">Design load balancers, microservices, and CI/CD pipelines on an infinite grid.</p>
                         </div>
-                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                            <HeartHandshake className="w-8 h-8 text-rose-400 mb-4" />
-                            <h3 className="text-lg font-bold mb-2">Product Managers</h3>
+                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
+                            <HeartHandshake className="w-10 h-10 text-rose-400 mb-6" />
+                            <h3 className="text-xl font-bold mb-3">Product Managers</h3>
                             <p className="text-slate-400 text-sm">Wireframe user journeys and gather contextual feedback via sticky-note comments.</p>
                         </div>
-                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-6 backdrop-blur-md">
-                            <Layers className="w-8 h-8 text-blue-400 mb-4" />
-                            <h3 className="text-lg font-bold mb-2">UI/UX Designers</h3>
+                        <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
+                            <Layers className="w-10 h-10 text-blue-400 mb-6" />
+                            <h3 className="text-xl font-bold mb-3">UI/UX Designers</h3>
                             <p className="text-slate-400 text-sm">Rapidly prototype interface layouts and map out component hierarchies.</p>
                         </div>
                     </div>
                 </div>
 
-                {/* TESTIMONIALS SECTION */}
-                <div className="bg-[#06090F] py-24 relative z-10 border-y border-white/5">
+                {/* TESTIMONIALS SECTION (Deep Violet Tint) */}
+                <div className="bg-[#0D0B1A] py-24 relative z-10 border-t border-white/5">
                     <div className="max-w-6xl mx-auto px-6">
-                        <h2 className="text-3xl md:text-4xl font-bold mb-12 text-center">Wall of Love</h2>
+                        <h2 className="text-3xl md:text-5xl font-extrabold mb-12 text-center">Wall of Love</h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl relative">
-                                <p className="text-lg text-slate-300 italic mb-6">"Kidraw was instrumental when mapping out the real-time websocket infrastructure for KanbanSync. The infinite canvas and smart geometry allowed us to see the entire system at a glance."</p>
+                            <div className="bg-white/[0.03] border border-violet-500/20 p-10 rounded-3xl shadow-xl shadow-violet-900/20">
+                                <p className="text-xl text-slate-300 italic mb-8">"Kidraw was instrumental when mapping out the real-time websocket infrastructure. The infinite canvas and smart geometry allowed us to see the entire system at a glance."</p>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-violet-500/20 rounded-full flex items-center justify-center border border-violet-500/30 text-violet-300 font-bold">AL</div>
-                                    <div><p className="font-bold text-white">Alex Larson</p><p className="text-sm text-slate-500">Engineering Lead</p></div>
+                                    <div className="w-14 h-14 bg-violet-500/20 rounded-full flex items-center justify-center border border-violet-500/30 text-violet-300 font-bold text-xl">AL</div>
+                                    <div><p className="font-bold text-white text-lg">Alex Larson</p><p className="text-slate-500">Engineering Lead</p></div>
                                 </div>
                             </div>
-                            <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl relative">
-                                <p className="text-lg text-slate-300 italic mb-6">"Wireframing the Stripe payment flow logic for Funding Panda was effortless. The laser pointer tool made our virtual pitch meetings incredibly seamless and focused."</p>
+                            <div className="bg-white/[0.03] border border-fuchsia-500/20 p-10 rounded-3xl shadow-xl shadow-fuchsia-900/20">
+                                <p className="text-xl text-slate-300 italic mb-8">"Wireframing payment flow logic was effortless. The laser pointer tool made our virtual pitch meetings incredibly seamless and focused."</p>
                                 <div className="flex items-center gap-4">
-                                    <div className="w-12 h-12 bg-fuchsia-500/20 rounded-full flex items-center justify-center border border-fuchsia-500/30 text-fuchsia-300 font-bold">SM</div>
-                                    <div><p className="font-bold text-white">Sarah Mitchell</p><p className="text-sm text-slate-500">Product Manager</p></div>
+                                    <div className="w-14 h-14 bg-fuchsia-500/20 rounded-full flex items-center justify-center border border-fuchsia-500/30 text-fuchsia-300 font-bold text-xl">SM</div>
+                                    <div><p className="font-bold text-white text-lg">Sarah Mitchell</p><p className="text-slate-500">Product Manager</p></div>
                                 </div>
                             </div>
                         </div>
@@ -211,7 +243,7 @@ export default async function DashboardOrLanding() {
                     <span className="font-extrabold text-xl text-white tracking-tight">Kidraw</span>
                 </div>
 
-                {/* ENHANCED AVATAR DROPDOWN */}
+                {/* DROPDOWN MENU WITH FIXED HOVER STYLES & REAL ROUTES */}
                 <DropdownMenu>
                     <DropdownMenuTrigger className="outline-none">
                         <Avatar className="h-10 w-10 border-2 border-white/10 shadow-sm ring-2 ring-transparent hover:ring-violet-500 transition-all cursor-pointer">
@@ -229,18 +261,26 @@ export default async function DashboardOrLanding() {
 
                         <DropdownMenuSeparator className="bg-white/10" />
                         <DropdownMenuGroup className="py-1">
-                            <DropdownMenuItem className="cursor-pointer hover:bg-white/5 focus:bg-white/5 rounded-md"><User className="w-4 h-4 mr-2 text-slate-400" /> Profile</DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer hover:bg-white/5 focus:bg-white/5 rounded-md"><Settings className="w-4 h-4 mr-2 text-slate-400" /> Settings</DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer hover:bg-white/5 focus:bg-white/5 rounded-md"><CreditCard className="w-4 h-4 mr-2 text-slate-400" /> Billing</DropdownMenuItem>
+                            {/* Note the focus classes used here to override Shadcn's default light-mode focus colors */}
+                            <Link href="/info/profile">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><User className="w-4 h-4 mr-2" /> Profile</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/settings">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><Settings className="w-4 h-4 mr-2" /> Settings</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/billing">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><CreditCard className="w-4 h-4 mr-2" /> Billing</DropdownMenuItem>
+                            </Link>
                         </DropdownMenuGroup>
 
                         <DropdownMenuSeparator className="bg-white/10" />
-                        <DropdownMenuItem className="cursor-pointer hover:bg-white/5 focus:bg-white/5 rounded-md"><Keyboard className="w-4 h-4 mr-2 text-slate-400" /> Keyboard Shortcuts <DropdownMenuShortcut>⌘K</DropdownMenuShortcut></DropdownMenuItem>
+                        <Link href="/info/keyboard-shortcuts">
+                            <DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300 transition-colors"><Keyboard className="w-4 h-4 mr-2" /> Keyboard Shortcuts <DropdownMenuShortcut className="text-inherit opacity-70">⌘K</DropdownMenuShortcut></DropdownMenuItem>
+                        </Link>
 
                         <DropdownMenuSeparator className="bg-white/10" />
-                        {/* Custom Sign Out Flow */}
                         <Link href="/api/auth/signout">
-                            <DropdownMenuItem className="text-red-400 font-medium cursor-pointer rounded-md hover:bg-red-500/10 focus:bg-red-500/10 focus:text-red-400 transition-colors">
+                            <DropdownMenuItem className="cursor-pointer focus:bg-red-600 focus:text-white text-red-400 rounded-md transition-colors">
                                 <LogIn className="w-4 h-4 mr-2 rotate-180" /> Log out
                             </DropdownMenuItem>
                         </Link>
@@ -256,7 +296,7 @@ export default async function DashboardOrLanding() {
                         <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap bg-white text-slate-950 hover:bg-slate-200 rounded-full px-8 shadow-[0_0_30px_rgba(139,92,246,0.3)] transition-all hover:scale-105 h-12 font-bold text-sm">
                             <Plus className="w-5 h-5 mr-2" /> New Board
                         </DialogTrigger>
-                        <DialogContent className="bg-[#0B0F19] border border-white/10 text-slate-50 sm:max-w-[450px] shadow-[0_0_100px_rgba(139,92,246,0.15)] rounded-2xl overflow-hidden p-0">
+                        <DialogContent className="bg-[#0B0F19] border border-white/10 text-slate-50 sm:max-w-[450px] shadow-[0_0_100px_rgba(139,92,246,0.15)] rounded-2xl p-0 overflow-hidden">
                             <form action={createNewBoard}>
                                 <DialogHeader className="px-6 pt-6 mb-2">
                                     <DialogTitle className="text-2xl font-bold">Create New Workspace</DialogTitle>
@@ -272,8 +312,7 @@ export default async function DashboardOrLanding() {
                                         <textarea id="description" name="description" placeholder="Briefly describe the purpose of this board..." className="flex min-h-[100px] w-full rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 resize-none transition-all" />
                                     </div>
                                 </div>
-                                {/* FIXED FOOTER: No grey background, border perfectly aligns */}
-                                <DialogFooter className="px-6 py-4 border-t border-white/5 bg-transparent sm:justify-center">
+                                <DialogFooter className="px-6 py-4 border-t border-white/5 bg-[#0B0F19] sm:justify-center">
                                     <Button type="submit" className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:from-violet-500 hover:to-fuchsia-500 w-full rounded-xl h-12 font-bold shadow-lg">
                                         Initialize Workspace <ArrowRight className="w-4 h-4 ml-2" />
                                     </Button>
@@ -283,7 +322,6 @@ export default async function DashboardOrLanding() {
                     </Dialog>
                 </div>
 
-                {/* ... glowing cards rendering logic the exact same ... */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                     {boards.length === 0 ? (
                         <div className="col-span-full py-32 flex flex-col items-center justify-center border border-dashed border-white/10 rounded-3xl bg-white/[0.01] backdrop-blur-sm">
