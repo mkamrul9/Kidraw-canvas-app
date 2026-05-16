@@ -62,12 +62,16 @@ const Footer = () => (
     </footer>
 );
 
+// ==========================================
+// MAIN PAGE COMPONENT WITH CONDITIONAL RENDERING
+// ==========================================
 export default async function DashboardOrLanding({ searchParams }: { searchParams: Promise<{ view?: string }> }) {
     const resolvedParams = await searchParams;
     const view = resolvedParams.view;
     const session = await getServerSession(authOptions);
 
     async function createNewBoard(formData: FormData) {
+        // This function runs on the server when the form is submitted, allowing us to securely access the user's session and interact with the database without exposing any sensitive logic to the client.
         'use server';
         const currentSession = await getServerSession(authOptions);
         if (!currentSession?.user?.id) return;

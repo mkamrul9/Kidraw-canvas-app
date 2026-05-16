@@ -7,18 +7,23 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
+// custom type for our custom button
+// also used in actonToolbar. we can use the type in the type file to reuse this later
 type ToolBtnProps = {
     icon: ReactNode;
     label: string;
     onClick: () => void;
     isActive?: boolean;
     className?: string;
-    disabled?: boolean;
+    disabled?: boolean; // not in actionToolbar
 };
 
+// Our custom button component with custom props
 function ToolBtn({ icon, label, onClick, isActive = false, className = "", disabled = false }: ToolBtnProps) {
     return (
+        // wrapping the button with tooltip to show the label on hover
         <Tooltip>
+            {/* using TooltipTrigger to trigger the tooltip on hover. asChild is used to pass the props to the child component  */}
             <TooltipTrigger asChild>
                 <Button
                     variant="ghost"
@@ -38,6 +43,7 @@ function ToolBtn({ icon, label, onClick, isActive = false, className = "", disab
 type ActiveMenu = 'pen' | 'shape' | 'eraser' | 'select' | null;
 type ToolName = 'select' | 'lasso' | 'hand' | 'pen' | 'shape' | 'text' | 'image' | 'eraser' | 'object-eraser' | 'comment' | 'laser';
 
+// Main custom Toolbar component
 export default function Toolbar() {
     const {
         activeTool,
@@ -57,8 +63,10 @@ export default function Toolbar() {
         isLocked,
     } = useCanvasStore();
 
+    // state to manage which dropdown menu is open. null means no menu is open
     const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
 
+    // if menu was already open and user clicks the same tool, we close the menu. if user clicks a different tool, we open the new menu
     const toggleMenu = (menu: Exclude<ActiveMenu, null>) => setActiveMenu(activeMenu === menu ? null : menu);
     const closeMenu = () => setActiveMenu(null);
     const handleToolClick = (tool: ToolName) => {
