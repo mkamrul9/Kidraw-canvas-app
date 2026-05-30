@@ -19,8 +19,13 @@ interface LayerRendererProps {
     isLocked: boolean;
     activeTool: string;
     onDragEnd: (id: string, x: number, y: number) => void;
+    onDragMove?: (id: string, x: number, y: number) => void;
     onClick: (id: string) => void;
     onTextDblClick: (id: string, x: number, y: number, text: string) => void;
+    onMouseEnter?: (id: string) => void;
+    onMouseLeave?: (id: string) => void;
+    onTransform?: (id: string, x: number, y: number, width: number, height: number) => void;
+    onTransformEnd?: (id: string, x: number, y: number, width: number, height: number) => void;
 }
 
 /**
@@ -33,8 +38,13 @@ export default function LayerRenderer({
     isLocked,
     activeTool,
     onDragEnd,
+    onDragMove,
     onClick,
     onTextDblClick,
+    onMouseEnter,
+    onMouseLeave,
+    onTransform,
+    onTransformEnd,
 }: LayerRendererProps) {
     const commonProps = {
         id: layer.id,
@@ -43,7 +53,50 @@ export default function LayerRenderer({
         onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => {
             onDragEnd(layer.id, event.target.x(), event.target.y());
         },
+        onDragMove: (event: Konva.KonvaEventObject<DragEvent>) => {
+            if (onDragMove) {
+                onDragMove(layer.id, event.target.x(), event.target.y());
+            }
+        },
         onClick: () => onClick(layer.id),
+        onMouseEnter: () => {
+            if (onMouseEnter) onMouseEnter(layer.id);
+        },
+        onMouseLeave: () => {
+            if (onMouseLeave) onMouseLeave(layer.id);
+        },
+        onTransform: (event: Konva.KonvaEventObject<any>) => {
+            const node = event.target;
+            const scaleX = node.scaleX();
+            const scaleY = node.scaleY();
+            node.scaleX(1);
+            node.scaleY(1);
+            if (onTransform) {
+                onTransform(
+                    layer.id,
+                    node.x(),
+                    node.y(),
+                    node.width() * scaleX,
+                    node.height() * scaleY
+                );
+            }
+        },
+        onTransformEnd: (event: Konva.KonvaEventObject<any>) => {
+            const node = event.target;
+            const scaleX = node.scaleX();
+            const scaleY = node.scaleY();
+            node.scaleX(1);
+            node.scaleY(1);
+            if (onTransformEnd) {
+                onTransformEnd(
+                    layer.id,
+                    node.x(),
+                    node.y(),
+                    node.width() * scaleX,
+                    node.height() * scaleY
+                );
+            }
+        },
     };
 
     const shapeOpacity = layer.opacity ?? 1;

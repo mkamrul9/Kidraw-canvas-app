@@ -20,3 +20,36 @@ export function isPointInPolygon(point: number[], vs: number[]): boolean {
     }
     return inside;
 }
+
+export type SnapPoint = {
+    x: number;
+    y: number;
+    type: 'top' | 'right' | 'bottom' | 'left';
+    elementId: string;
+};
+
+export function getSnapPoints(layer: { id: string; x: number; y: number; width: number; height: number; type: string }): SnapPoint[] {
+    if (['pen', 'eraser', 'straight-line', 'arrow', 'laser'].includes(layer.type)) {
+        return [];
+    }
+    const W = layer.width;
+    const H = layer.height;
+    return [
+        { x: layer.x + W / 2, y: layer.y, type: 'top', elementId: layer.id },
+        { x: layer.x + W, y: layer.y + H / 2, type: 'right', elementId: layer.id },
+        { x: layer.x + W / 2, y: layer.y + H, type: 'bottom', elementId: layer.id },
+        { x: layer.x, y: layer.y + H / 2, type: 'left', elementId: layer.id },
+    ];
+}
+
+export function getSnapPointCoords(layer: { x: number; y: number; width: number; height: number }, type: 'top' | 'right' | 'bottom' | 'left') {
+    const W = layer.width;
+    const H = layer.height;
+    switch (type) {
+        case 'top': return { x: layer.x + W / 2, y: layer.y };
+        case 'right': return { x: layer.x + W, y: layer.y + H / 2 };
+        case 'bottom': return { x: layer.x + W / 2, y: layer.y + H };
+        case 'left': return { x: layer.x, y: layer.y + H / 2 };
+    }
+}
+

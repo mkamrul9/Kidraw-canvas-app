@@ -27,4 +27,6 @@ export type Layer = {
     penSize?: number;
     opacity?: number;
     src?: string;
+    startBinding?: { elementId: string; snapPoint: 'top' | 'right' | 'bottom' | 'left' };
+    endBinding?: { elementId: string; snapPoint: 'top' | 'right' | 'bottom' | 'left' };
 };

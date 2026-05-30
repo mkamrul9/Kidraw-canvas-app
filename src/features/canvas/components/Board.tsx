@@ -1,6 +1,6 @@
 'use client';
 
-import { Stage, Layer as KonvaLayer, Rect, Line, Transformer } from 'react-konva';
+import { Stage, Layer as KonvaLayer, Rect, Line, Transformer, Circle, Group, Arrow } from 'react-konva';
 import Konva from 'konva';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
@@ -8,7 +8,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import LayerRenderer from './LayerRenderer';
 import { getBackgroundStyle } from '@/features/canvas/lib/background';
-import { isPointInPolygon } from '@/features/canvas/lib/geometry';
+import { isPointInPolygon, getSnapPoints, getSnapPointCoords, SnapPoint } from '@/features/canvas/lib/geometry';
 import { useCanvasExport } from '@/features/canvas/hooks/useCanvasExport';
 import { LASER_FADE_INTERVAL_MS, COMMENT_WIDTH, COMMENT_HEIGHT, COMMENT_FILL, IMAGE_MAX_WIDTH, STICKY_WIDTH, STICKY_HEIGHT, DEFAULT_STICKY_FILL } from '@/features/canvas/constants';
 
@@ -18,6 +18,8 @@ export default function Board() {
     const [selectionBox, setSelectionBox] = useState<{ x: number; y: number; width: number; height: number } | null>(null);
     const [lassoPoints, setLassoPoints] = useState<number[]>([]);
     const [laserPoints, setLaserPoints] = useState<number[]>([]);
+    const [activeSnapPoint, setActiveSnapPoint] = useState<SnapPoint | null>(null);
+    const [hoveredShapeId, setHoveredShapeId] = useState<string | null>(null);
 
     const {
         layers, activeTool, activeShape, activeColor, backgroundColor, bgPattern,
@@ -29,6 +31,7 @@ export default function Board() {
     const stageRef = useRef<Konva.Stage>(null);
     const transformerRef = useRef<Konva.Transformer>(null);
     const currentShapeId = useRef<string | null>(null);
+    const hoverTimeoutRef = useRef<any>(null);
 
     // ─── Hooks ───────────────────────────────────────────
     useCanvasExport(stageRef);
@@ -126,6 +129,43 @@ export default function Board() {
         }
         if (activeTool === 'object-eraser') return;
 
+        if (activeTool === 'shape' && activeShape === 'arrow') {
+            setSelectedLayerId(null);
+            setIsDrawing(true);
+            const newId = uuidv4();
+            currentShapeId.current = newId;
+
+            const allSnaps = layers.flatMap((l) => getSnapPoints(l));
+            let startX = pos.x;
+            let startY = pos.y;
+            let startBinding: any = undefined;
+
+            let closestSnap = null;
+            let minDistance = 20;
+            for (const snap of allSnaps) {
+                const dist = Math.hypot(snap.x - pos.x, snap.y - pos.y);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestSnap = snap;
+                }
+            }
+
+            if (closestSnap) {
+                startX = closestSnap.x;
+                startY = closestSnap.y;
+                startBinding = { elementId: closestSnap.elementId, snapPoint: closestSnap.type };
+            }
+
+            addLayer({
+                id: newId,
+                type: 'arrow',
+                x: startX, y: startY, width: 0, height: 0, fill: activeColor,
+                opacity: activeOpacity,
+                startBinding,
+            });
+            return;
+        }
+
         if (activeTool === 'text' || activeTool === 'comment' || activeTool === 'sticky') {
             setSelectedLayerId(null);
             const newId = uuidv4();
@@ -174,7 +214,36 @@ export default function Board() {
         if (activeTool === 'pen' || activeTool === 'eraser') {
             updateLayer(currentShapeId.current, { points: [...(currentShape.points || []), pos.x, pos.y] });
         } else {
-            updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
+            if (currentShape.type === 'arrow') {
+                const allSnaps = layers.flatMap((l) => getSnapPoints(l)).filter(s => s.elementId !== currentShape.startBinding?.elementId);
+                let endX = pos.x;
+                let endY = pos.y;
+                let hoverSnap = null;
+
+                let minDistance = 20;
+                for (const snap of allSnaps) {
+                    const dist = Math.hypot(snap.x - pos.x, snap.y - pos.y);
+                    if (dist < minDistance) {
+                        minDistance = dist;
+                        hoverSnap = snap;
+                    }
+                }
+
+                if (hoverSnap) {
+                    endX = hoverSnap.x;
+                    endY = hoverSnap.y;
+                    setActiveSnapPoint(hoverSnap);
+                } else {
+                    setActiveSnapPoint(null);
+                }
+
+                updateLayer(currentShapeId.current, {
+                    width: endX - currentShape.x,
+                    height: endY - currentShape.y,
+                });
+            } else {
+                updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
+            }
         }
     }, [isDrawing, activeTool, selectionBox, layers, updateLayer]);
 
@@ -214,11 +283,86 @@ export default function Board() {
             return;
         }
 
-        if (currentShapeId.current) { currentShapeId.current = null; saveHistory(); }
+        if (currentShapeId.current) {
+            const currentShape = layers.find((layer) => layer.id === currentShapeId.current);
+            if (currentShape && currentShape.type === 'arrow' && activeSnapPoint) {
+                updateLayer(currentShapeId.current, {
+                    endBinding: { elementId: activeSnapPoint.elementId, snapPoint: activeSnapPoint.type }
+                });
+            }
+            currentShapeId.current = null;
+            setActiveSnapPoint(null);
+            saveHistory();
+        }
     }, [isDrawing, activeTool, lassoPoints, selectionBox, layers, setIsDrawing, setSelectedLayerIds, setSelectedLayerId, saveHistory]);
 
     // ─── Layer Callbacks ─────────────────────────────────
-    const handleLayerDragEnd = useCallback((id: string, x: number, y: number) => { updateLayer(id, { x, y }); saveHistory(); }, [updateLayer, saveHistory]);
+    const recalculateConnectedArrows = useCallback((draggedId: string, nextX: number, nextY: number) => {
+        const connectedArrows = layers.filter(
+            (layer) =>
+                layer.type === 'arrow' &&
+                (layer.startBinding?.elementId === draggedId || layer.endBinding?.elementId === draggedId)
+        );
+
+        connectedArrows.forEach((arrow) => {
+            let startX = arrow.x;
+            let startY = arrow.y;
+            if (arrow.startBinding) {
+                const startBinding = arrow.startBinding;
+                const shape = startBinding.elementId === draggedId
+                    ? { ...layers.find((l) => l.id === draggedId)!, x: nextX, y: nextY }
+                    : layers.find((l) => l.id === startBinding.elementId);
+                if (shape) {
+                    const pt = getSnapPointCoords(shape, startBinding.snapPoint);
+                    startX = pt.x;
+                    startY = pt.y;
+                }
+            }
+
+            let endX = arrow.x + arrow.width;
+            let endY = arrow.y + arrow.height;
+            if (arrow.endBinding) {
+                const endBinding = arrow.endBinding;
+                const shape = endBinding.elementId === draggedId
+                    ? { ...layers.find((l) => l.id === draggedId)!, x: nextX, y: nextY }
+                    : layers.find((l) => l.id === endBinding.elementId);
+                if (shape) {
+                    const pt = getSnapPointCoords(shape, endBinding.snapPoint);
+                    endX = pt.x;
+                    endY = pt.y;
+                }
+            }
+
+            updateLayer(arrow.id, {
+                x: startX,
+                y: startY,
+                width: endX - startX,
+                height: endY - startY,
+            });
+        });
+    }, [layers, updateLayer]);
+
+    const handleLayerDragMove = useCallback((id: string, x: number, y: number) => {
+        updateLayer(id, { x, y });
+        recalculateConnectedArrows(id, x, y);
+    }, [updateLayer, recalculateConnectedArrows]);
+
+    const handleLayerDragEnd = useCallback((id: string, x: number, y: number) => {
+        updateLayer(id, { x, y });
+        recalculateConnectedArrows(id, x, y);
+        saveHistory();
+    }, [updateLayer, recalculateConnectedArrows, saveHistory]);
+
+    const handleLayerTransform = useCallback((id: string, x: number, y: number, width: number, height: number) => {
+        updateLayer(id, { x, y, width, height });
+        recalculateConnectedArrows(id, x, y);
+    }, [updateLayer, recalculateConnectedArrows]);
+
+    const handleLayerTransformEnd = useCallback((id: string, x: number, y: number, width: number, height: number) => {
+        updateLayer(id, { x, y, width, height });
+        recalculateConnectedArrows(id, x, y);
+        saveHistory();
+    }, [updateLayer, recalculateConnectedArrows, saveHistory]);
 
     const handleLayerClick = useCallback((id: string) => {
         if (!isLocked && activeTool === 'select') setSelectedLayerId(id);
@@ -227,6 +371,18 @@ export default function Board() {
 
     const handleTextDblClick = useCallback((id: string, x: number, y: number, text: string) => {
         setEditingText({ id, x, y, text });
+    }, []);
+
+    const handleMouseEnter = useCallback((id: string) => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        setHoveredShapeId(id);
+    }, []);
+
+    const handleMouseLeave = useCallback((id: string) => {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = setTimeout(() => {
+            setHoveredShapeId((prev) => (prev === id ? null : prev));
+        }, 400);
     }, []);
 
     // ─── Render ──────────────────────────────────────────
@@ -328,8 +484,13 @@ export default function Board() {
                             isLocked={isLocked}
                             activeTool={activeTool}
                             onDragEnd={handleLayerDragEnd}
+                            onDragMove={handleLayerDragMove}
                             onClick={handleLayerClick}
                             onTextDblClick={handleTextDblClick}
+                            onMouseEnter={handleMouseEnter}
+                            onMouseLeave={handleMouseLeave}
+                            onTransform={handleLayerTransform}
+                            onTransformEnd={handleLayerTransformEnd}
                         />
                     ))}
 
@@ -352,6 +513,90 @@ export default function Board() {
 
                     {(activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && !isLocked && (
                         <Transformer ref={transformerRef} boundBoxFunc={(oldBox, newBox) => newBox.width < 5 || newBox.height < 5 ? oldBox : newBox} />
+                    )}
+
+                    {activeSnapPoint && (
+                        <Circle
+                            x={activeSnapPoint.x}
+                            y={activeSnapPoint.y}
+                            radius={6}
+                            fill="#3b82f6"
+                            stroke="#ffffff"
+                            strokeWidth={1.5}
+                            shadowColor="#3b82f6"
+                            shadowBlur={6}
+                        />
+                    )}
+
+                    {hoveredShapeId && (
+                        <Group>
+                            {(() => {
+                                const hl = layers.find(l => l.id === hoveredShapeId);
+                                if (!hl) return null;
+                                const snaps = getSnapPoints(hl);
+                                const getArrowPoints = (type: 'top' | 'right' | 'bottom' | 'left', x: number, y: number) => {
+                                    const len = 12 * (1 / zoom);
+                                    const offset = 2 * (1 / zoom);
+                                    switch (type) {
+                                        case 'top': return [x, y + offset, x, y - len];
+                                        case 'bottom': return [x, y - offset, x, y + len];
+                                        case 'left': return [x + offset, y, x - len, y];
+                                        case 'right': return [x - offset, y, x + len, y];
+                                    }
+                                };
+                                return snaps.map((snap, idx) => (
+                                    <Arrow
+                                        key={`connector-${hoveredShapeId}-${idx}`}
+                                        points={getArrowPoints(snap.type, snap.x, snap.y)}
+                                        stroke="#3b82f6"
+                                        fill="#3b82f6"
+                                        strokeWidth={2.5 * (1 / zoom)}
+                                        pointerLength={5 * (1 / zoom)}
+                                        pointerWidth={5 * (1 / zoom)}
+                                        onMouseEnter={(e) => {
+                                            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                                            const stage = e.target.getStage();
+                                            if (stage) stage.container().style.cursor = 'pointer';
+                                            const shape = e.target as Konva.Shape;
+                                            shape.stroke('#2563eb');
+                                            shape.fill('#2563eb');
+                                            shape.getLayer()?.batchDraw();
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                                            hoverTimeoutRef.current = setTimeout(() => {
+                                                setHoveredShapeId(null);
+                                            }, 400);
+                                            const stage = e.target.getStage();
+                                            if (stage) stage.container().style.cursor = 'default';
+                                            const shape = e.target as Konva.Shape;
+                                            shape.stroke('#3b82f6');
+                                            shape.fill('#3b82f6');
+                                            shape.getLayer()?.batchDraw();
+                                        }}
+                                        onMouseDown={(e) => {
+                                            e.cancelBubble = true;
+                                            setSelectedLayerId(null);
+                                            setIsDrawing(true);
+                                            const newId = uuidv4();
+                                            currentShapeId.current = newId;
+
+                                            addLayer({
+                                                id: newId,
+                                                type: 'arrow',
+                                                x: snap.x,
+                                                y: snap.y,
+                                                width: 0,
+                                                height: 0,
+                                                fill: activeColor,
+                                                opacity: activeOpacity,
+                                                startBinding: { elementId: hoveredShapeId, snapPoint: snap.type }
+                                            });
+                                        }}
+                                    />
+                                ));
+                            })()}
+                        </Group>
                     )}
                 </KonvaLayer>
             </Stage>
