@@ -3,13 +3,13 @@
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Wand2, ImagePlus, Lasso, SquareDashed, Triangle, Diamond, Star, Hexagon, ArrowUpRight, Minus, Shapes, StickyNote } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Wand2, ImagePlus, Lasso, SquareDashed, Triangle, Diamond, Star, Hexagon, ArrowUpRight, Minus, Shapes, StickyNote, Frame } from 'lucide-react';
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
 import { PEN_SIZES, ERASER_SIZES } from '@/features/canvas/constants';
 
 type ActiveMenu = 'pen' | 'shape' | 'eraser' | 'select' | null;
-type ToolName = 'select' | 'lasso' | 'hand' | 'pen' | 'shape' | 'text' | 'image' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'sticky';
+type ToolName = 'select' | 'lasso' | 'hand' | 'pen' | 'shape' | 'text' | 'image' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'sticky' | 'frame';
 
 // Main custom Toolbar component
 export default function Toolbar() {
@@ -80,6 +80,8 @@ export default function Toolbar() {
                 <ToolButton icon={<Type className="w-4 h-4" />} label="Text (T)" onClick={() => handleToolClick('text')} isActive={activeTool === 'text'} />
 
                 <ToolButton icon={<StickyNote className="w-4 h-4" />} label="Sticky Note (N)" onClick={() => handleToolClick('sticky')} isActive={activeTool === 'sticky'} />
+
+                <ToolButton icon={<Frame className="w-4 h-4" />} label="Frame / Artboard (F)" onClick={() => handleToolClick('frame')} isActive={activeTool === 'frame'} />
 
                 <ToolButton
                     icon={<ImagePlus className="w-4 h-4" />}

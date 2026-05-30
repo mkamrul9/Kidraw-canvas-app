@@ -105,10 +105,7 @@ export default function Board() {
     // ─── Pointer Handlers ────────────────────────────────
     const handlePointerDown = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
         if (editingText) {
-            updateLayer(editingText.id, { text: editingText.text });
-            setEditingText(null);
-            stageRef.current?.findOne(`#${editingText.id}`)?.show();
-            saveHistory();
+            (document.activeElement as HTMLElement)?.blur();
             return;
         }
         if (isLocked && activeTool !== 'hand') return;
@@ -129,13 +126,30 @@ export default function Board() {
         }
         if (activeTool === 'object-eraser') return;
 
+        const storeLayers = useCanvasStore.getState().layers;
+
+        if (activeTool === 'frame') {
+            setSelectedLayerId(null);
+            setIsDrawing(true);
+            const newId = uuidv4();
+            currentShapeId.current = newId;
+            addLayer({
+                id: newId,
+                type: 'frame',
+                x: pos.x, y: pos.y, width: 0, height: 0, fill: 'rgba(148, 163, 184, 0.03)',
+                text: `Frame ${storeLayers.filter(l => l.type === 'frame').length + 1}`,
+                opacity: activeOpacity,
+            });
+            return;
+        }
+
         if (activeTool === 'shape' && activeShape === 'arrow') {
             setSelectedLayerId(null);
             setIsDrawing(true);
             const newId = uuidv4();
             currentShapeId.current = newId;
 
-            const allSnaps = layers.flatMap((l) => getSnapPoints(l));
+            const allSnaps = storeLayers.flatMap((l) => getSnapPoints(l));
             let startX = pos.x;
             let startY = pos.y;
             let startBinding: any = undefined;
@@ -208,14 +222,15 @@ export default function Board() {
         if (activeTool === 'select' && selectionBox) { setSelectionBox({ ...selectionBox, width: pos.x - selectionBox.x, height: pos.y - selectionBox.y }); return; }
 
         if (!currentShapeId.current) return;
-        const currentShape = layers.find((layer) => layer.id === currentShapeId.current);
+        const storeLayers = useCanvasStore.getState().layers;
+        const currentShape = storeLayers.find((layer) => layer.id === currentShapeId.current);
         if (!currentShape) return;
 
         if (activeTool === 'pen' || activeTool === 'eraser') {
             updateLayer(currentShapeId.current, { points: [...(currentShape.points || []), pos.x, pos.y] });
         } else {
             if (currentShape.type === 'arrow') {
-                const allSnaps = layers.flatMap((l) => getSnapPoints(l)).filter(s => s.elementId !== currentShape.startBinding?.elementId);
+                const allSnaps = storeLayers.flatMap((l) => getSnapPoints(l)).filter(s => s.elementId !== currentShape.startBinding?.elementId);
                 let endX = pos.x;
                 let endY = pos.y;
                 let hoverSnap = null;
@@ -245,7 +260,7 @@ export default function Board() {
                 updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
             }
         }
-    }, [isDrawing, activeTool, selectionBox, layers, updateLayer]);
+    }, [isDrawing, activeTool, selectionBox, updateLayer]);
 
     const handlePointerUp = useCallback(() => {
         if (!isDrawing) return;
@@ -253,9 +268,11 @@ export default function Board() {
 
         if (activeTool === 'laser') return;
 
+        const storeLayers = useCanvasStore.getState().layers;
+
         if (activeTool === 'lasso' && lassoPoints.length > 4) {
             const capturedIds: string[] = [];
-            layers.forEach((layer) => {
+            storeLayers.forEach((layer) => {
                 const cx = layer.x + (layer.width ? layer.width / 2 : 0);
                 const cy = layer.y + (layer.height ? layer.height / 2 : 0);
                 if (isPointInPolygon([cx, cy], lassoPoints)) capturedIds.push(layer.id);
@@ -272,7 +289,7 @@ export default function Board() {
                 width: Math.abs(selectionBox.width), height: Math.abs(selectionBox.height),
             };
             const capturedIds: string[] = [];
-            layers.forEach((layer) => {
+            storeLayers.forEach((layer) => {
                 if (!layer.width && !layer.points) return;
                 if (layer.x >= boxRect.x && layer.x <= boxRect.x + boxRect.width && layer.y >= boxRect.y && layer.y <= boxRect.y + boxRect.height) {
                     capturedIds.push(layer.id);
@@ -284,7 +301,7 @@ export default function Board() {
         }
 
         if (currentShapeId.current) {
-            const currentShape = layers.find((layer) => layer.id === currentShapeId.current);
+            const currentShape = storeLayers.find((layer) => layer.id === currentShapeId.current);
             if (currentShape && currentShape.type === 'arrow' && activeSnapPoint) {
                 updateLayer(currentShapeId.current, {
                     endBinding: { elementId: activeSnapPoint.elementId, snapPoint: activeSnapPoint.type }
@@ -294,11 +311,12 @@ export default function Board() {
             setActiveSnapPoint(null);
             saveHistory();
         }
-    }, [isDrawing, activeTool, lassoPoints, selectionBox, layers, setIsDrawing, setSelectedLayerIds, setSelectedLayerId, saveHistory]);
+    }, [isDrawing, activeTool, lassoPoints, selectionBox, setIsDrawing, setSelectedLayerIds, setSelectedLayerId, saveHistory]);
 
     // ─── Layer Callbacks ─────────────────────────────────
     const recalculateConnectedArrows = useCallback((draggedId: string, nextX: number, nextY: number) => {
-        const connectedArrows = layers.filter(
+        const storeLayers = useCanvasStore.getState().layers;
+        const connectedArrows = storeLayers.filter(
             (layer) =>
                 layer.type === 'arrow' &&
                 (layer.startBinding?.elementId === draggedId || layer.endBinding?.elementId === draggedId)
@@ -310,8 +328,8 @@ export default function Board() {
             if (arrow.startBinding) {
                 const startBinding = arrow.startBinding;
                 const shape = startBinding.elementId === draggedId
-                    ? { ...layers.find((l) => l.id === draggedId)!, x: nextX, y: nextY }
-                    : layers.find((l) => l.id === startBinding.elementId);
+                    ? { ...storeLayers.find((l) => l.id === draggedId)!, x: nextX, y: nextY }
+                    : storeLayers.find((l) => l.id === startBinding.elementId);
                 if (shape) {
                     const pt = getSnapPointCoords(shape, startBinding.snapPoint);
                     startX = pt.x;
@@ -324,8 +342,8 @@ export default function Board() {
             if (arrow.endBinding) {
                 const endBinding = arrow.endBinding;
                 const shape = endBinding.elementId === draggedId
-                    ? { ...layers.find((l) => l.id === draggedId)!, x: nextX, y: nextY }
-                    : layers.find((l) => l.id === endBinding.elementId);
+                    ? { ...storeLayers.find((l) => l.id === draggedId)!, x: nextX, y: nextY }
+                    : storeLayers.find((l) => l.id === endBinding.elementId);
                 if (shape) {
                     const pt = getSnapPointCoords(shape, endBinding.snapPoint);
                     endX = pt.x;
@@ -340,18 +358,114 @@ export default function Board() {
                 height: endY - startY,
             });
         });
-    }, [layers, updateLayer]);
+    }, [updateLayer]);
 
     const handleLayerDragMove = useCallback((id: string, x: number, y: number) => {
-        updateLayer(id, { x, y });
-        recalculateConnectedArrows(id, x, y);
+        const storeLayers = useCanvasStore.getState().layers;
+        const frame = storeLayers.find((l) => l.id === id);
+
+        if (frame && frame.type === 'frame') {
+            const dx = x - frame.x;
+            const dy = y - frame.y;
+            updateLayer(id, { x, y });
+
+            const children = storeLayers.filter((l) => l.parentId === id);
+            children.forEach((child) => {
+                const nextChildX = child.x + dx;
+                const nextChildY = child.y + dy;
+                updateLayer(child.id, { x: nextChildX, y: nextChildY });
+                recalculateConnectedArrows(child.id, nextChildX, nextChildY);
+            });
+        } else {
+            updateLayer(id, { x, y });
+            recalculateConnectedArrows(id, x, y);
+        }
     }, [updateLayer, recalculateConnectedArrows]);
 
+    const checkShapeFrameContainment = useCallback((shapeId: string, sx: number, sy: number) => {
+        const storeLayers = useCanvasStore.getState().layers;
+        const shape = storeLayers.find((l) => l.id === shapeId);
+        if (!shape || shape.type === 'frame') return;
+
+        const sw = shape.width || 0;
+        const sh = shape.height || 0;
+        const cx = sx + sw / 2;
+        const cy = sy + sh / 2;
+
+        const frames = storeLayers.filter((l) => l.type === 'frame');
+        let containingFrameId: string | undefined = undefined;
+
+        for (const frame of frames) {
+            const fx1 = frame.width < 0 ? frame.x + frame.width : frame.x;
+            const fx2 = frame.width < 0 ? frame.x : frame.x + frame.width;
+            const fy1 = frame.height < 0 ? frame.y + frame.height : frame.y;
+            const fy2 = frame.height < 0 ? frame.y : frame.y + frame.height;
+
+            if (cx >= fx1 && cx <= fx2 && cy >= fy1 && cy <= fy2) {
+                containingFrameId = frame.id;
+                break;
+            }
+        }
+
+        if (shape.parentId !== containingFrameId) {
+            updateLayer(shapeId, { parentId: containingFrameId });
+        }
+    }, [updateLayer]);
+
+    const updateAllFramesContainment = useCallback(() => {
+        const storeLayers = useCanvasStore.getState().layers;
+        const shapes = storeLayers.filter((l) => l.type !== 'frame' && l.type !== 'arrow');
+        const frames = storeLayers.filter((l) => l.type === 'frame');
+
+        shapes.forEach((shape) => {
+            const sw = shape.width || 0;
+            const sh = shape.height || 0;
+            const cx = shape.x + sw / 2;
+            const cy = shape.y + sh / 2;
+
+            let containingFrameId: string | undefined = undefined;
+            for (const frame of frames) {
+                const fx1 = frame.width < 0 ? frame.x + frame.width : frame.x;
+                const fx2 = frame.width < 0 ? frame.x : frame.x + frame.width;
+                const fy1 = frame.height < 0 ? frame.y + frame.height : frame.y;
+                const fy2 = frame.height < 0 ? frame.y : frame.y + frame.height;
+
+                if (cx >= fx1 && cx <= fx2 && cy >= fy1 && cy <= fy2) {
+                    containingFrameId = frame.id;
+                    break;
+                }
+            }
+
+            if (shape.parentId !== containingFrameId) {
+                updateLayer(shape.id, { parentId: containingFrameId });
+            }
+        });
+    }, [updateLayer]);
+
     const handleLayerDragEnd = useCallback((id: string, x: number, y: number) => {
-        updateLayer(id, { x, y });
-        recalculateConnectedArrows(id, x, y);
+        const storeLayers = useCanvasStore.getState().layers;
+        const frame = storeLayers.find((l) => l.id === id);
+
+        if (frame && frame.type === 'frame') {
+            const dx = x - frame.x;
+            const dy = y - frame.y;
+            updateLayer(id, { x, y });
+
+            const children = storeLayers.filter((l) => l.parentId === id);
+            children.forEach((child) => {
+                const nextChildX = child.x + dx;
+                const nextChildY = child.y + dy;
+                updateLayer(child.id, { x: nextChildX, y: nextChildY });
+                recalculateConnectedArrows(child.id, nextChildX, nextChildY);
+            });
+            updateAllFramesContainment();
+        } else {
+            updateLayer(id, { x, y });
+            recalculateConnectedArrows(id, x, y);
+            checkShapeFrameContainment(id, x, y);
+        }
         saveHistory();
-    }, [updateLayer, recalculateConnectedArrows, saveHistory]);
+    }, [updateLayer, recalculateConnectedArrows, checkShapeFrameContainment, updateAllFramesContainment, saveHistory]);
 
     const handleLayerTransform = useCallback((id: string, x: number, y: number, width: number, height: number) => {
         updateLayer(id, { x, y, width, height });
@@ -361,8 +475,15 @@ export default function Board() {
     const handleLayerTransformEnd = useCallback((id: string, x: number, y: number, width: number, height: number) => {
         updateLayer(id, { x, y, width, height });
         recalculateConnectedArrows(id, x, y);
+        const storeLayers = useCanvasStore.getState().layers;
+        const layer = storeLayers.find((l) => l.id === id);
+        if (layer?.type === 'frame') {
+            updateAllFramesContainment();
+        } else {
+            checkShapeFrameContainment(id, x, y);
+        }
         saveHistory();
-    }, [updateLayer, recalculateConnectedArrows, saveHistory]);
+    }, [updateLayer, recalculateConnectedArrows, checkShapeFrameContainment, updateAllFramesContainment, saveHistory]);
 
     const handleLayerClick = useCallback((id: string) => {
         if (!isLocked && activeTool === 'select') setSelectedLayerId(id);
@@ -382,13 +503,14 @@ export default function Board() {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
         hoverTimeoutRef.current = setTimeout(() => {
             setHoveredShapeId((prev) => (prev === id ? null : prev));
-        }, 400);
+        }, 800);
     }, []);
 
     // ─── Render ──────────────────────────────────────────
     const editingLayer = editingText ? layers.find((l) => l.id === editingText.id) : null;
     const isSticky = editingLayer?.type === 'sticky';
     const isComment = editingLayer?.type === 'comment';
+    const isFrame = editingLayer?.type === 'frame';
 
     const getStickyFontSize = (textStr: string = '', w: number, h: number) => {
         const textLength = textStr.length || 1;
@@ -403,6 +525,23 @@ export default function Board() {
         const bg = isSticky || isComment ? (editingLayer.fill || '#fef08a') : 'rgba(255,255,255,0.9)';
         const textCol = '#0f172a';
         
+        if (isFrame) {
+            return {
+                top: editingText.y,
+                left: editingText.x,
+                width: '140px',
+                height: '26px',
+                backgroundColor: '#0B0F19',
+                color: '#94a3b8',
+                fontSize: `${14 * zoom}px`,
+                padding: '2px 6px',
+                border: '1px solid #475569',
+                borderRadius: '4px',
+                lineHeight: '1.2',
+                fontWeight: 'bold',
+            };
+        }
+
         if (isSticky) {
             const fs = getStickyFontSize(editingText.text, editingLayer.width, editingLayer.height);
             const pad = 20 * zoom;
@@ -459,7 +598,7 @@ export default function Board() {
                     value={editingText.text}
                     autoFocus
                     onChange={(e) => setEditingText({ ...editingText, text: e.target.value })}
-                    onBlur={() => { updateLayer(editingText.id, { text: editingText.text }); setEditingText(null); stageRef.current?.findOne(`#${editingText.id}`)?.show(); saveHistory(); }}
+                    onBlur={() => { updateLayer(editingText.id, { text: editingText.text }); setEditingText(null); saveHistory(); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
                 />
             )}
@@ -476,23 +615,30 @@ export default function Board() {
                 onTouchStart={handlePointerDown} onTouchMove={handlePointerMove} onTouchEnd={handlePointerUp}
             >
                 <KonvaLayer>
-                    {layers.map((layer) => (
-                        <LayerRenderer
-                            key={layer.id}
-                            layer={layer}
-                            isSelected={selectedLayerIds.includes(layer.id) && (activeTool === 'select' || activeTool === 'lasso')}
-                            isLocked={isLocked}
-                            activeTool={activeTool}
-                            onDragEnd={handleLayerDragEnd}
-                            onDragMove={handleLayerDragMove}
-                            onClick={handleLayerClick}
-                            onTextDblClick={handleTextDblClick}
-                            onMouseEnter={handleMouseEnter}
-                            onMouseLeave={handleMouseLeave}
-                            onTransform={handleLayerTransform}
-                            onTransformEnd={handleLayerTransformEnd}
-                        />
-                    ))}
+                    {(() => {
+                        const sortedLayers = [...layers].sort((a, b) => {
+                            if (a.type === 'frame' && b.type !== 'frame') return -1;
+                            if (a.type !== 'frame' && b.type === 'frame') return 1;
+                            return 0;
+                        });
+                        return sortedLayers.map((layer) => (
+                            <LayerRenderer
+                                key={layer.id}
+                                layer={layer}
+                                isSelected={selectedLayerIds.includes(layer.id) && (activeTool === 'select' || activeTool === 'lasso')}
+                                isLocked={isLocked}
+                                activeTool={activeTool}
+                                onDragEnd={handleLayerDragEnd}
+                                onDragMove={handleLayerDragMove}
+                                onClick={handleLayerClick}
+                                onTextDblClick={handleTextDblClick}
+                                onMouseEnter={handleMouseEnter}
+                                onMouseLeave={handleMouseLeave}
+                                onTransform={handleLayerTransform}
+                                onTransformEnd={handleLayerTransformEnd}
+                            />
+                        ));
+                    })()}
 
                     {laserPoints.length > 0 && (
                         <Line points={laserPoints} stroke="#ef4444" strokeWidth={6} tension={0.5} lineCap="round" lineJoin="round" shadowColor="#ef4444" shadowBlur={15} />
@@ -536,12 +682,12 @@ export default function Board() {
                                 const snaps = getSnapPoints(hl);
                                 const getArrowPoints = (type: 'top' | 'right' | 'bottom' | 'left', x: number, y: number) => {
                                     const len = 12 * (1 / zoom);
-                                    const offset = 2 * (1 / zoom);
+                                    const gap = 14 * (1 / zoom);
                                     switch (type) {
-                                        case 'top': return [x, y + offset, x, y - len];
-                                        case 'bottom': return [x, y - offset, x, y + len];
-                                        case 'left': return [x + offset, y, x - len, y];
-                                        case 'right': return [x - offset, y, x + len, y];
+                                        case 'top': return [x, y - gap, x, y - gap - len];
+                                        case 'bottom': return [x, y + gap, x, y + gap + len];
+                                        case 'left': return [x - gap, y, x - gap - len, y];
+                                        case 'right': return [x + gap, y, x + gap + len, y];
                                     }
                                 };
                                 return snaps.map((snap, idx) => (
@@ -566,7 +712,7 @@ export default function Board() {
                                             if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
                                             hoverTimeoutRef.current = setTimeout(() => {
                                                 setHoveredShapeId(null);
-                                            }, 400);
+                                            }, 800);
                                             const stage = e.target.getStage();
                                             if (stage) stage.container().style.cursor = 'default';
                                             const shape = e.target as Konva.Shape;

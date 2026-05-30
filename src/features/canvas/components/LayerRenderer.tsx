@@ -72,12 +72,14 @@ export default function LayerRenderer({
             node.scaleX(1);
             node.scaleY(1);
             if (onTransform) {
+                const baseWidth = layer.width !== undefined ? layer.width : node.width();
+                const baseHeight = layer.height !== undefined ? layer.height : node.height();
                 onTransform(
                     layer.id,
                     node.x(),
                     node.y(),
-                    node.width() * scaleX,
-                    node.height() * scaleY
+                    baseWidth * scaleX,
+                    baseHeight * scaleY
                 );
             }
         },
@@ -88,12 +90,14 @@ export default function LayerRenderer({
             node.scaleX(1);
             node.scaleY(1);
             if (onTransformEnd) {
+                const baseWidth = layer.width !== undefined ? layer.width : node.width();
+                const baseHeight = layer.height !== undefined ? layer.height : node.height();
                 onTransformEnd(
                     layer.id,
                     node.x(),
                     node.y(),
-                    node.width() * scaleX,
-                    node.height() * scaleY
+                    baseWidth * scaleX,
+                    baseHeight * scaleY
                 );
             }
         },
@@ -101,6 +105,38 @@ export default function LayerRenderer({
 
     const shapeOpacity = layer.opacity ?? 1;
     const radius = Math.max(Math.abs(layer.width), Math.abs(layer.height)) / 2;
+
+    // ─── Frame (Artboard) ───────────────────────────────
+    if (layer.type === 'frame') {
+        const frameFill = layer.fill || 'rgba(148, 163, 184, 0.03)';
+        return (
+            <Group key={layer.id} {...commonProps} x={layer.x} y={layer.y}>
+                <Rect
+                    width={layer.width}
+                    height={layer.height}
+                    fill={frameFill}
+                    stroke="#475569"
+                    strokeWidth={1.5}
+                    dash={[8, 4]}
+                    cornerRadius={2}
+                />
+                <Text
+                    x={0}
+                    y={-22}
+                    text={layer.text || 'Frame'}
+                    fill="#94a3b8"
+                    fontSize={14}
+                    fontFamily="sans-serif"
+                    fontStyle="bold"
+                    onDblClick={(event) => {
+                        if (activeTool === 'select' && !isLocked) {
+                            onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || 'Frame');
+                        }
+                    }}
+                />
+            </Group>
+        );
+    }
 
     // ─── Image ──────────────────────────────────────────
     if (layer.type === 'image') {
@@ -150,7 +186,6 @@ export default function LayerRenderer({
                     onDblClick={(event) => {
                         if (activeTool === 'select' && !isLocked) {
                             onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
-                            event.target.hide();
                         }
                     }}
                 />
@@ -173,7 +208,6 @@ export default function LayerRenderer({
                     onDblClick={(event) => {
                         if (activeTool === 'select' && !isLocked) {
                             onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
-                            event.target.hide();
                         }
                     }}
                 />
@@ -212,7 +246,7 @@ export default function LayerRenderer({
         return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={0.5} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
 
     if (layer.type === 'text')
-        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={DEFAULT_FONT_SIZE} fontFamily={DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); event.target.hide(); } }} />;
+        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={DEFAULT_FONT_SIZE} fontFamily={DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
 
     if (layer.type === 'eraser')
         return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;

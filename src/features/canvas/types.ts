@@ -3,9 +3,9 @@ export type Color = string;
 // Added arrow, straight-line, and hexagon
 export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'arrow' | 'straight-line' | 'hexagon';
 
-export type LayerType = ShapeType | 'pen' | 'text' | 'eraser' | 'comment' | 'image' | 'sticky';
+export type LayerType = ShapeType | 'pen' | 'text' | 'eraser' | 'comment' | 'image' | 'sticky' | 'frame';
 
-export type Tool = 'select' | 'lasso' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'image' | 'sticky';
+export type Tool = 'select' | 'lasso' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'image' | 'sticky' | 'frame';
 
 export type Camera = {
     x: number;
@@ -29,4 +29,5 @@ export type Layer = {
     src?: string;
     startBinding?: { elementId: string; snapPoint: 'top' | 'right' | 'bottom' | 'left' };
     endBinding?: { elementId: string; snapPoint: 'top' | 'right' | 'bottom' | 'left' };
+    parentId?: string;
 };
