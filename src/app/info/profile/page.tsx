@@ -2,8 +2,8 @@
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { ArrowLeft, User, Mail, Shield, Key, Camera } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
+import { Button } from "@/shared/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 

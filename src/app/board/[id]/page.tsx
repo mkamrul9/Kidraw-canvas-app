@@ -1,16 +1,15 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import Toolbar from '../../../components/layout/Toolbar';
-import ActionToolbar from '../../../components/layout/ActionToolbar';
-import PropertiesPanel from '../../../components/layout/PropertiesPanel';
-import ZoomHUD from '../../../components/layout/ZoomHUD';
-import { useEffect } from 'react';
-import { useCanvasStore } from '../../../store/useCanvasStore';
-import { use } from 'react';
-import NavigationHUD from '@/src/components/layout/NavigationHUD';
+import Toolbar from '@/widgets/Toolbar';
+import ActionToolbar from '@/widgets/ActionToolbar';
+import PropertiesPanel from '@/widgets/PropertiesPanel';
+import ZoomHUD from '@/widgets/ZoomHUD';
+import NavigationHUD from '@/widgets/NavigationHUD';
+import { useEffect, use } from 'react';
+import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 
-const Board = dynamic(() => import('../../../components/canvas/Board'), {
+const Board = dynamic(() => import('@/features/canvas/components/Board'), {
   ssr: false,
   loading: () => <div className="h-screen w-screen flex items-center justify-center bg-slate-50">Loading canvas...</div>
 });

@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn } from "next-auth/react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import { Sparkles } from "lucide-react";
 import Link from "next/link";
 

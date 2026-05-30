@@ -1,10 +1,10 @@
 'use client';
 import Link from "next/link";
 import { ArrowLeft, Bell, Monitor, Lock, Trash2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/shared/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/shared/components/ui/dialog";
 
 export default function SettingsPage() {
     const [theme, setTheme] = useState('dark');
