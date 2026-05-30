@@ -6,6 +6,7 @@ import ActionToolbar from '@/widgets/ActionToolbar';
 import PropertiesPanel from '@/widgets/PropertiesPanel';
 import ZoomHUD from '@/widgets/ZoomHUD';
 import NavigationHUD from '@/widgets/NavigationHUD';
+import LibrarySidebar from '@/widgets/LibrarySidebar';
 import { useEffect, use } from 'react';
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 
@@ -31,6 +32,7 @@ export default function CanvasPage({ params }: { params: Promise<{ id: string }>
     <main className="h-screen w-screen overflow-hidden relative bg-slate-50">
       <Board />
       <NavigationHUD />
+      <LibrarySidebar />
       <Toolbar />
       <ActionToolbar />
       <PropertiesPanel />

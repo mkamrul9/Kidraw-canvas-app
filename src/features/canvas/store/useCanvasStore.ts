@@ -49,6 +49,7 @@ interface CanvasState {
     setPermissionRole: (role: 'owner' | 'editor' | 'viewer') => void;
 
     addLayer: (layer: Layer) => void;
+    addLayers: (layers: Layer[]) => void;
     updateLayer: (id: string, newAttributes: Partial<Layer>) => void;
 
     // Canvas Management Actions
@@ -125,6 +126,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setPermissionRole: (role) => set({ permissionRole: role }),
 
     addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
+
+    addLayers: (newLayers) => set((state) => ({ layers: [...state.layers, ...newLayers] })),
 
     updateLayer: (id, newAttributes) => set((state) => ({
         layers: state.layers.map((layer) =>
