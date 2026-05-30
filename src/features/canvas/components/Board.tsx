@@ -13,6 +13,7 @@ import { useCanvasExport } from '@/features/canvas/hooks/useCanvasExport';
 import { LASER_FADE_INTERVAL_MS, COMMENT_WIDTH, COMMENT_HEIGHT, COMMENT_FILL, IMAGE_MAX_WIDTH, STICKY_WIDTH, STICKY_HEIGHT, DEFAULT_STICKY_FILL } from '@/features/canvas/constants';
 import { renderPDFPages } from '@/features/canvas/lib/pdf';
 import { toast } from 'sonner';
+import { useSession } from 'next-auth/react';
 import { Shapes, Loader2 } from 'lucide-react';
 
 export default function Board() {
@@ -25,6 +26,11 @@ export default function Board() {
     const [hoveredShapeId, setHoveredShapeId] = useState<string | null>(null);
     const [isDraggingFile, setIsDraggingFile] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+    const { data: session } = useSession();
+    const [cursorChat, setCursorChat] = useState<{ x: number; y: number; text: string; isOpen: boolean; isEditing: boolean } | null>(null);
+    const cursorChatTimerRef = useRef<any>(null);
+    const cursorChatInputRef = useRef<HTMLInputElement>(null);
 
     const {
         layers, activeTool, activeShape, activeColor, backgroundColor, bgPattern,
@@ -98,6 +104,15 @@ export default function Board() {
         }
     }, [activeOpacity, addLayer, saveHistory]);
 
+    const resetCursorChatTimer = useCallback((durationMs = 6000) => {
+        if (cursorChatTimerRef.current) {
+            clearTimeout(cursorChatTimerRef.current);
+        }
+        cursorChatTimerRef.current = setTimeout(() => {
+            setCursorChat(null);
+        }, durationMs);
+    }, []);
+
     // ─── Hooks ───────────────────────────────────────────
     useCanvasExport(stageRef);
 
@@ -112,6 +127,73 @@ export default function Board() {
         const interval = setInterval(() => setLaserPoints((prev) => (prev.length > 0 ? prev.slice(2) : [])), LASER_FADE_INTERVAL_MS);
         return () => clearInterval(interval);
     }, []);
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === '/') {
+                const active = document.activeElement;
+                if (
+                    active &&
+                    (active.tagName === 'INPUT' ||
+                        active.tagName === 'TEXTAREA' ||
+                        active.getAttribute('contenteditable') === 'true')
+                ) {
+                    return;
+                }
+
+                e.preventDefault();
+
+                const stage = stageRef.current;
+                const pos = stage?.getPointerPosition() || { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+                setCursorChat({
+                    x: pos.x,
+                    y: pos.y,
+                    text: '',
+                    isOpen: true,
+                    isEditing: true,
+                });
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    useEffect(() => {
+        if (!cursorChat || !cursorChat.isOpen) return;
+
+        const handleMouseMove = (e: MouseEvent) => {
+            setCursorChat((prev) => {
+                if (!prev) return null;
+                // Only update position coordinates, keeping other state attributes intact
+                return { ...prev, x: e.clientX, y: e.clientY };
+            });
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, [cursorChat?.isOpen]);
+
+    useEffect(() => {
+        if (cursorChat && cursorChat.isOpen) {
+            resetCursorChatTimer(6000);
+        } else {
+            if (cursorChatTimerRef.current) {
+                clearTimeout(cursorChatTimerRef.current);
+                cursorChatTimerRef.current = null;
+            }
+        }
+    }, [cursorChat?.isOpen, cursorChat?.isEditing, resetCursorChatTimer]);
+
+    useEffect(() => {
+        if (cursorChat?.isEditing) {
+            const timer = setTimeout(() => {
+                cursorChatInputRef.current?.focus();
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [cursorChat?.isEditing]);
 
     useEffect(() => {
         const handleInsertFile = async (event: Event) => {
@@ -695,6 +777,87 @@ export default function Board() {
                     onBlur={() => { updateLayer(editingText.id, { text: editingText.text }); setEditingText(null); saveHistory(); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
                 />
+            )}
+
+            {cursorChat && cursorChat.isOpen && (
+                <div
+                    className={`absolute z-[100] pointer-events-none select-none flex flex-col items-start transition-all duration-75 ease-out animate-cursor-chat-pop ${
+                        !cursorChat.isEditing ? 'animate-cursor-chat-fade-out' : ''
+                    }`}
+                    style={{
+                        left: `${cursorChat.x}px`,
+                        top: `${cursorChat.y}px`,
+                    }}
+                >
+                    {/* Beautiful custom Figma-style mouse cursor */}
+                    <svg
+                        width="24"
+                        height="24"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="drop-shadow-[0_2px_5px_rgba(0,0,0,0.35)]"
+                    >
+                        <path
+                            d="M3 3L10.07 19.97L12.58 12.58L19.97 10.07L3 3Z"
+                            fill="#8b5cf6"
+                            stroke="#ffffff"
+                            strokeWidth="2"
+                            strokeLinejoin="miter"
+                        />
+                    </svg>
+
+                    {/* Chat Bubble Container */}
+                    <div className="ml-4 mt-3 flex flex-col pointer-events-auto items-start">
+                        {/* Username label */}
+                        <div className="bg-violet-700/95 backdrop-blur-sm text-[10px] text-violet-100 font-bold px-2.5 py-0.5 rounded-t-lg border-t border-x border-violet-500/30 w-fit select-none">
+                            {session?.user?.name || 'You'}
+                        </div>
+
+                        {/* Speech bubble */}
+                        <div className="flex items-center gap-2 bg-violet-600 border border-violet-500/80 text-white text-sm px-3.5 py-2 shadow-2xl rounded-r-xl rounded-bl-xl rounded-tl-none min-h-[38px] max-w-[280px] min-w-[140px] transform origin-top-left">
+                            {cursorChat.isEditing ? (
+                                <input
+                                    ref={cursorChatInputRef}
+                                    type="text"
+                                    placeholder="Say something..."
+                                    className="bg-transparent text-white placeholder-violet-200/50 border-none outline-none font-sans text-sm w-full py-0.5 focus:ring-0 focus:outline-none"
+                                    value={cursorChat.text}
+                                    onChange={(e) => {
+                                        setCursorChat((prev) => {
+                                            if (!prev) return null;
+                                            return { ...prev, text: e.target.value };
+                                        });
+                                        resetCursorChatTimer(6000);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            e.currentTarget.blur();
+                                        } else if (e.key === 'Escape') {
+                                            e.preventDefault();
+                                            setCursorChat(null);
+                                        }
+                                    }}
+                                    onBlur={() => {
+                                        setCursorChat((prev) => {
+                                            if (!prev) return null;
+                                            if (!prev.isEditing) return prev; // If already editing is set to false, don't execute blur logic
+                                            if (prev.text.trim()) {
+                                                return { ...prev, isEditing: false };
+                                            }
+                                            return null;
+                                        });
+                                    }}
+                                />
+                            ) : (
+                                <span className="break-words whitespace-pre-wrap font-sans text-sm font-medium pr-1 select-text">
+                                    {cursorChat.text}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </div>
             )}
 
             {isDraggingFile && (

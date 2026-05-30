@@ -128,3 +128,35 @@
     @apply font-sans;
   }
 }
+
+@keyframes cursorChatPop {
+  0% {
+    transform: scale(0.8) translateY(8px);
+    opacity: 0;
+  }
+  70% {
+    transform: scale(1.05) translateY(-2px);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-cursor-chat-pop {
+  animation: cursorChatPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes cursorChatFadeOut {
+  0%, 80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-cursor-chat-fade-out {
+  animation: cursorChatFadeOut 6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
