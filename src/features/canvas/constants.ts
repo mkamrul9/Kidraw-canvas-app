@@ -17,6 +17,12 @@ export const COMMENT_WIDTH = 200;
 export const COMMENT_HEIGHT = 100;
 export const COMMENT_FILL = '#fef08a';
 
+// ─── Sticky Notes ────────────────────────────────────────────
+export const STICKY_WIDTH = 180;
+export const STICKY_HEIGHT = 180;
+export const DEFAULT_STICKY_FILL = '#fef08a';
+export const STICKY_COLORS = ['#fef08a', '#bbf7d0', '#bfdbfe', '#fbcfe8', '#fed7aa'];
+
 // ─── Image ───────────────────────────────────────────────────
 export const IMAGE_MAX_WIDTH = 800;
 

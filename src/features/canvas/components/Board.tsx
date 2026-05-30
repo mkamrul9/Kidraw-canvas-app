@@ -10,7 +10,7 @@ import LayerRenderer from './LayerRenderer';
 import { getBackgroundStyle } from '@/features/canvas/lib/background';
 import { isPointInPolygon } from '@/features/canvas/lib/geometry';
 import { useCanvasExport } from '@/features/canvas/hooks/useCanvasExport';
-import { LASER_FADE_INTERVAL_MS, COMMENT_WIDTH, COMMENT_HEIGHT, COMMENT_FILL, IMAGE_MAX_WIDTH } from '@/features/canvas/constants';
+import { LASER_FADE_INTERVAL_MS, COMMENT_WIDTH, COMMENT_HEIGHT, COMMENT_FILL, IMAGE_MAX_WIDTH, STICKY_WIDTH, STICKY_HEIGHT, DEFAULT_STICKY_FILL } from '@/features/canvas/constants';
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -126,11 +126,14 @@ export default function Board() {
         }
         if (activeTool === 'object-eraser') return;
 
-        if (activeTool === 'text' || activeTool === 'comment') {
+        if (activeTool === 'text' || activeTool === 'comment' || activeTool === 'sticky') {
             setSelectedLayerId(null);
             const newId = uuidv4();
             if (activeTool === 'comment') {
                 addLayer({ id: newId, type: 'comment', x: pos.x, y: pos.y, width: COMMENT_WIDTH, height: COMMENT_HEIGHT, fill: COMMENT_FILL, text: '' });
+            } else if (activeTool === 'sticky') {
+                const finalColor = activeColor !== '#000000' ? activeColor : DEFAULT_STICKY_FILL;
+                addLayer({ id: newId, type: 'sticky', x: pos.x, y: pos.y, width: STICKY_WIDTH, height: STICKY_HEIGHT, fill: finalColor, text: '', opacity: activeOpacity });
             } else {
                 addLayer({ id: newId, type: 'text', x: pos.x, y: pos.y, width: 200, height: 50, fill: activeColor, text: '', opacity: activeOpacity });
             }
@@ -227,16 +230,76 @@ export default function Board() {
     }, []);
 
     // ─── Render ──────────────────────────────────────────
+    const editingLayer = editingText ? layers.find((l) => l.id === editingText.id) : null;
+    const isSticky = editingLayer?.type === 'sticky';
+    const isComment = editingLayer?.type === 'comment';
+
+    const getStickyFontSize = (textStr: string = '', w: number, h: number) => {
+        const textLength = textStr.length || 1;
+        const textPadding = 24;
+        const area = Math.max(100, (w - textPadding) * (h - textPadding));
+        const calculated = Math.sqrt(area / textLength / 0.7);
+        return Math.min(24, Math.max(12, Math.floor(calculated)));
+    };
+
+    const textareaStyle = (() => {
+        if (!editingText || !editingLayer) return {};
+        const bg = isSticky || isComment ? (editingLayer.fill || '#fef08a') : 'rgba(255,255,255,0.9)';
+        const textCol = '#0f172a';
+        
+        if (isSticky) {
+            const fs = getStickyFontSize(editingText.text, editingLayer.width, editingLayer.height);
+            const pad = 20 * zoom;
+            return {
+                top: editingText.y,
+                left: editingText.x,
+                width: `${editingLayer.width * zoom}px`,
+                height: `${editingLayer.height * zoom}px`,
+                backgroundColor: bg,
+                color: textCol,
+                fontSize: `${fs * zoom}px`,
+                padding: `${pad}px`,
+                textAlign: 'center' as const,
+                border: 'none',
+                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
+                borderRadius: '4px',
+                lineHeight: '1.4',
+            };
+        }
+
+        if (isComment) {
+            return {
+                top: editingText.y,
+                left: editingText.x,
+                width: `${COMMENT_WIDTH * zoom}px`,
+                height: `${COMMENT_HEIGHT * zoom}px`,
+                backgroundColor: bg,
+                color: textCol,
+                fontSize: `${16 * zoom}px`,
+                padding: `${10 * zoom}px`,
+                border: '1px solid #eab308',
+                borderRadius: '4px',
+            };
+        }
+
+        return {
+            top: editingText.y,
+            left: editingText.x,
+            minWidth: '200px',
+            backgroundColor: 'rgba(255,255,255,0.9)',
+            border: '2px solid #6366f1',
+            color: editingLayer.fill || '#000000',
+            fontSize: `${20 * zoom}px`,
+            padding: '8px',
+        };
+    })();
+
     return (
         <div className={`relative w-full h-full ${activeTool === 'hand' ? (isDrawing ? 'cursor-grabbing' : 'cursor-grab') : ''}`} style={getBackgroundStyle(backgroundColor, bgPattern, zoom, camera)}>
             {editingText && (
                 <textarea
-                    className="absolute z-50 shadow-xl rounded outline-none p-2 text-[20px] font-sans resize-none pointer-events-auto"
-                    style={{
-                        top: editingText.y, left: editingText.x, minWidth: '200px',
-                        backgroundColor: activeTool === 'comment' ? '#fef08a' : 'rgba(255,255,255,0.9)',
-                        border: activeTool === 'comment' ? '1px solid #eab308' : '2px solid #6366f1'
-                    }}
+                    className="absolute z-50 shadow-xl rounded outline-none resize-none pointer-events-auto font-sans"
+                    style={textareaStyle}
                     value={editingText.text}
                     autoFocus
                     onChange={(e) => setEditingText({ ...editingText, text: e.target.value })}

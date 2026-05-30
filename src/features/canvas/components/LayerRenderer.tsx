@@ -54,6 +54,57 @@ export default function LayerRenderer({
         return <URLImage key={layer.id} layer={layer} {...commonProps} />;
     }
 
+    // ─── Sticky Note ────────────────────────────────────
+    if (layer.type === 'sticky') {
+        const padding = 20;
+        const textWidth = Math.max(10, layer.width - padding * 2);
+        
+        // Font size auto-scaling heuristic to fit text in the box
+        const getStickyFontSize = (textStr: string = '', w: number, h: number) => {
+            const textLength = textStr.length || 1;
+            const textPadding = 24;
+            const area = Math.max(100, (w - textPadding) * (h - textPadding));
+            const calculated = Math.sqrt(area / textLength / 0.7);
+            return Math.min(24, Math.max(12, Math.floor(calculated)));
+        };
+
+        const fontSize = getStickyFontSize(layer.text, layer.width, layer.height);
+
+        return (
+            <Group key={layer.id} {...commonProps} x={layer.x} y={layer.y}>
+                <Rect
+                    width={layer.width}
+                    height={layer.height}
+                    fill={layer.fill}
+                    shadowColor="black"
+                    shadowBlur={12}
+                    shadowOpacity={0.12}
+                    shadowOffset={{ x: 2, y: 4 }}
+                    cornerRadius={4}
+                />
+                <Text
+                    x={padding}
+                    y={padding}
+                    text={layer.text}
+                    fill="#0f172a"
+                    fontSize={fontSize}
+                    fontFamily="sans-serif"
+                    align="center"
+                    verticalAlign="middle"
+                    width={textWidth}
+                    height={Math.max(10, layer.height - padding * 2)}
+                    wrap="word"
+                    onDblClick={(event) => {
+                        if (activeTool === 'select' && !isLocked) {
+                            onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
+                            event.target.hide();
+                        }
+                    }}
+                />
+            </Group>
+        );
+    }
+
     // ─── Comment (sticky note) ──────────────────────────
     if (layer.type === 'comment') {
         return (

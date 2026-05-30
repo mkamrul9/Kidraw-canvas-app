@@ -86,7 +86,21 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     historyStep: 0,
 
     setActiveTool: (tool) => set({ activeTool: tool }),
-    setActiveColor: (color) => set({ activeColor: color }),
+    setActiveColor: (color) => {
+        set({ activeColor: color });
+        const { selectedLayerId, layers } = get();
+        if (selectedLayerId) {
+            const layer = layers.find((l) => l.id === selectedLayerId);
+            if (layer) {
+                const updates: Partial<Layer> = { fill: color };
+                if (layer.type === 'pen' || layer.type === 'straight-line') {
+                    updates.stroke = color;
+                }
+                get().updateLayer(selectedLayerId, updates);
+                get().saveHistory();
+            }
+        }
+    },
     setBackgroundColor: (color) => set({ backgroundColor: color }),
     setIsDrawing: (isDrawing) => set({ isDrawing }),
     setBoardId: (id) => set({ boardId: id }),
