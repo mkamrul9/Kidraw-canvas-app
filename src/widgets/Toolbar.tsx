@@ -92,16 +92,12 @@ export default function Toolbar() {
                 <input
                     id="image-upload"
                     type="file"
-                    accept="image/*"
+                    accept="image/*,application/pdf"
                     className="hidden"
                     onChange={(e) => {
                         if (e.target.files && e.target.files[0]) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                                window.dispatchEvent(new CustomEvent('insert-image', { detail: ev.target?.result }));
-                                setActiveTool('image');
-                            };
-                            reader.readAsDataURL(e.target.files[0]);
+                            window.dispatchEvent(new CustomEvent('insert-file', { detail: e.target.files[0] }));
+                            setActiveTool('select');
                         }
                     }}
                 />

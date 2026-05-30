@@ -11,6 +11,9 @@ import { getBackgroundStyle } from '@/features/canvas/lib/background';
 import { isPointInPolygon, getSnapPoints, getSnapPointCoords, SnapPoint } from '@/features/canvas/lib/geometry';
 import { useCanvasExport } from '@/features/canvas/hooks/useCanvasExport';
 import { LASER_FADE_INTERVAL_MS, COMMENT_WIDTH, COMMENT_HEIGHT, COMMENT_FILL, IMAGE_MAX_WIDTH, STICKY_WIDTH, STICKY_HEIGHT, DEFAULT_STICKY_FILL } from '@/features/canvas/constants';
+import { renderPDFPages } from '@/features/canvas/lib/pdf';
+import { toast } from 'sonner';
+import { Shapes, Loader2 } from 'lucide-react';
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -20,6 +23,8 @@ export default function Board() {
     const [laserPoints, setLaserPoints] = useState<number[]>([]);
     const [activeSnapPoint, setActiveSnapPoint] = useState<SnapPoint | null>(null);
     const [hoveredShapeId, setHoveredShapeId] = useState<string | null>(null);
+    const [isDraggingFile, setIsDraggingFile] = useState(false);
+    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
     const {
         layers, activeTool, activeShape, activeColor, backgroundColor, bgPattern,
@@ -32,6 +37,66 @@ export default function Board() {
     const transformerRef = useRef<Konva.Transformer>(null);
     const currentShapeId = useRef<string | null>(null);
     const hoverTimeoutRef = useRef<any>(null);
+
+    const processUploadedFile = useCallback(async (file: File, x: number, y: number) => {
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const src = ev.target?.result as string;
+                if (!src) return;
+                const img = new window.Image();
+                img.src = src;
+                img.onload = () => {
+                    const scale = Math.min(1, IMAGE_MAX_WIDTH / img.width);
+                    const width = img.width * scale;
+                    const height = img.height * scale;
+                    addLayer({
+                        id: uuidv4(),
+                        type: 'image',
+                        x: x - width / 2,
+                        y: y - height / 2,
+                        width,
+                        height,
+                        fill: 'transparent',
+                        src,
+                        opacity: activeOpacity,
+                    });
+                    saveHistory();
+                };
+            };
+            reader.readAsDataURL(file);
+        } else if (file.type === 'application/pdf') {
+            try {
+                setUploadProgress(0);
+                const { pages, width, height } = await renderPDFPages(file, (pct) => {
+                    setUploadProgress(pct);
+                });
+                
+                if (pages.length > 0) {
+                    addLayer({
+                        id: uuidv4(),
+                        type: 'pdf',
+                        x: x - width / 2,
+                        y: y - height / 2,
+                        width,
+                        height,
+                        fill: 'transparent',
+                        opacity: activeOpacity,
+                        pdfPages: pages,
+                        pdfPageIndex: 0,
+                    });
+                    saveHistory();
+                }
+            } catch (err) {
+                console.error(err);
+                toast.error('Failed to parse PDF file.');
+            } finally {
+                setUploadProgress(null);
+            }
+        } else {
+            toast.error('Unsupported file format. Please upload images or PDFs.');
+        }
+    }, [activeOpacity, addLayer, saveHistory]);
 
     // ─── Hooks ───────────────────────────────────────────
     useCanvasExport(stageRef);
@@ -49,27 +114,18 @@ export default function Board() {
     }, []);
 
     useEffect(() => {
-        const handleInsertImage = (event: Event) => {
-            const customEvent = event as CustomEvent<string>;
-            const src = customEvent.detail;
-            if (!src) return;
-            const img = new window.Image();
-            img.src = src;
-            img.onload = () => {
-                const scale = Math.min(1, IMAGE_MAX_WIDTH / img.width);
-                addLayer({
-                    id: uuidv4(), type: 'image',
-                    x: (-camera.x + dimensions.width / 2) / zoom - (img.width * scale) / 2,
-                    y: (-camera.y + dimensions.height / 2) / zoom - (img.height * scale) / 2,
-                    width: img.width * scale, height: img.height * scale,
-                    fill: 'transparent', src, opacity: activeOpacity,
-                });
-                saveHistory();
-            };
+        const handleInsertFile = async (event: Event) => {
+            const customEvent = event as CustomEvent<File>;
+            const file = customEvent.detail;
+            if (!file) return;
+
+            const centerX = (-camera.x + dimensions.width / 2) / zoom;
+            const centerY = (-camera.y + dimensions.height / 2) / zoom;
+            await processUploadedFile(file, centerX, centerY);
         };
-        window.addEventListener('insert-image', handleInsertImage);
-        return () => window.removeEventListener('insert-image', handleInsertImage);
-    }, [camera, zoom, dimensions, activeOpacity, addLayer, saveHistory]);
+        window.addEventListener('insert-file', handleInsertFile as EventListener);
+        return () => window.removeEventListener('insert-file', handleInsertFile as EventListener);
+    }, [camera, zoom, dimensions, processUploadedFile]);
 
     useEffect(() => {
         if ((activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && transformerRef.current && stageRef.current) {
@@ -494,6 +550,11 @@ export default function Board() {
         setEditingText({ id, x, y, text });
     }, []);
 
+    const handlePdfPageChange = useCallback((id: string, pageIndex: number) => {
+        updateLayer(id, { pdfPageIndex: pageIndex });
+        saveHistory();
+    }, [updateLayer, saveHistory]);
+
     const handleMouseEnter = useCallback((id: string) => {
         if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
         setHoveredShapeId(id);
@@ -590,7 +651,40 @@ export default function Board() {
     })();
 
     return (
-        <div className={`relative w-full h-full ${activeTool === 'hand' ? (isDrawing ? 'cursor-grabbing' : 'cursor-grab') : ''}`} style={getBackgroundStyle(backgroundColor, bgPattern, zoom, camera)}>
+        <div
+            className={`relative w-full h-full ${activeTool === 'hand' ? (isDrawing ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
+            style={getBackgroundStyle(backgroundColor, bgPattern, zoom, camera)}
+            onDragOver={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'copy';
+                setIsDraggingFile(true);
+            }}
+            onDragLeave={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDraggingFile(false);
+            }}
+            onDrop={async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDraggingFile(false);
+
+                const files = e.dataTransfer.files;
+                if (!files || files.length === 0) return;
+
+                const file = files[0];
+                const rect = stageRef.current?.container().getBoundingClientRect();
+                if (!rect) return;
+
+                const clientX = e.clientX - rect.left;
+                const clientY = e.clientY - rect.top;
+                const dropX = (clientX - camera.x) / zoom;
+                const dropY = (clientY - camera.y) / zoom;
+
+                await processUploadedFile(file, dropX, dropY);
+            }}
+        >
             {editingText && (
                 <textarea
                     className="absolute z-50 shadow-xl rounded outline-none resize-none pointer-events-auto font-sans"
@@ -601,6 +695,31 @@ export default function Board() {
                     onBlur={() => { updateLayer(editingText.id, { text: editingText.text }); setEditingText(null); saveHistory(); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
                 />
+            )}
+
+            {isDraggingFile && (
+                <div className="absolute inset-0 bg-indigo-600/10 backdrop-blur-[2px] border-4 border-dashed border-indigo-500 rounded-3xl m-4 flex flex-col items-center justify-center gap-3 z-[100] pointer-events-none animate-in fade-in zoom-in duration-200">
+                    <div className="bg-indigo-600 p-4 rounded-full shadow-lg border border-indigo-400">
+                        <Shapes className="w-8 h-8 text-white animate-bounce" />
+                    </div>
+                    <span className="font-extrabold text-indigo-400 text-lg uppercase tracking-wider">Drop images or PDFs here</span>
+                </div>
+            )}
+
+            {uploadProgress !== null && (
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0B0F19]/90 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 z-[110] min-w-[280px]">
+                    <div className="flex items-center gap-2 text-white">
+                        <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
+                        <span className="font-bold text-sm">Processing Document...</span>
+                    </div>
+                    <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden border border-white/5">
+                        <div
+                            className="bg-violet-600 h-full rounded-full transition-all duration-150 ease-out"
+                            style={{ width: `${uploadProgress}%` }}
+                        ></div>
+                    </div>
+                    <span className="text-xs text-slate-400 font-semibold">{uploadProgress}%</span>
+                </div>
             )}
 
             <Stage
@@ -636,6 +755,7 @@ export default function Board() {
                                 onMouseLeave={handleMouseLeave}
                                 onTransform={handleLayerTransform}
                                 onTransformEnd={handleLayerTransformEnd}
+                                onPdfPageChange={handlePdfPageChange}
                             />
                         ));
                     })()}

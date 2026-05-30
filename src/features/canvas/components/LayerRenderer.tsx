@@ -26,6 +26,7 @@ interface LayerRendererProps {
     onMouseLeave?: (id: string) => void;
     onTransform?: (id: string, x: number, y: number, width: number, height: number) => void;
     onTransformEnd?: (id: string, x: number, y: number, width: number, height: number) => void;
+    onPdfPageChange?: (id: string, pageIndex: number) => void;
 }
 
 /**
@@ -45,6 +46,7 @@ export default function LayerRenderer({
     onMouseLeave,
     onTransform,
     onTransformEnd,
+    onPdfPageChange,
 }: LayerRendererProps) {
     const commonProps = {
         id: layer.id,
@@ -141,6 +143,95 @@ export default function LayerRenderer({
     // ─── Image ──────────────────────────────────────────
     if (layer.type === 'image') {
         return <URLImage key={layer.id} layer={layer} {...commonProps} />;
+    }
+
+    // ─── PDF Document ───────────────────────────────────
+    if (layer.type === 'pdf') {
+        const pages = layer.pdfPages || [];
+        const pageIdx = layer.pdfPageIndex || 0;
+        const currentSrc = pages[pageIdx] || '';
+
+        return (
+            <Group key={layer.id} {...commonProps} x={layer.x} y={layer.y}>
+                <URLImage
+                    layer={{ src: currentSrc, x: 0, y: 0, width: layer.width, height: layer.height, opacity: layer.opacity }}
+                />
+                {pages.length > 1 && (
+                    <Group
+                        x={layer.width / 2 - 60}
+                        y={-32}
+                        onClick={(e) => e.cancelBubble = true}
+                        onTouchStart={(e) => e.cancelBubble = true}
+                        onMouseDown={(e) => e.cancelBubble = true}
+                    >
+                        <Rect
+                            width={120}
+                            height={26}
+                            fill="#0B0F19"
+                            stroke="#334155"
+                            strokeWidth={1}
+                            cornerRadius={13}
+                            shadowColor="black"
+                            shadowBlur={4}
+                            shadowOpacity={0.2}
+                        />
+                        <Text
+                            x={8}
+                            y={7}
+                            text="◀"
+                            fill={pageIdx > 0 ? "#94a3b8" : "#334155"}
+                            fontSize={12}
+                            onClick={(e) => {
+                                e.cancelBubble = true;
+                                if (pageIdx > 0 && onPdfPageChange) {
+                                    onPdfPageChange(layer.id, pageIdx - 1);
+                                }
+                            }}
+                            onMouseEnter={(e) => {
+                                const stage = e.target.getStage();
+                                if (stage && pageIdx > 0) stage.container().style.cursor = 'pointer';
+                            }}
+                            onMouseLeave={(e) => {
+                                const stage = e.target.getStage();
+                                if (stage) stage.container().style.cursor = 'default';
+                            }}
+                        />
+                        <Text
+                            x={25}
+                            y={8}
+                            width={70}
+                            text={`${pageIdx + 1} / ${pages.length}`}
+                            fill="#ffffff"
+                            fontSize={11}
+                            fontStyle="bold"
+                            align="center"
+                            fontFamily="sans-serif"
+                        />
+                        <Text
+                            x={102}
+                            y={7}
+                            text="▶"
+                            fill={pageIdx < pages.length - 1 ? "#94a3b8" : "#334155"}
+                            fontSize={12}
+                            onClick={(e) => {
+                                e.cancelBubble = true;
+                                if (pageIdx < pages.length - 1 && onPdfPageChange) {
+                                    onPdfPageChange(layer.id, pageIdx + 1);
+                                }
+                            }}
+                            onMouseEnter={(e) => {
+                                const stage = e.target.getStage();
+                                if (stage && pageIdx < pages.length - 1) stage.container().style.cursor = 'pointer';
+                            }}
+                            onMouseLeave={(e) => {
+                                const stage = e.target.getStage();
+                                if (stage) stage.container().style.cursor = 'default';
+                            }}
+                        />
+                    </Group>
+                )}
+            </Group>
+        );
     }
 
     // ─── Sticky Note ────────────────────────────────────
