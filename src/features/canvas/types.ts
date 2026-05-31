@@ -3,9 +3,9 @@ export type Color = string;
 // Added arrow, straight-line, and hexagon
 export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'arrow' | 'straight-line' | 'hexagon';
 
-export type LayerType = ShapeType | 'pen' | 'pencil' | 'text' | 'eraser' | 'comment' | 'image' | 'embed' | 'sticky' | 'frame' | 'pdf' | 'group';
+export type LayerType = ShapeType | 'pen' | 'pencil' | 'text' | 'eraser' | 'comment' | 'image' | 'embed' | 'sticky' | 'frame' | 'pdf' | 'group' | 'code';
 
-export type Tool = 'select' | 'lasso' | 'hand' | 'shape' | 'pen' | 'pencil' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'image' | 'embed' | 'sticky' | 'frame' | 'pdf';
+export type Tool = 'select' | 'lasso' | 'hand' | 'shape' | 'pen' | 'pencil' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'image' | 'embed' | 'sticky' | 'frame' | 'pdf' | 'code';
 
 export type Camera = {
     x: number;
@@ -35,4 +35,5 @@ export type Layer = {
     pdfPages?: string[];
     pdfPageIndex?: number;
     zIndex?: number;
+    codeLanguage?: string;
 };

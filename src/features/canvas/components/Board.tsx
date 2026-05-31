@@ -342,6 +342,16 @@ export default function Board() {
             return;
         }
 
+        if (activeTool === 'code') {
+            setSelectedLayerId(null);
+            const newId = uuidv4();
+            addLayer({ id: newId, type: 'code', x: pos.x, y: pos.y, width: 450, height: 300, fill: '#0f172a', text: '// Write your code here\n', opacity: activeOpacity, codeLanguage: 'javascript' });
+            setActiveTool('select');
+            setSelectedLayerId(newId);
+            saveHistory();
+            return;
+        }
+
         if (activeTool === 'text' || activeTool === 'sticky') {
             setSelectedLayerId(null);
             const newId = uuidv4();
@@ -392,7 +402,7 @@ export default function Board() {
         const currentShape = storeLayers.find((layer) => layer.id === currentShapeId.current);
         if (!currentShape) return;
 
-        if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'eraser') {
+        if (activeTool === 'text' || activeTool === 'sticky' || activeTool === 'comment') {
             updateLayer(currentShapeId.current, { points: [...(currentShape.points || []), pos.x, pos.y] });
         } else {
             if (currentShape.type === 'arrow') {
@@ -1143,7 +1153,7 @@ export default function Board() {
                     >
                         {/* Invisible drag handle over the iframe when selected to allow moving it easily */}
                         {isSelected && activeTool === 'select' && (
-                            <div className="absolute inset-x-0 top-0 h-6 bg-violet-500/20 cursor-move z-20 hover:bg-violet-500/40 transition-colors flex items-center justify-center">
+                            <div className="absolute inset-x-0 top-0 h-6 bg-violet-500/20 cursor-move z-20 hover:bg-violet-500/40 transition-colors flex items-center justify-center" style={{ pointerEvents: 'none' }}>
                                 <div className="w-12 h-1.5 rounded-full bg-white/50"></div>
                             </div>
                         )}
@@ -1154,6 +1164,45 @@ export default function Board() {
                             frameBorder="0"
                             allowFullScreen
                             className="w-full h-full"
+                        />
+                    </div>
+                );
+            })}
+
+            {/* Embedded Code Sandbox Layers */}
+            {layers.filter(l => l.type === 'code').map((layer) => {
+                const isSelected = selectedLayerIds.includes(layer.id);
+                const pointerEvents = isSelected && activeTool !== 'hand' ? 'auto' : 'none';
+                
+                return (
+                    <div
+                        key={layer.id}
+                        className={`absolute z-10 origin-top-left overflow-hidden bg-[#0f172a] rounded-xl shadow-2xl ${isSelected ? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-transparent' : 'border border-slate-700/50'}`}
+                        style={{
+                            left: 0,
+                            top: 0,
+                            width: layer.width,
+                            height: layer.height,
+                            transform: `translate(${camera.x + layer.x * zoom}px, ${camera.y + layer.y * zoom}px) scale(${zoom})`,
+                            pointerEvents
+                        }}
+                    >
+                        {/* Mac-like Window Header (Pointer events none so clicks pass through to Konva for dragging) */}
+                        <div className="absolute inset-x-0 top-0 h-9 bg-[#1e293b] flex items-center px-3 gap-2 border-b border-black/20 z-20" style={{ pointerEvents: 'none' }}>
+                            <div className="w-3 h-3 rounded-full bg-red-500 border border-red-600"></div>
+                            <div className="w-3 h-3 rounded-full bg-yellow-500 border border-yellow-600"></div>
+                            <div className="w-3 h-3 rounded-full bg-green-500 border border-green-600"></div>
+                            <span className="ml-2 text-[11px] font-mono text-slate-400 select-none tracking-wider">{layer.codeLanguage || 'javascript'}</span>
+                        </div>
+                        
+                        <textarea
+                            value={layer.text}
+                            onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
+                            onPointerDown={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                            onTouchStart={(e) => e.stopPropagation()}
+                            className="w-full h-full pt-12 pb-4 px-4 bg-transparent text-emerald-400 font-mono text-sm leading-relaxed resize-none focus:outline-none"
+                            spellCheck={false}
                         />
                     </div>
                 );
