@@ -18,6 +18,7 @@ import { Shapes, Loader2 } from 'lucide-react';
 import CommentOverlay from './CommentOverlay';
 import LiveCursors from './LiveCursors';
 import { usePresence } from '../hooks/usePresence';
+import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -120,6 +121,7 @@ export default function Board() {
 
     // ─── Hooks ───────────────────────────────────────────
     useCanvasExport(stageRef);
+    useKeyboardShortcuts();
 
     // ─── Effects ─────────────────────────────────────────
     useEffect(() => {

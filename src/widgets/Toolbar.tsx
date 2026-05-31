@@ -102,7 +102,7 @@ export default function Toolbar() {
                     }}
                 />
 
-                <ToolButton icon={<Wand2 className="w-4 h-4" />} label="Laser Pointer" onClick={() => handleToolClick('laser')} isActive={activeTool === 'laser'} />
+                <ToolButton icon={<Wand2 className="w-4 h-4" />} label="Laser Pointer (K)" onClick={() => handleToolClick('laser')} isActive={activeTool === 'laser'} />
 
                 <div className="relative flex items-center">
                     <ToolButton icon={activeEraserType === 'object-eraser' ? <XSquare className="w-4 h-4" /> : <Eraser className="w-4 h-4" />} label="Eraser (E)" onClick={() => { setActiveTool(activeEraserType); toggleMenu('eraser'); }} isActive={activeTool === 'eraser' || activeTool === 'object-eraser'} />
@@ -134,8 +134,8 @@ export default function Toolbar() {
 
                 <div className="w-[1px] h-8 bg-white/10 mx-1"></div>
 
-                <ToolButton icon={<Undo className="w-4 h-4" />} label="Undo" onClick={undo} disabled={historyStep === 0 || isLocked} />
-                <ToolButton icon={<Redo className="w-4 h-4" />} label="Redo" onClick={redo} disabled={historyStep === history.length - 1 || isLocked} />
+                <ToolButton icon={<Undo className="w-4 h-4" />} label="Undo (Ctrl+Z)" onClick={undo} disabled={historyStep === 0 || isLocked} />
+                <ToolButton icon={<Redo className="w-4 h-4" />} label="Redo (Ctrl+Y)" onClick={redo} disabled={historyStep === history.length - 1 || isLocked} />
             </div>
         </TooltipProvider>
     );

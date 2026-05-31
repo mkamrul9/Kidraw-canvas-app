@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 
 export default function LibrarySidebar() {
     const [isOpen, setIsOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState<'Templates' | 'UI Components'>('Templates');
+    const [activeTab, setActiveTab] = useState<'Templates' | 'UI Components' | 'Shortcuts'>('Templates');
     const [searchQuery, setSearchQuery] = useState('');
 
     const { addLayers, saveHistory, camera, zoom } = useCanvasStore();
@@ -160,7 +160,7 @@ export default function LibrarySidebar() {
                 <div className="px-4 pt-4 pb-3 border-b border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-2">
                         <Shapes className="w-4 h-4 text-violet-400" />
-                        <span className="font-extrabold text-white text-sm uppercase tracking-wider">Library & Kit</span>
+                        <span className="font-extrabold text-white text-sm uppercase tracking-wider">Library & Shortcuts</span>
                     </div>
                     <Button
                         variant="ghost"
@@ -213,14 +213,58 @@ export default function LibrarySidebar() {
                                     : 'text-slate-400 hover:text-slate-200'
                             }`}
                         >
-                            UI Components
+                            Components
+                        </button>
+                        <button
+                            onClick={() => {
+                                setActiveTab('Shortcuts');
+                                setSearchQuery('');
+                            }}
+                            className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                                activeTab === 'Shortcuts'
+                                    ? 'bg-violet-600 text-white shadow-md'
+                                    : 'text-slate-400 hover:text-slate-200'
+                            }`}
+                        >
+                            Shortcuts
                         </button>
                     </div>
                 </div>
 
-                {/* Library Items List */}
+                {/* Library Items List or Shortcuts View */}
                 <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 scrollbar-thin scrollbar-thumb-slate-800">
-                    {filteredItems.length === 0 ? (
+                    {activeTab === 'Shortcuts' ? (
+                        <div className="flex flex-col gap-2">
+                            {[
+                                { key: 'V', label: 'Select' },
+                                { key: 'L', label: 'Lasso Select' },
+                                { key: 'H', label: 'Hand / Pan' },
+                                { key: 'P', label: 'Pen' },
+                                { key: 'S', label: 'Shapes Menu' },
+                                { key: 'R', label: 'Rectangle' },
+                                { key: 'C', label: 'Circle' },
+                                { key: 'A', label: 'Arrow' },
+                                { key: 'T', label: 'Text' },
+                                { key: 'N', label: 'Sticky Note' },
+                                { key: 'F', label: 'Frame' },
+                                { key: 'K', label: 'Laser Pointer' },
+                                { key: 'E', label: 'Eraser' },
+                                { key: 'Shift+E', label: 'Object Eraser' },
+                                { key: 'Ctrl+C', label: 'Copy' },
+                                { key: 'Ctrl+V', label: 'Paste' },
+                                { key: 'Ctrl+Z', label: 'Undo' },
+                                { key: 'Ctrl+Y', label: 'Redo' },
+                                { key: '/', label: 'Quick Chat' },
+                            ].map((shortcut, i) => (
+                                <div key={i} className="flex justify-between items-center bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
+                                    <span className="text-xs text-slate-300 font-medium">{shortcut.label}</span>
+                                    <kbd className="px-2 py-1 bg-slate-800 border border-slate-600 rounded text-[10px] text-slate-300 font-mono shadow-sm">
+                                        {shortcut.key}
+                                    </kbd>
+                                </div>
+                            ))}
+                        </div>
+                    ) : filteredItems.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-12 text-slate-500 text-xs">
                             <Shapes className="w-8 h-8 mb-2 opacity-30 text-slate-400" />
                             <span>No items found</span>
