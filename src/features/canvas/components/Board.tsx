@@ -11,6 +11,7 @@ import { getBackgroundStyle } from '@/features/canvas/lib/background';
 import { isPointInPolygon, getSnapPoints, getSnapPointCoords, SnapPoint } from '@/features/canvas/lib/geometry';
 import { useCanvasExport } from '@/features/canvas/hooks/useCanvasExport';
 import { LASER_FADE_INTERVAL_MS, COMMENT_WIDTH, COMMENT_HEIGHT, COMMENT_FILL, IMAGE_MAX_WIDTH, STICKY_WIDTH, STICKY_HEIGHT, DEFAULT_STICKY_FILL } from '@/features/canvas/constants';
+import { getOrthogonalPath, BoundingBox } from '@/features/canvas/utils/routing';
 import { renderPDFPages } from '@/features/canvas/lib/pdf';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
@@ -41,6 +42,7 @@ export default function Board() {
         activeOpacity, isDrawing, setIsDrawing, addLayer, updateLayer, removeLayer,
         saveHistory, selectedLayerIds, setSelectedLayerIds, setSelectedLayerId,
         eraserSize, penSize, camera, setCamera, zoom, setZoom, isLocked, boardId,
+        isSketchMode,
     } = useCanvasStore();
 
     const { updateMyPresence } = usePresence(boardId);
@@ -410,9 +412,22 @@ export default function Board() {
                     setActiveSnapPoint(null);
                 }
 
+                const allObstacles: BoundingBox[] = storeLayers
+                    .filter(l => l.type !== 'arrow' && l.type !== 'straight-line' && l.type !== 'pen')
+                    .map(l => ({ id: l.id, x: l.x, y: l.y, width: Math.abs(l.width || 0), height: Math.abs(l.height || 0) }));
+
+                const absPoints = getOrthogonalPath(
+                    { x: currentShape.x, y: currentShape.y },
+                    { x: endX, y: endY },
+                    currentShape.startBinding?.elementId,
+                    hoverSnap?.elementId,
+                    allObstacles
+                );
+                
                 updateLayer(currentShapeId.current, {
                     width: endX - currentShape.x,
                     height: endY - currentShape.y,
+                    points: absPoints.map((val, idx) => idx % 2 === 0 ? val - currentShape.x : val - currentShape.y),
                 });
             } else {
                 updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
@@ -553,11 +568,30 @@ export default function Board() {
                 }
             }
 
+            const allObstacles: BoundingBox[] = storeLayers
+                .filter(l => l.type !== 'arrow' && l.type !== 'straight-line' && l.type !== 'pen')
+                .map(l => ({
+                    id: l.id,
+                    x: l.id === draggedId ? nextX : l.x,
+                    y: l.id === draggedId ? nextY : l.y,
+                    width: Math.abs(l.width || 0),
+                    height: Math.abs(l.height || 0),
+                }));
+
+            const absPoints = getOrthogonalPath(
+                { x: startX, y: startY },
+                { x: endX, y: endY },
+                arrow.startBinding?.elementId,
+                arrow.endBinding?.elementId,
+                allObstacles
+            );
+
             updateLayer(arrow.id, {
                 x: startX,
                 y: startY,
                 width: endX - startX,
                 height: endY - startY,
+                points: absPoints.map((val, idx) => idx % 2 === 0 ? val - startX : val - startY),
             });
         });
     }, [updateLayer]);
@@ -1045,6 +1079,7 @@ export default function Board() {
                                 layer={layer}
                                 isSelected={selectedLayerIds.includes(layer.id) && (activeTool === 'select' || activeTool === 'lasso')}
                                 isLocked={isLocked}
+                                isSketchMode={isSketchMode}
                                 activeTool={activeTool}
                                 onDragEnd={handleLayerDragEnd}
                                 onDragMove={handleLayerDragMove}

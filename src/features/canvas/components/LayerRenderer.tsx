@@ -5,6 +5,7 @@ import Konva from 'konva';
 import useImage from 'use-image';
 import type { Layer } from '@/features/canvas/types';
 import { COMMENT_WIDTH, COMMENT_HEIGHT, DEFAULT_FONT_SIZE, DEFAULT_FONT_FAMILY } from '@/features/canvas/constants';
+import RoughShape from '@/features/canvas/components/RoughShape';
 
 // ─── URL Image Sub-Component ────────────────────────────────
 const URLImage = ({ layer, ...props }: { layer: { src?: string; x: number; y: number; width: number; height: number; opacity?: number } }) => {
@@ -17,6 +18,7 @@ interface LayerRendererProps {
     layer: Layer;
     isSelected: boolean;
     isLocked: boolean;
+    isSketchMode: boolean;
     activeTool: string;
     onDragEnd: (id: string, x: number, y: number) => void;
     onDragMove?: (id: string, x: number, y: number) => void;
@@ -37,6 +39,7 @@ export default function LayerRenderer({
     layer,
     isSelected,
     isLocked,
+    isSketchMode,
     activeTool,
     onDragEnd,
     onDragMove,
@@ -325,30 +328,41 @@ export default function LayerRenderer({
     }
 
     // ─── Geometric Shapes ───────────────────────────────
-    if (layer.type === 'rectangle')
-        return <Rect key={layer.id} {...commonProps} x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill={layer.fill} opacity={shapeOpacity} cornerRadius={4} />;
-
-    if (layer.type === 'ellipse')
-        return <Ellipse key={layer.id} {...commonProps} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} opacity={shapeOpacity} />;
-
-    if (layer.type === 'triangle')
-        return <RegularPolygon key={layer.id} {...commonProps} sides={3} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
-
-    if (layer.type === 'diamond')
-        return <RegularPolygon key={layer.id} {...commonProps} sides={4} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
-
-    if (layer.type === 'hexagon')
-        return <RegularPolygon key={layer.id} {...commonProps} sides={6} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
-
-    if (layer.type === 'star')
-        return <KonvaStar key={layer.id} {...commonProps} numPoints={5} innerRadius={radius / 2} outerRadius={radius} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} fill={layer.fill} opacity={shapeOpacity} />;
+    if (layer.type === 'rectangle' || layer.type === 'ellipse' || layer.type === 'triangle' || layer.type === 'diamond' || layer.type === 'hexagon' || layer.type === 'star') {
+        if (isSketchMode && layer.type !== 'star') { // Roughjs doesn't have a native star out of the box, we fallback to our custom RoughShape for others
+            return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
+        }
+        
+        if (layer.type === 'rectangle')
+            return <Rect key={layer.id} {...commonProps} x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill={layer.fill} opacity={shapeOpacity} cornerRadius={4} />;
+        if (layer.type === 'ellipse')
+            return <Ellipse key={layer.id} {...commonProps} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} opacity={shapeOpacity} />;
+        if (layer.type === 'triangle')
+            return <RegularPolygon key={layer.id} {...commonProps} sides={3} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
+        if (layer.type === 'diamond')
+            return <RegularPolygon key={layer.id} {...commonProps} sides={4} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
+        if (layer.type === 'hexagon')
+            return <RegularPolygon key={layer.id} {...commonProps} sides={6} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
+        if (layer.type === 'star')
+            return <KonvaStar key={layer.id} {...commonProps} numPoints={5} innerRadius={radius / 2} outerRadius={radius} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} fill={layer.fill} opacity={shapeOpacity} />;
+    }
 
     // ─── Lines & Arrows ─────────────────────────────────
-    if (layer.type === 'straight-line')
-        return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={[0, 0, layer.width, layer.height]} stroke={layer.fill} strokeWidth={layer.penSize || 4} lineCap="round" opacity={shapeOpacity} />;
+    if (layer.type === 'straight-line' || layer.type === 'arrow') {
+        if (isSketchMode) {
+            return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
+        }
+        
+        if (layer.type === 'straight-line') {
+            const pts = layer.points && layer.points.length >= 4 ? layer.points : [0, 0, layer.width, layer.height];
+            return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={pts} stroke={layer.fill} strokeWidth={layer.penSize || 4} lineCap="round" opacity={shapeOpacity} />;
+        }
 
-    if (layer.type === 'arrow')
-        return <Arrow key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={[0, 0, layer.width, layer.height]} fill={layer.fill} stroke={layer.fill} strokeWidth={layer.penSize || 4} pointerLength={15} pointerWidth={15} opacity={shapeOpacity} />;
+        if (layer.type === 'arrow') {
+            const pts = layer.points && layer.points.length >= 4 ? layer.points : [0, 0, layer.width, layer.height];
+            return <Arrow key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={pts} fill={layer.fill} stroke={layer.fill} strokeWidth={layer.penSize || 4} pointerLength={15} pointerWidth={15} opacity={shapeOpacity} />;
+        }
+    }
 
     // ─── Freehand & Text ────────────────────────────────
     if (layer.type === 'pen')

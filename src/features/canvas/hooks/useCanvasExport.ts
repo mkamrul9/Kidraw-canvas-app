@@ -163,20 +163,23 @@ export function useCanvasExport(stageRef: React.RefObject<Konva.Stage | null>) {
             const stage = stageRef.current;
             const oldScale = stage.scale();
             const oldPos = stage.position();
-            const oldSize = stage.size();
 
-            // Temporarily resize and position the stage to cover the bounding box at 1x zoom
+            // Temporarily reset stage scale and position to map 1:1 with absolute layer coordinates
             stage.scale({ x: 1, y: 1 });
-            stage.position({ x: -minX, y: -minY });
-            stage.size({ width: exportWidth, height: exportHeight });
+            stage.position({ x: 0, y: 0 });
 
-            // 1. Get raw transparent drawing from Konva
-            const konvaDataURL = stage.toDataURL({ pixelRatio: EXPORT_PIXEL_RATIO });
+            // 1. Get raw transparent drawing directly from the bounding box area
+            const konvaDataURL = stage.toDataURL({ 
+                x: minX,
+                y: minY,
+                width: exportWidth,
+                height: exportHeight,
+                pixelRatio: EXPORT_PIXEL_RATIO 
+            });
 
-            // Restore stage back to its original state
+            // Restore stage back to its original viewing state immediately
             stage.scale(oldScale || { x: 1, y: 1 });
             stage.position(oldPos || { x: 0, y: 0 });
-            stage.size(oldSize || { width: dimensions.width, height: dimensions.height });
 
             // 2. Create off-screen compiler canvas
             const canvas = document.createElement('canvas');

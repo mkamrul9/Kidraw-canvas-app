@@ -72,6 +72,7 @@ interface CanvasState {
     activeShape: ShapeType;
     penSize: number;
     activeOpacity: number;
+    isSketchMode: boolean;
     permissionRole: 'owner' | 'editor' | 'viewer';
 
     // History State
@@ -96,6 +97,7 @@ interface CanvasState {
     setActiveShape: (shape: ShapeType) => void;
     setPenSize: (size: number) => void;
     setOpacity: (opacity: number) => void;
+    toggleSketchMode: () => void;
     setPermissionRole: (role: 'owner' | 'editor' | 'viewer') => void;
 
     addLayer: (layer: Layer, isRemote?: boolean) => void;
@@ -141,6 +143,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeShape: 'rectangle',
     penSize: 4,
     activeOpacity: 1,
+    isSketchMode: false,
     permissionRole: 'owner',
 
     history: [[]], // Start with one empty state
@@ -188,6 +191,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setActiveShape: (shape) => set({ activeShape: shape, activeTool: 'shape' }),
     setPenSize: (size) => set({ penSize: size }),
     setOpacity: (opacity) => set({ activeOpacity: opacity }),
+    toggleSketchMode: () => set((state) => ({ isSketchMode: !state.isSketchMode })),
     setPermissionRole: (role) => set({ permissionRole: role }),
 
     addLayer: (layer, isRemote = false) => {
