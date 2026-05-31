@@ -15,7 +15,7 @@ import { getOrthogonalPath, BoundingBox } from '@/features/canvas/utils/routing'
 import { renderPDFPages } from '@/features/canvas/lib/pdf';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
-import { Shapes, Loader2 } from 'lucide-react';
+import { Shapes, Loader2, Plus } from 'lucide-react';
 import CommentOverlay from './CommentOverlay';
 import LiveCursors from './LiveCursors';
 import { usePresence } from '../hooks/usePresence';
@@ -39,8 +39,8 @@ export default function Board() {
     const cursorChatInputRef = useRef<HTMLInputElement>(null);
 
     const {
-        layers, activeTool, activeShape, activeColor, backgroundColor, bgPattern,
-        activeOpacity, isDrawing, setIsDrawing, addLayer, updateLayer, removeLayer,
+        layers, activeTool, setActiveTool, activeShape, activeColor, backgroundColor, bgPattern,
+        activeOpacity, isDrawing, setIsDrawing, addLayer, addLayers, updateLayer, removeLayer,
         saveHistory, selectedLayerIds, setSelectedLayerIds, setSelectedLayerId,
         eraserSize, penSize, camera, setCamera, zoom, setZoom, isLocked, boardId,
         isSketchMode,
@@ -906,6 +906,80 @@ export default function Board() {
         };
     })();
 
+    // ─── Mind Mapping Auto-Layout ───────────────────────────────────────────
+    const handleAddNode = (direction: 'top' | 'right' | 'bottom' | 'left', parentLayer: Layer) => {
+        const spacingX = 120;
+        const spacingY = 120;
+        
+        let newX = parentLayer.x;
+        let newY = parentLayer.y;
+        
+        if (direction === 'top') newY -= parentLayer.height + spacingY;
+        if (direction === 'bottom') newY += parentLayer.height + spacingY;
+        if (direction === 'left') newX -= parentLayer.width + spacingX;
+        if (direction === 'right') newX += parentLayer.width + spacingX;
+
+        // Simple Collision Detection / Fan-out shift
+        const allLayers = useCanvasStore.getState().layers;
+        let collision = true;
+        let shiftMultiplier = 1;
+        while (collision && shiftMultiplier < 10) {
+            collision = allLayers.some(l => 
+                l.id !== parentLayer.id && 
+                Math.abs(l.x - newX) < parentLayer.width && 
+                Math.abs(l.y - newY) < parentLayer.height
+            );
+            
+            if (collision) {
+                // Shift perpendicularly to the direction of generation
+                if (direction === 'left' || direction === 'right') {
+                    newY += (parentLayer.height + 20) * (shiftMultiplier % 2 === 0 ? -shiftMultiplier : Math.ceil(shiftMultiplier / 2));
+                } else {
+                    newX += (parentLayer.width + 20) * (shiftMultiplier % 2 === 0 ? -shiftMultiplier : Math.ceil(shiftMultiplier / 2));
+                }
+                shiftMultiplier++;
+            }
+        }
+
+        const newId = uuidv4();
+        const childNode: Layer = {
+            ...parentLayer,
+            id: newId,
+            x: newX,
+            y: newY,
+            text: '', // clear text for new node
+        };
+
+        const arrowId = uuidv4();
+        const arrowNode: Layer = {
+            id: arrowId,
+            type: 'arrow',
+            x: 0, y: 0, width: 0, height: 0,
+            fill: parentLayer.stroke || parentLayer.fill,
+            stroke: parentLayer.stroke || parentLayer.fill,
+            startBinding: { elementId: parentLayer.id, snapPoint: direction },
+            endBinding: { elementId: newId, snapPoint: direction === 'left' ? 'right' : direction === 'right' ? 'left' : direction === 'top' ? 'bottom' : 'top' },
+        };
+
+        addLayers([childNode, arrowNode]);
+        setSelectedLayerId(newId);
+        setActiveTool('select');
+        saveHistory();
+        
+        // Auto-focus text editor for the new shape
+        setTimeout(() => {
+            setEditingText({
+                id: newId,
+                x: camera.x + newX * zoom,
+                y: camera.y + newY * zoom,
+                text: ''
+            });
+        }, 50);
+    };
+
+    const selectedLayer = selectedLayerIds.length === 1 ? layers.find(l => l.id === selectedLayerIds[0]) : null;
+    const isMindMapCompatible = selectedLayer && ['rectangle', 'ellipse', 'diamond', 'hexagon', 'triangle', 'sticky', 'text'].includes(selectedLayer.type);
+
     return (
         <div
             className={`relative w-full h-full ${activeTool === 'hand' ? (isDrawing ? 'cursor-grabbing' : 'cursor-grab') : ''}`}
@@ -951,6 +1025,40 @@ export default function Board() {
                     onBlur={() => { updateLayer(editingText.id, { text: editingText.text }); setEditingText(null); saveHistory(); }}
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
                 />
+            )}
+
+            {/* Mind-Map Quick Add Overlay */}
+            {selectedLayer && isMindMapCompatible && activeTool === 'select' && !isDraggingFile && !isDrawing && (
+                <div 
+                    className="absolute z-50 pointer-events-none"
+                    style={{
+                        left: camera.x + selectedLayer.x * zoom,
+                        top: camera.y + selectedLayer.y * zoom,
+                        width: selectedLayer.width * zoom,
+                        height: selectedLayer.height * zoom,
+                    }}
+                >
+                    {/* Top */}
+                    <button 
+                        className="absolute left-1/2 -translate-x-1/2 -top-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('top', selectedLayer); }}
+                    ><Plus className="w-4 h-4" /></button>
+                    {/* Right */}
+                    <button 
+                        className="absolute top-1/2 -translate-y-1/2 -right-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('right', selectedLayer); }}
+                    ><Plus className="w-4 h-4" /></button>
+                    {/* Bottom */}
+                    <button 
+                        className="absolute left-1/2 -translate-x-1/2 -bottom-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('bottom', selectedLayer); }}
+                    ><Plus className="w-4 h-4" /></button>
+                    {/* Left */}
+                    <button 
+                        className="absolute top-1/2 -translate-y-1/2 -left-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('left', selectedLayer); }}
+                    ><Plus className="w-4 h-4" /></button>
+                </div>
             )}
 
             {embedPrompt && (

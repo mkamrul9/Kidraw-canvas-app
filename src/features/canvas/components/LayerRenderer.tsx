@@ -349,22 +349,59 @@ export default function LayerRenderer({
 
     // ─── Geometric Shapes ───────────────────────────────
     if (layer.type === 'rectangle' || layer.type === 'ellipse' || layer.type === 'triangle' || layer.type === 'diamond' || layer.type === 'hexagon' || layer.type === 'star') {
-        if (isSketchMode && layer.type !== 'star') { // Roughjs doesn't have a native star out of the box, we fallback to our custom RoughShape for others
-            return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
-        }
-        
-        if (layer.type === 'rectangle')
-            return <Rect key={layer.id} {...commonProps} x={layer.x} y={layer.y} width={layer.width} height={layer.height} fill={layer.fill} opacity={shapeOpacity} cornerRadius={4} />;
-        if (layer.type === 'ellipse')
-            return <Ellipse key={layer.id} {...commonProps} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} opacity={shapeOpacity} />;
-        if (layer.type === 'triangle')
-            return <RegularPolygon key={layer.id} {...commonProps} sides={3} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
-        if (layer.type === 'diamond')
-            return <RegularPolygon key={layer.id} {...commonProps} sides={4} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
-        if (layer.type === 'hexagon')
-            return <RegularPolygon key={layer.id} {...commonProps} sides={6} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} radius={radius} fill={layer.fill} opacity={shapeOpacity} />;
-        if (layer.type === 'star')
-            return <KonvaStar key={layer.id} {...commonProps} numPoints={5} innerRadius={radius / 2} outerRadius={radius} x={layer.x + layer.width / 2} y={layer.y + layer.height / 2} fill={layer.fill} opacity={shapeOpacity} />;
+        const textFontSize = Math.max(12, Math.min(layer.width, layer.height) * 0.2); // Responsive font size
+        const textCol = layer.fill === '#ffffff' || layer.fill === '#eab308' || layer.fill === '#f97316' ? '#0f172a' : '#ffffff';
+
+        const renderShapeContent = () => {
+            if (isSketchMode && layer.type !== 'star') { 
+                return <RoughShape layer={{...layer, x: 0, y: 0}} commonProps={{}} />;
+            }
+            if (layer.type === 'rectangle')
+                return <Rect width={layer.width} height={layer.height} fill={layer.fill} cornerRadius={4} />;
+            if (layer.type === 'ellipse')
+                return <Ellipse x={layer.width / 2} y={layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} fill={layer.fill} />;
+            if (layer.type === 'triangle')
+                return <RegularPolygon sides={3} x={layer.width / 2} y={layer.height / 2} radius={radius} fill={layer.fill} />;
+            if (layer.type === 'diamond')
+                return <RegularPolygon sides={4} x={layer.width / 2} y={layer.height / 2} radius={radius} fill={layer.fill} />;
+            if (layer.type === 'hexagon')
+                return <RegularPolygon sides={6} x={layer.width / 2} y={layer.height / 2} radius={radius} fill={layer.fill} />;
+            if (layer.type === 'star')
+                return <KonvaStar numPoints={5} innerRadius={radius / 2} outerRadius={radius} x={layer.width / 2} y={layer.height / 2} fill={layer.fill} />;
+            return null;
+        };
+
+        return (
+            <Group 
+                key={layer.id} 
+                {...commonProps} 
+                x={layer.x} 
+                y={layer.y} 
+                opacity={shapeOpacity}
+                onDblClick={(event) => {
+                    if (activeTool === 'select' && !isLocked) {
+                        onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
+                    }
+                }}
+            >
+                {renderShapeContent()}
+                
+                {layer.text && (
+                    <Text
+                        x={10}
+                        y={10}
+                        width={layer.width - 20}
+                        height={layer.height - 20}
+                        text={layer.text}
+                        fill={textCol}
+                        fontSize={textFontSize}
+                        align="center"
+                        verticalAlign="middle"
+                        fontFamily="sans-serif"
+                    />
+                )}
+            </Group>
+        );
     }
 
     // ─── Lines & Arrows ─────────────────────────────────
