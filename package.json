@@ -14,6 +14,7 @@
     "@prisma/client": "^5.22.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "jspdf": "^4.2.1",
     "konva": "^10.3.0",
     "lucide-react": "^1.14.0",
     "next": "16.2.6",

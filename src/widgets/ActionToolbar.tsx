@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -15,7 +15,7 @@ export default function ActionToolbar() {
     const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
 
-    const handleExport = (format: 'png' | 'jpeg' | 'svg') => {
+    const handleExport = (format: 'png' | 'jpeg' | 'svg' | 'pdf') => {
         window.dispatchEvent(new CustomEvent('export-canvas', { detail: format }));
     };
 
@@ -54,10 +54,11 @@ export default function ActionToolbar() {
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Export Board</TooltipContent>
                     </Tooltip>
-                    <DropdownMenuContent align="end" className="w-40 bg-[#0B0F19] border-slate-700 text-slate-300">
+                    <DropdownMenuContent align="end" className="w-44 bg-[#0B0F19] border-slate-700 text-slate-300">
                         <DropdownMenuItem onClick={() => handleExport('png')} className="cursor-pointer focus:bg-violet-600 focus:text-white"><ImageIcon className="w-4 h-4 mr-2" /> PNG Image</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleExport('jpeg')} className="cursor-pointer focus:bg-violet-600 focus:text-white"><FileImage className="w-4 h-4 mr-2" /> JPEG Image</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleExport('svg')} className="cursor-pointer focus:bg-violet-600 focus:text-white"><PenTool className="w-4 h-4 mr-2" /> SVG Vector</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleExport('pdf')} className="cursor-pointer focus:bg-violet-600 focus:text-white"><FileText className="w-4 h-4 mr-2" /> PDF Document</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
 
