@@ -7,7 +7,7 @@ import { Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 
 export default function ExportCodeModal() {
-    const { exportCodeContent, setExportCodeContent } = useCanvasStore();
+    const { exportCodeContent, exportType, setExportCodeContent } = useCanvasStore();
     const [copied, setCopied] = useState(false);
 
     if (!exportCodeContent) return null;
@@ -18,11 +18,14 @@ export default function ExportCodeModal() {
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const title = exportType === 'mermaid' ? 'Mermaid.js Export' : 'React & Tailwind Export';
+    const codeColor = exportType === 'mermaid' ? 'text-blue-400' : 'text-emerald-400';
+
     return (
         <Dialog open={!!exportCodeContent} onOpenChange={(open) => !open && setExportCodeContent(null)}>
             <DialogContent className="bg-[#0B0F19] border border-white/10 text-white sm:max-w-[700px] shadow-2xl rounded-2xl overflow-hidden p-0">
                 <DialogHeader className="px-6 py-4 border-b border-white/5 bg-[#05070B] flex flex-row items-center justify-between">
-                    <DialogTitle className="text-xl font-bold font-sans">React & Tailwind Export</DialogTitle>
+                    <DialogTitle className="text-xl font-bold font-sans">{title}</DialogTitle>
                     <Button 
                         onClick={handleCopy}
                         className="bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg px-4 h-9 flex items-center gap-2"
@@ -32,7 +35,7 @@ export default function ExportCodeModal() {
                     </Button>
                 </DialogHeader>
                 <div className="p-0 bg-[#0f172a] max-h-[60vh] overflow-auto">
-                    <pre className="text-sm text-emerald-400 p-6 font-mono leading-relaxed">
+                    <pre className={`text-sm ${codeColor} p-6 font-mono leading-relaxed`}>
                         <code>{exportCodeContent}</code>
                     </pre>
                 </div>

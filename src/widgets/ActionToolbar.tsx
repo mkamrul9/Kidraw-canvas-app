@@ -11,6 +11,8 @@ import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
 import { exportToReactCode } from '@/features/canvas/lib/exportReact';
+import { exportToMermaid } from '@/features/canvas/lib/exportMermaid';
+import { DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
 
 export default function ActionToolbar() {
     const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent } = useCanvasStore();
@@ -90,6 +92,11 @@ export default function ActionToolbar() {
                         <DropdownMenuItem onClick={() => handleExport('jpeg')} className="cursor-pointer focus:bg-violet-600 focus:text-white"><FileImage className="w-4 h-4 mr-2" /> JPEG Image</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleExport('svg')} className="cursor-pointer focus:bg-violet-600 focus:text-white"><PenTool className="w-4 h-4 mr-2" /> SVG Vector</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleExport('pdf')} className="cursor-pointer focus:bg-violet-600 focus:text-white"><FileText className="w-4 h-4 mr-2" /> PDF Document</DropdownMenuItem>
+                        <DropdownMenuSeparator className="bg-slate-700" />
+                        <DropdownMenuItem onClick={() => {
+                            const code = exportToMermaid(layers);
+                            setExportCodeContent(code, 'mermaid');
+                        }} className="cursor-pointer focus:bg-violet-600 focus:text-white"><Code2 className="w-4 h-4 mr-2" /> Mermaid Syntax (.md)</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
 

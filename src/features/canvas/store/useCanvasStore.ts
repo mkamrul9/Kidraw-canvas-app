@@ -80,7 +80,8 @@ interface CanvasState {
     historyStep: number;
 
     exportCodeContent: string | null;
-    setExportCodeContent: (code: string | null) => void;
+    exportType: 'react' | 'mermaid' | null;
+    setExportCodeContent: (code: string | null, type?: 'react' | 'mermaid' | null) => void;
 
     setActiveTool: (tool: Tool) => void;
     setActiveColor: (color: Color) => void;
@@ -153,7 +154,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     historyStep: 0,
 
     exportCodeContent: null,
-    setExportCodeContent: (code) => set({ exportCodeContent: code }),
+    exportType: null,
+    setExportCodeContent: (code, type = 'react') => set({ exportCodeContent: code, exportType: code ? type : null }),
 
     setActiveTool: (tool) => set({ activeTool: tool }),
     setActiveColor: (color) => {
