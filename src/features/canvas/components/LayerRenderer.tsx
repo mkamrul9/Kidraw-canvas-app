@@ -115,23 +115,25 @@ export default function LayerRenderer({
     if (layer.type === 'frame') {
         const frameFill = layer.fill || 'rgba(148, 163, 184, 0.03)';
         return (
-            <Group key={layer.id} {...commonProps} x={layer.x} y={layer.y}>
+            <Group key={layer.id} x={layer.x} y={layer.y}>
                 <Rect
+                    {...commonProps}
+                    x={0}
+                    y={0}
                     width={layer.width}
                     height={layer.height}
                     fill={frameFill}
-                    stroke="#475569"
-                    strokeWidth={1.5}
-                    dash={[8, 4]}
-                    cornerRadius={2}
+                    stroke={isSelected ? '#8b5cf6' : 'rgba(255, 255, 255, 0.1)'}
+                    strokeWidth={isSelected ? 2 : 1}
+                    cornerRadius={0}
                 />
                 <Text
-                    x={0}
-                    y={-22}
                     text={layer.text || 'Frame'}
+                    x={0}
+                    y={-24}
                     fill="#94a3b8"
                     fontSize={14}
-                    fontFamily="sans-serif"
+                    fontFamily={DEFAULT_FONT_FAMILY}
                     fontStyle="bold"
                     onDblClick={(event) => {
                         if (activeTool === 'select' && !isLocked) {
@@ -140,6 +142,24 @@ export default function LayerRenderer({
                     }}
                 />
             </Group>
+        );
+    }
+
+    // ─── Embed Placeholder ──────────────────────────────
+    if (layer.type === 'embed') {
+        return (
+            <Rect
+                key={layer.id}
+                {...commonProps}
+                x={layer.x}
+                y={layer.y}
+                width={layer.width}
+                height={layer.height}
+                fill="transparent"
+                stroke={isSelected ? '#8b5cf6' : 'rgba(255, 255, 255, 0.1)'}
+                strokeWidth={isSelected ? 2 : 1}
+                cornerRadius={12}
+            />
         );
     }
 
@@ -365,8 +385,12 @@ export default function LayerRenderer({
     }
 
     // ─── Freehand & Text ────────────────────────────────
-    if (layer.type === 'pen')
-        return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={0.5} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
+    if (layer.type === 'pen' || layer.type === 'pencil') {
+        if (isSketchMode && layer.type === 'pencil') {
+            return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
+        }
+        return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={layer.type === 'pen' ? 0.5 : 0} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
+    }
 
     if (layer.type === 'text')
         return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;

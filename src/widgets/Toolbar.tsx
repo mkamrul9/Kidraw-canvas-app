@@ -3,13 +3,13 @@
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Wand2, ImagePlus, Lasso, SquareDashed, Triangle, Diamond, Star, Hexagon, ArrowUpRight, Minus, Shapes, StickyNote, Frame } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Wand2, ImagePlus, Lasso, SquareDashed, Triangle, Diamond, Star, Hexagon, ArrowUpRight, Minus, Shapes, StickyNote, Frame, Pencil, Globe } from 'lucide-react';
 import { useState } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
 import { PEN_SIZES, ERASER_SIZES } from '@/features/canvas/constants';
 
 type ActiveMenu = 'pen' | 'shape' | 'eraser' | 'select' | null;
-type ToolName = 'select' | 'lasso' | 'hand' | 'pen' | 'shape' | 'text' | 'image' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'sticky' | 'frame';
+type ToolName = 'select' | 'lasso' | 'hand' | 'pen' | 'pencil' | 'shape' | 'text' | 'image' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'sticky' | 'frame';
 
 // Main custom Toolbar component
 export default function Toolbar() {
@@ -27,7 +27,7 @@ export default function Toolbar() {
     const closeMenu = () => setActiveMenu(null);
     const handleToolClick = (tool: ToolName) => {
         setActiveTool(tool);
-        if (!['shape', 'pen', 'eraser', 'select'].includes(tool)) closeMenu();
+        if (!['shape', 'pen', 'pencil', 'eraser', 'select'].includes(tool)) closeMenu();
     };
 
     return (
@@ -51,12 +51,22 @@ export default function Toolbar() {
                 <ToolButton icon={<Hand className="w-4 h-4" />} label="Pan Canvas (H)" onClick={() => handleToolClick('hand')} isActive={activeTool === 'hand'} />
 
                 <div className="relative flex items-center">
-                    <ToolButton icon={<Pen className="w-4 h-4" />} label="Draw (P)" onClick={() => { setActiveTool('pen'); toggleMenu('pen'); }} isActive={activeTool === 'pen'} />
+                    <ToolButton icon={activeTool === 'pencil' ? <Pencil className="w-4 h-4" /> : <Pen className="w-4 h-4" />} label="Draw (P)" onClick={() => { setActiveTool(activeTool === 'pencil' ? 'pencil' : 'pen'); toggleMenu('pen'); }} isActive={activeTool === 'pen' || activeTool === 'pencil'} />
                     {activeMenu === 'pen' && (
-                        <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-[#0B0F19] rounded-xl shadow-2xl border border-white/10 p-2 flex items-center justify-around w-[120px]">
-                            {PEN_SIZES.map((size) => (
-                                <button key={size} onClick={() => setPenSize(size)} className={`rounded-full transition-all ${penSize === size ? 'bg-violet-500 ring-2 ring-violet-200' : 'bg-slate-600 hover:bg-slate-500'}`} style={{ width: size === 2 ? 10 : size === 4 ? 14 : 20, height: size === 2 ? 10 : size === 4 ? 14 : 20 }} />
-                            ))}
+                        <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-[#0B0F19] rounded-xl shadow-2xl border border-white/10 p-2 flex flex-col gap-2 min-w-[160px]">
+                            <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" className={`flex-1 text-xs ${activeTool === 'pen' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} onClick={() => setActiveTool('pen')}>
+                                    Smooth (Pen)
+                                </Button>
+                                <Button variant="ghost" size="sm" className={`flex-1 text-xs ${activeTool === 'pencil' ? 'bg-white/10 text-white' : 'text-slate-400 hover:text-white hover:bg-white/5'}`} onClick={() => setActiveTool('pencil')}>
+                                    Raw (Pencil)
+                                </Button>
+                            </div>
+                            <div className="flex items-center justify-around py-1">
+                                {PEN_SIZES.map((size) => (
+                                    <button key={size} onClick={() => setPenSize(size)} className={`rounded-full transition-all ${penSize === size ? 'bg-violet-500 ring-2 ring-violet-200' : 'bg-slate-600 hover:bg-slate-500'}`} style={{ width: size === 2 ? 10 : size === 4 ? 14 : 20, height: size === 2 ? 10 : size === 4 ? 14 : 20 }} />
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -82,6 +92,10 @@ export default function Toolbar() {
                 <ToolButton icon={<StickyNote className="w-4 h-4" />} label="Sticky Note (N)" onClick={() => handleToolClick('sticky')} isActive={activeTool === 'sticky'} />
 
                 <ToolButton icon={<Frame className="w-4 h-4" />} label="Frame / Artboard (F)" onClick={() => handleToolClick('frame')} isActive={activeTool === 'frame'} />
+
+                <div className="relative flex items-center">
+                    <ToolButton icon={<Globe className="w-4 h-4" />} label="Embed Website/Video" onClick={() => handleToolClick('embed')} isActive={activeTool === 'embed'} />
+                </div>
 
                 <ToolButton
                     icon={<ImagePlus className="w-4 h-4" />}

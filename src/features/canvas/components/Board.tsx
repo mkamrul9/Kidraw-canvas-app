@@ -31,6 +31,7 @@ export default function Board() {
     const [hoveredShapeId, setHoveredShapeId] = useState<string | null>(null);
     const [isDraggingFile, setIsDraggingFile] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [embedPrompt, setEmbedPrompt] = useState<{ x: number; y: number } | null>(null);
 
     const { data: session } = useSession();
     const [cursorChat, setCursorChat] = useState<{ x: number; y: number; text: string; isOpen: boolean; isEditing: boolean } | null>(null);
@@ -272,6 +273,10 @@ export default function Board() {
 
         if (activeTool === 'hand') return;
         if (activeTool === 'laser') { setIsDrawing(true); setLaserPoints([pos.x, pos.y]); return; }
+        if (activeTool === 'embed') {
+            setEmbedPrompt({ x: pos.x, y: pos.y });
+            return;
+        }
         if (activeTool === 'lasso') {
             if (e.target === stage || e.target.name() === 'background') { setSelectedLayerIds([]); setLassoPoints([pos.x, pos.y]); setIsDrawing(true); }
             return;
@@ -357,12 +362,13 @@ export default function Board() {
         currentShapeId.current = newId;
         addLayer({
             id: newId,
-            type: activeTool === 'shape' ? activeShape : activeTool === 'eraser' ? 'eraser' : activeTool,
-            x: pos.x, y: pos.y, width: 0, height: 0, fill: activeColor,
-            stroke: activeTool === 'pen' ? activeColor : undefined,
-            points: activeTool === 'pen' || activeTool === 'eraser' ? [pos.x, pos.y] : undefined,
+            type: activeTool === 'shape' ? activeShape : activeTool === 'eraser' ? 'eraser' : (activeTool as any),
+            x: pos.x, y: pos.y, width: 0, height: 0,
+            fill: (activeTool === 'pen' || activeTool === 'pencil') ? 'transparent' : activeColor,
+            stroke: activeTool === 'pen' || activeTool === 'pencil' ? activeColor : undefined,
+            points: activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'eraser' ? [pos.x, pos.y] : undefined,
             eraserSize: activeTool === 'eraser' ? eraserSize : undefined,
-            penSize: activeTool === 'pen' ? penSize : undefined,
+            penSize: activeTool === 'pen' || activeTool === 'pencil' ? penSize : undefined,
             opacity: activeOpacity,
         });
     }, [editingText, isLocked, activeTool, activeShape, activeColor, activeOpacity, eraserSize, penSize, addLayer, updateLayer, saveHistory, setIsDrawing, setSelectedLayerId, setSelectedLayerIds]);
@@ -386,7 +392,7 @@ export default function Board() {
         const currentShape = storeLayers.find((layer) => layer.id === currentShapeId.current);
         if (!currentShape) return;
 
-        if (activeTool === 'pen' || activeTool === 'eraser') {
+        if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'eraser') {
             updateLayer(currentShapeId.current, { points: [...(currentShape.points || []), pos.x, pos.y] });
         } else {
             if (currentShape.type === 'arrow') {
@@ -413,7 +419,7 @@ export default function Board() {
                 }
 
                 const allObstacles: BoundingBox[] = storeLayers
-                    .filter(l => l.type !== 'arrow' && l.type !== 'straight-line' && l.type !== 'pen')
+                    .filter(l => l.type !== 'arrow' && l.type !== 'straight-line' && l.type !== 'pen' && l.type !== 'pencil')
                     .map(l => ({ id: l.id, x: l.x, y: l.y, width: Math.abs(l.width || 0), height: Math.abs(l.height || 0) }));
 
                 const absPoints = getOrthogonalPath(
@@ -476,7 +482,7 @@ export default function Board() {
             storeLayers.forEach((layer) => {
                 let lX1, lY1, lX2, lY2;
                 
-                if (layer.type === 'pen' && layer.points && layer.points.length > 0) {
+                if ((layer.type === 'pen' || layer.type === 'pencil') && layer.points && layer.points.length > 0) {
                     const xs = layer.points.filter((_, i) => i % 2 === 0);
                     const ys = layer.points.filter((_, i) => i % 2 !== 0);
                     lX1 = Math.min(...xs);
@@ -946,6 +952,104 @@ export default function Board() {
                     onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); e.currentTarget.blur(); } }}
                 />
             )}
+
+            {embedPrompt && (
+                <div 
+                    className="absolute z-[60] bg-[#0B0F19]/90 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-white/10 flex gap-2 animate-in fade-in zoom-in-95"
+                    style={{
+                        left: camera.x + embedPrompt.x * zoom,
+                        top: camera.y + embedPrompt.y * zoom,
+                    }}
+                >
+                    <input 
+                        type="url" 
+                        autoFocus
+                        placeholder="https://youtube.com/embed/..."
+                        className="bg-slate-900/50 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white w-64 focus:outline-none focus:ring-2 focus:ring-violet-500"
+                        onKeyDown={(e) => {
+                            if (e.key === 'Escape') setEmbedPrompt(null);
+                            if (e.key === 'Enter') {
+                                const url = e.currentTarget.value;
+                                if (url) {
+                                    const newId = uuidv4();
+                                    addLayer({
+                                        id: newId, type: 'embed',
+                                        x: embedPrompt.x, y: embedPrompt.y, width: 400, height: 300,
+                                        embedUrl: url, fill: 'transparent'
+                                    });
+                                    setActiveTool('select');
+                                    setSelectedLayerId(newId);
+                                    saveHistory();
+                                }
+                                setEmbedPrompt(null);
+                            }
+                        }}
+                    />
+                    <button 
+                        className="bg-violet-600 hover:bg-violet-500 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                        onClick={(e) => {
+                            const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                            const url = input.value;
+                            if (url) {
+                                const newId = uuidv4();
+                                addLayer({
+                                    id: newId, type: 'embed',
+                                    x: embedPrompt.x, y: embedPrompt.y, width: 400, height: 300,
+                                    embedUrl: url, fill: 'transparent'
+                                });
+                                setActiveTool('select');
+                                setSelectedLayerId(newId);
+                                saveHistory();
+                            }
+                            setEmbedPrompt(null);
+                        }}
+                    >
+                        Embed
+                    </button>
+                    <button 
+                        className="text-slate-400 hover:text-white px-2"
+                        onClick={() => setEmbedPrompt(null)}
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+
+            {layers.filter(l => l.type === 'embed' && l.embedUrl).map((layer) => {
+                const isSelected = selectedLayerIds.includes(layer.id);
+                // The iframe should only intercept clicks if it's currently selected and we are not panning the board.
+                const pointerEvents = isSelected && activeTool !== 'hand' ? 'auto' : 'none';
+                
+                return (
+                    <div
+                        key={layer.id}
+                        className={`absolute z-10 origin-top-left overflow-hidden bg-slate-900 rounded-xl ${isSelected ? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-transparent' : 'border border-white/10'}`}
+                        style={{
+                            left: 0,
+                            top: 0,
+                            width: layer.width,
+                            height: layer.height,
+                            transform: `translate(${camera.x + layer.x * zoom}px, ${camera.y + layer.y * zoom}px) scale(${zoom})`,
+                            pointerEvents
+                        }}
+                    >
+                        {/* Invisible drag handle over the iframe when selected to allow moving it easily */}
+                        {isSelected && activeTool === 'select' && (
+                            <div className="absolute inset-x-0 top-0 h-6 bg-violet-500/20 cursor-move z-20 hover:bg-violet-500/40 transition-colors flex items-center justify-center">
+                                <div className="w-12 h-1.5 rounded-full bg-white/50"></div>
+                            </div>
+                        )}
+                        <iframe
+                            src={layer.embedUrl}
+                            width="100%"
+                            height="100%"
+                            frameBorder="0"
+                            allowFullScreen
+                            className="w-full h-full"
+                        />
+                    </div>
+                );
+            })}
 
             {cursorChat && cursorChat.isOpen && (
                 <div
