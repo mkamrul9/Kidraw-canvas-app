@@ -122,6 +122,7 @@ interface CanvasState {
     saveHistory: () => void;
     undo: () => void;
     redo: () => void;
+    jumpToHistoryStep: (step: number) => void;
     clear: () => void;
     saveToCloud: (boardId: string) => Promise<void>;
     loadFromCloud: (boardId: string) => Promise<void>;
@@ -304,6 +305,16 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             set({
                 historyStep: historyStep + 1,
                 layers: history[historyStep + 1],
+            });
+        }
+    },
+
+    jumpToHistoryStep: (step: number) => {
+        const { history } = get();
+        if (step >= 0 && step < history.length) {
+            set({
+                historyStep: step,
+                layers: history[step],
             });
         }
     },
