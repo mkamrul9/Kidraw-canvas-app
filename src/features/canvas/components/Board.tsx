@@ -16,6 +16,8 @@ import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { Shapes, Loader2 } from 'lucide-react';
 import CommentOverlay from './CommentOverlay';
+import LiveCursors from './LiveCursors';
+import { usePresence } from '../hooks/usePresence';
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -37,8 +39,10 @@ export default function Board() {
         layers, activeTool, activeShape, activeColor, backgroundColor, bgPattern,
         activeOpacity, isDrawing, setIsDrawing, addLayer, updateLayer, removeLayer,
         saveHistory, selectedLayerIds, setSelectedLayerIds, setSelectedLayerId,
-        eraserSize, penSize, camera, setCamera, zoom, setZoom, isLocked,
+        eraserSize, penSize, camera, setCamera, zoom, setZoom, isLocked, boardId,
     } = useCanvasStore();
+
+    const { updateMyPresence } = usePresence(boardId);
 
     const stageRef = useRef<Konva.Stage>(null);
     const transformerRef = useRef<Konva.Transformer>(null);
@@ -202,13 +206,22 @@ export default function Board() {
             const file = customEvent.detail;
             if (!file) return;
 
-            const centerX = (-camera.x + dimensions.width / 2) / zoom;
-            const centerY = (-camera.y + dimensions.height / 2) / zoom;
+            const { camera, zoom } = useCanvasStore.getState();
+            const centerX = (-camera.x + window.innerWidth / 2) / zoom;
+            const centerY = (-camera.y + window.innerHeight / 2) / zoom;
             await processUploadedFile(file, centerX, centerY);
         };
         window.addEventListener('insert-file', handleInsertFile as EventListener);
         return () => window.removeEventListener('insert-file', handleInsertFile as EventListener);
-    }, [camera, zoom, dimensions, processUploadedFile]);
+    }, [processUploadedFile]);
+
+    useEffect(() => {
+        if (!boardId) return;
+        const stage = stageRef.current;
+        if (!stage) return;
+        const pos = stage.getRelativePointerPosition() || { x: 0, y: 0 };
+        updateMyPresence(pos.x, pos.y, cursorChat?.isOpen ? cursorChat.text : '');
+    }, [cursorChat?.text, cursorChat?.isOpen, boardId, updateMyPresence]);
 
     useEffect(() => {
         if ((activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && transformerRef.current && stageRef.current) {
@@ -351,8 +364,13 @@ export default function Board() {
     }, [editingText, isLocked, activeTool, activeShape, activeColor, activeOpacity, eraserSize, penSize, addLayer, updateLayer, saveHistory, setIsDrawing, setSelectedLayerId, setSelectedLayerIds]);
 
     const handlePointerMove = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        const stage = e.target.getStage();
+        const pos = stage?.getRelativePointerPosition();
+        if (pos) {
+            updateMyPresence(pos.x, pos.y, cursorChat?.isOpen ? cursorChat.text : '');
+        }
+
         if (!isDrawing) return;
-        const pos = e.target.getStage()?.getRelativePointerPosition();
         if (!pos) return;
 
         if (activeTool === 'laser') { setLaserPoints((prev) => [...prev, pos.x, pos.y]); return; }
@@ -398,7 +416,7 @@ export default function Board() {
                 updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
             }
         }
-    }, [isDrawing, activeTool, selectionBox, updateLayer]);
+    }, [isDrawing, activeTool, selectionBox, updateLayer, updateMyPresence, cursorChat?.isOpen, cursorChat?.text]);
 
     const handlePointerUp = useCallback(() => {
         if (!isDrawing) return;
@@ -1030,6 +1048,7 @@ export default function Board() {
                 </KonvaLayer>
             </Stage>
             <CommentOverlay />
+            <LiveCursors />
         </div>
     );
 }

@@ -13,8 +13,6 @@ import { EXPORT_PIXEL_RATIO } from '@/features/canvas/constants';
  * Also manages window resize and returns the current dimensions.
  */
 export function useCanvasExport(stageRef: React.RefObject<Konva.Stage | null>) {
-    const { layers, backgroundColor, bgPattern, zoom, camera } = useCanvasStore();
-
     const dimensionsRef = useRef({ width: typeof window !== 'undefined' ? window.innerWidth : 0, height: typeof window !== 'undefined' ? window.innerHeight : 0 });
 
     const handleExport = useCallback(async (e: Event) => {
@@ -23,6 +21,7 @@ export function useCanvasExport(stageRef: React.RefObject<Konva.Stage | null>) {
         if (!format) return;
 
         const dimensions = dimensionsRef.current;
+        const { backgroundColor, bgPattern, zoom, camera } = useCanvasStore.getState();
 
         try {
             if (format === 'svg') {
@@ -90,7 +89,7 @@ export function useCanvasExport(stageRef: React.RefObject<Konva.Stage | null>) {
         } catch (err) {
             console.error("Export failed", err);
         }
-    }, [stageRef, backgroundColor, bgPattern, zoom, camera]);
+    }, [stageRef]);
 
     useEffect(() => {
         const handleResize = () => {

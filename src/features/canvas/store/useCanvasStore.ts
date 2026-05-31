@@ -2,6 +2,55 @@ import { create } from 'zustand';
 import { toast } from 'sonner';
 import { Layer, Color, Tool, ShapeType } from '@/features/canvas/types';
 
+// Throttling mechanism for drawing updates to prevent network spam
+let updateTimeout: NodeJS.Timeout | null = null;
+let pendingUpdates: Record<string, any> = {};
+
+const getOrCreateGuestId = () => {
+    if (typeof window === 'undefined') return 'guest-ssr';
+    let id = sessionStorage.getItem('kidraw_guest_id');
+    if (!id) {
+        id = `guest-${Math.random().toString(36).substring(2, 11)}`;
+        sessionStorage.setItem('kidraw_guest_id', id);
+    }
+    return id;
+};
+
+const broadcastUpdate = async (boardId: string | null, payload: any) => {
+    if (!boardId) return;
+    try {
+        const guestId = getOrCreateGuestId();
+        console.log('[DEBUG] broadcasting drawing update:', payload.type, payload);
+        const res = await fetch(`/api/board/${boardId}/presence?guestId=${guestId}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+            console.error('[DEBUG] broadcast POST returned error status:', res.status);
+        }
+    } catch (err) {
+        console.error('Failed to broadcast canvas update:', err);
+    }
+};
+
+const throttledBroadcastUpdate = (boardId: string | null, id: string, attributes: any) => {
+    if (!boardId) return;
+    pendingUpdates[id] = { ...pendingUpdates[id], ...attributes };
+
+    if (updateTimeout) return;
+
+    updateTimeout = setTimeout(() => {
+        const payload = {
+            type: 'draw-update-batch',
+            updates: Object.entries(pendingUpdates).map(([key, val]) => ({ id: key, attributes: val }))
+        };
+        pendingUpdates = {};
+        updateTimeout = null;
+        broadcastUpdate(boardId, payload);
+    }, 85); // Send updates every ~85ms
+};
+
 interface CanvasState {
     activeTool: Tool;
     activeColor: Color;
@@ -39,7 +88,7 @@ interface CanvasState {
     setActiveEraserType: (type: 'eraser' | 'object-eraser') => void;
     setEraserSize: (size: number) => void;
     addCustomColor: (color: string) => void;
-    removeLayer: (id: string) => void;
+    removeLayer: (id: string, isRemote?: boolean) => void;
     setCamera: (pos: { x: number; y: number }) => void;
     setZoom: (zoom: number) => void;
     toggleLock: () => void;
@@ -48,9 +97,9 @@ interface CanvasState {
     setOpacity: (opacity: number) => void;
     setPermissionRole: (role: 'owner' | 'editor' | 'viewer') => void;
 
-    addLayer: (layer: Layer) => void;
+    addLayer: (layer: Layer, isRemote?: boolean) => void;
     addLayers: (layers: Layer[]) => void;
-    updateLayer: (id: string, newAttributes: Partial<Layer>) => void;
+    updateLayer: (id: string, newAttributes: Partial<Layer>, isRemote?: boolean) => void;
 
     // Canvas Management Actions
     saveHistory: () => void;
@@ -114,9 +163,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         const newColors = [color, ...state.customColors.filter((current) => current !== color)].slice(0, 5);
         return { customColors: newColors };
     }),
-    removeLayer: (id) => set((state) => ({
-        layers: state.layers.filter((layer) => layer.id !== id),
-    })),
+    removeLayer: (id, isRemote = false) => {
+        set((state) => ({
+            layers: state.layers.filter((layer) => layer.id !== id),
+        }));
+        if (!isRemote) {
+            broadcastUpdate(get().boardId, { type: 'draw-remove', id });
+        }
+    },
     setCamera: (pos) => set({ camera: pos }),
     setZoom: (zoom) => set({ zoom }),
     toggleLock: () => set((state) => ({ isLocked: !state.isLocked, selectedLayerId: null })),
@@ -125,15 +179,25 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setOpacity: (opacity) => set({ activeOpacity: opacity }),
     setPermissionRole: (role) => set({ permissionRole: role }),
 
-    addLayer: (layer) => set((state) => ({ layers: [...state.layers, layer] })),
+    addLayer: (layer, isRemote = false) => {
+        set((state) => ({ layers: [...state.layers, layer] }));
+        if (!isRemote) {
+            broadcastUpdate(get().boardId, { type: 'draw-add', layer });
+        }
+    },
 
     addLayers: (newLayers) => set((state) => ({ layers: [...state.layers, ...newLayers] })),
 
-    updateLayer: (id, newAttributes) => set((state) => ({
-        layers: state.layers.map((layer) =>
-            layer.id === id ? { ...layer, ...newAttributes } : layer
-        )
-    })),
+    updateLayer: (id, newAttributes, isRemote = false) => {
+        set((state) => ({
+            layers: state.layers.map((layer) =>
+                layer.id === id ? { ...layer, ...newAttributes } : layer
+            )
+        }));
+        if (!isRemote) {
+            throttledBroadcastUpdate(get().boardId, id, newAttributes);
+        }
+    },
 
     // Called only on MouseUp
     saveHistory: () => {
