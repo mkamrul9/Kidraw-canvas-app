@@ -921,7 +921,9 @@ export default function Board() {
                         const sortedLayers = [...layers].sort((a, b) => {
                             if (a.type === 'frame' && b.type !== 'frame') return -1;
                             if (a.type !== 'frame' && b.type === 'frame') return 1;
-                            return 0;
+                            const za = a.zIndex || 0;
+                            const zb = b.zIndex || 0;
+                            return za - zb;
                         });
                         return sortedLayers.map((layer) => (
                             <LayerRenderer

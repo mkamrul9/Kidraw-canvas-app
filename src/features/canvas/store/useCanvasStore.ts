@@ -101,6 +101,12 @@ interface CanvasState {
     addLayers: (layers: Layer[]) => void;
     updateLayer: (id: string, newAttributes: Partial<Layer>, isRemote?: boolean) => void;
 
+    // Layer Ordering Actions
+    bringToFront: (id: string) => void;
+    sendToBack: (id: string) => void;
+    bringForward: (id: string) => void;
+    sendBackward: (id: string) => void;
+
     // Canvas Management Actions
     saveHistory: () => void;
     undo: () => void;
@@ -180,6 +186,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setPermissionRole: (role) => set({ permissionRole: role }),
 
     addLayer: (layer, isRemote = false) => {
+        const { layers } = get();
+        if (layer.zIndex === undefined) {
+            const maxZ = layers.reduce((max, l) => Math.max(max, l.zIndex || 0), 0);
+            layer.zIndex = maxZ + 1;
+        }
         set((state) => ({ layers: [...state.layers, layer] }));
         if (!isRemote) {
             broadcastUpdate(get().boardId, { type: 'draw-add', layer });
@@ -197,6 +208,54 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         if (!isRemote) {
             throttledBroadcastUpdate(get().boardId, id, newAttributes);
         }
+    },
+
+    bringToFront: (id) => {
+        const { layers, updateLayer, saveHistory } = get();
+        const maxZ = layers.reduce((max, l) => Math.max(max, l.zIndex || 0), 0);
+        updateLayer(id, { zIndex: maxZ + 1 });
+        saveHistory();
+    },
+
+    sendToBack: (id) => {
+        const { layers, updateLayer, saveHistory } = get();
+        const minZ = layers.reduce((min, l) => Math.min(min, l.zIndex || 0), 0);
+        updateLayer(id, { zIndex: minZ - 1 });
+        saveHistory();
+    },
+
+    bringForward: (id) => {
+        const { layers, updateLayer, saveHistory } = get();
+        const layer = layers.find(l => l.id === id);
+        if (!layer) return;
+        const currentZ = layer.zIndex || 0;
+        
+        const aboveLayers = layers.filter(l => (l.zIndex || 0) > currentZ).sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0));
+        if (aboveLayers.length === 0) return;
+        
+        const nextLayer = aboveLayers[0];
+        const nextNextLayer = aboveLayers[1];
+        
+        const newZ = nextNextLayer ? ((nextLayer.zIndex || 0) + (nextNextLayer.zIndex || 0)) / 2 : (nextLayer.zIndex || 0) + 1;
+        updateLayer(id, { zIndex: newZ });
+        saveHistory();
+    },
+
+    sendBackward: (id) => {
+        const { layers, updateLayer, saveHistory } = get();
+        const layer = layers.find(l => l.id === id);
+        if (!layer) return;
+        const currentZ = layer.zIndex || 0;
+        
+        const belowLayers = layers.filter(l => (l.zIndex || 0) < currentZ).sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0));
+        if (belowLayers.length === 0) return;
+        
+        const prevLayer = belowLayers[0];
+        const prevPrevLayer = belowLayers[1];
+        
+        const newZ = prevPrevLayer ? ((prevLayer.zIndex || 0) + (prevPrevLayer.zIndex || 0)) / 2 : (prevLayer.zIndex || 0) - 1;
+        updateLayer(id, { zIndex: newZ });
+        saveHistory();
     },
 
     // Called only on MouseUp

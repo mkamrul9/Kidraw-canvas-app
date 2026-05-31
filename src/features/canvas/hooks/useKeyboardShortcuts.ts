@@ -79,6 +79,21 @@ export const useKeyboardShortcuts = () => {
                 return;
             }
 
+            // Layer Ordering
+            if (e.key === '[' || e.key === ']') {
+                if (state.selectedLayerId) {
+                    if (e.key === '[') {
+                        if (e.shiftKey) state.sendToBack(state.selectedLayerId);
+                        else state.sendBackward(state.selectedLayerId);
+                    } else if (e.key === ']') {
+                        if (e.shiftKey) state.bringToFront(state.selectedLayerId);
+                        else state.bringForward(state.selectedLayerId);
+                    }
+                }
+                return;
+            }
+
+
             // Single key tools
             if (!e.ctrlKey && !e.metaKey && !e.altKey) {
                 const key = e.key.toLowerCase();

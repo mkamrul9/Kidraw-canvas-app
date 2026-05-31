@@ -254,6 +254,10 @@ export default function LibrarySidebar() {
                                 { key: 'Ctrl+V', label: 'Paste' },
                                 { key: 'Ctrl+Z', label: 'Undo' },
                                 { key: 'Ctrl+Y', label: 'Redo' },
+                                { key: ']', label: 'Bring Forward' },
+                                { key: '[', label: 'Send Backward' },
+                                { key: 'Shift+]', label: 'Bring to Front' },
+                                { key: 'Shift+[', label: 'Send to Back' },
                                 { key: '/', label: 'Quick Chat' },
                             ].map((shortcut, i) => (
                                 <div key={i} className="flex justify-between items-center bg-slate-900/40 p-2.5 rounded-lg border border-white/5">

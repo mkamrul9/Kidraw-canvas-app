@@ -1,7 +1,7 @@
 'use client';
 
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
-import { Plus, Blend, Grid } from 'lucide-react';
+import { Plus, Blend, Grid, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, Layers } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -9,9 +9,9 @@ import { ToolButton } from '@/shared/components/ToolButton';
 import { DEFAULT_COLORS } from '@/shared/constants';
 
 export default function PropertiesPanel() {
-    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory } = useCanvasStore();
+    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward } = useCanvasStore();
 
-    const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | null>(null);
+    const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | 'arrange' | null>(null);
 
     const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const op = parseFloat(e.target.value);
@@ -34,6 +34,21 @@ export default function PropertiesPanel() {
                         </div>
                     )}
                 </div>
+
+                {selectedLayerId && (
+                    <div className="relative w-full flex justify-center">
+                        <ToolButton icon={<Layers className="w-4 h-4" />} label="Arrange Layer" onClick={() => setActiveMenu(activeMenu === 'arrange' ? null : 'arrange')} isActive={activeMenu === 'arrange'} tooltipSide="left" tooltipClassName="mr-2" />
+                        {activeMenu === 'arrange' && (
+                            <div className="absolute right-16 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-2 flex flex-col gap-1 w-40 z-50">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 mb-1">Layer Order</span>
+                                <Button variant="ghost" size="sm" onClick={() => bringToFront(selectedLayerId)} className="justify-start text-xs text-slate-300 hover:text-white hover:bg-slate-800"><ChevronsUp className="w-4 h-4 mr-2" /> Bring to Front</Button>
+                                <Button variant="ghost" size="sm" onClick={() => bringForward(selectedLayerId)} className="justify-start text-xs text-slate-300 hover:text-white hover:bg-slate-800"><ChevronUp className="w-4 h-4 mr-2" /> Bring Forward</Button>
+                                <Button variant="ghost" size="sm" onClick={() => sendBackward(selectedLayerId)} className="justify-start text-xs text-slate-300 hover:text-white hover:bg-slate-800"><ChevronDown className="w-4 h-4 mr-2" /> Send Backward</Button>
+                                <Button variant="ghost" size="sm" onClick={() => sendToBack(selectedLayerId)} className="justify-start text-xs text-slate-300 hover:text-white hover:bg-slate-800"><ChevronsDown className="w-4 h-4 mr-2" /> Send to Back</Button>
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 <div className="relative w-full flex justify-center">
                     <ToolButton icon={<Grid className="w-4 h-4" />} label="Background Settings" onClick={() => setActiveMenu(activeMenu === 'bg' ? null : 'bg')} isActive={activeMenu === 'bg'} tooltipSide="left" tooltipClassName="mr-2" />

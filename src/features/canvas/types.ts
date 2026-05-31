@@ -33,4 +33,5 @@ export type Layer = {
     fontSize?: number;
     pdfPages?: string[];
     pdfPageIndex?: number;
+    zIndex?: number;
 };
