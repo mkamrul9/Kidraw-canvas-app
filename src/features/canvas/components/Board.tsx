@@ -1278,13 +1278,59 @@ export default function Board() {
             >
                 <KonvaLayer>
                     {(() => {
+                        const viewportTopX = -camera.x / zoom;
+                        const viewportTopY = -camera.y / zoom;
+                        const viewportWidth = dimensions.width / zoom;
+                        const viewportHeight = dimensions.height / zoom;
+                        const viewportBottomX = viewportTopX + viewportWidth;
+                        const viewportBottomY = viewportTopY + viewportHeight;
+                        
+                        // Buffer depends on zoom, so it's wider when zoomed in and smaller when zoomed out
+                        const buffer = 1000 / zoom; 
+                        const isLowDetail = zoom < 0.4;
+
+                        const isLayerVisible = (layer: Layer) => {
+                            let lx = layer.x;
+                            let ly = layer.y;
+                            let lw = layer.width || 0;
+                            let lh = layer.height || 0;
+
+                            if (layer.type === 'pen' || layer.type === 'straight-line' || layer.type === 'laser') {
+                                if (layer.points && layer.points.length > 0) {
+                                    let minX = layer.points[0];
+                                    let minY = layer.points[1];
+                                    let maxX = layer.points[0];
+                                    let maxY = layer.points[1];
+                                    for (let i = 2; i < layer.points.length; i += 2) {
+                                        if (layer.points[i] < minX) minX = layer.points[i];
+                                        if (layer.points[i] > maxX) maxX = layer.points[i];
+                                        if (layer.points[i+1] < minY) minY = layer.points[i+1];
+                                        if (layer.points[i+1] > maxY) maxY = layer.points[i+1];
+                                    }
+                                    lx = lx + minX;
+                                    ly = ly + minY;
+                                    lw = maxX - minX;
+                                    lh = maxY - minY;
+                                }
+                            }
+                            
+                            // Bounding box collision detection
+                            return (
+                                lx + lw >= viewportTopX - buffer &&
+                                lx <= viewportBottomX + buffer &&
+                                ly + lh >= viewportTopY - buffer &&
+                                ly <= viewportBottomY + buffer
+                            );
+                        };
+
                         const sortedLayers = [...layers].sort((a, b) => {
                             if (a.type === 'frame' && b.type !== 'frame') return -1;
                             if (a.type !== 'frame' && b.type === 'frame') return 1;
                             const za = a.zIndex || 0;
                             const zb = b.zIndex || 0;
                             return za - zb;
-                        });
+                        }).filter(isLayerVisible);
+
                         return sortedLayers.map((layer) => (
                             <LayerRenderer
                                 key={layer.id}
@@ -1292,6 +1338,7 @@ export default function Board() {
                                 isSelected={selectedLayerIds.includes(layer.id) && (activeTool === 'select' || activeTool === 'lasso')}
                                 isLocked={isLocked}
                                 isSketchMode={isSketchMode}
+                                isLowDetail={isLowDetail}
                                 activeTool={activeTool}
                                 onDragEnd={handleLayerDragEnd}
                                 onDragMove={handleLayerDragMove}

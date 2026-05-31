@@ -29,6 +29,7 @@ interface LayerRendererProps {
     onTransform?: (id: string, x: number, y: number, width: number, height: number) => void;
     onTransformEnd?: (id: string, x: number, y: number, width: number, height: number) => void;
     onPdfPageChange?: (id: string, pageIndex: number) => void;
+    isLowDetail?: boolean;
 }
 
 /**
@@ -50,6 +51,7 @@ export default function LayerRenderer({
     onTransform,
     onTransformEnd,
     onPdfPageChange,
+    isLowDetail = false,
 }: LayerRendererProps) {
     const commonProps = {
         id: layer.id,
@@ -127,20 +129,22 @@ export default function LayerRenderer({
                     strokeWidth={isSelected ? 2 : 1}
                     cornerRadius={0}
                 />
-                <Text
-                    text={layer.text || 'Frame'}
-                    x={0}
-                    y={-24}
-                    fill="#94a3b8"
-                    fontSize={14}
-                    fontFamily={DEFAULT_FONT_FAMILY}
-                    fontStyle="bold"
-                    onDblClick={(event) => {
-                        if (activeTool === 'select' && !isLocked) {
-                            onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || 'Frame');
-                        }
-                    }}
-                />
+                {!isLowDetail && (
+                    <Text
+                        text={layer.text || 'Frame'}
+                        x={0}
+                        y={-24}
+                        fill="#94a3b8"
+                        fontSize={14}
+                        fontFamily={DEFAULT_FONT_FAMILY}
+                        fontStyle="bold"
+                        onDblClick={(event) => {
+                            if (activeTool === 'select' && !isLocked) {
+                                onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || 'Frame');
+                            }
+                        }}
+                    />
+                )}
             </Group>
         );
     }
@@ -303,24 +307,26 @@ export default function LayerRenderer({
                     shadowOffset={{ x: 2, y: 4 }}
                     cornerRadius={4}
                 />
-                <Text
-                    x={padding}
-                    y={padding}
-                    text={layer.text}
-                    fill="#0f172a"
-                    fontSize={fontSize}
-                    fontFamily="sans-serif"
-                    align="center"
-                    verticalAlign="middle"
-                    width={textWidth}
-                    height={Math.max(10, layer.height - padding * 2)}
-                    wrap="word"
-                    onDblClick={(event) => {
-                        if (activeTool === 'select' && !isLocked) {
-                            onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
-                        }
-                    }}
-                />
+                {!isLowDetail && (
+                    <Text
+                        x={padding}
+                        y={padding}
+                        text={layer.text}
+                        fill="#0f172a"
+                        fontSize={fontSize}
+                        fontFamily="sans-serif"
+                        align="center"
+                        verticalAlign="middle"
+                        width={textWidth}
+                        height={Math.max(10, layer.height - padding * 2)}
+                        wrap="word"
+                        onDblClick={(event) => {
+                            if (activeTool === 'select' && !isLocked) {
+                                onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
+                            }
+                        }}
+                    />
+                )}
             </Group>
         );
     }
@@ -330,19 +336,21 @@ export default function LayerRenderer({
         return (
             <Group key={layer.id} {...commonProps} x={layer.x} y={layer.y}>
                 <Rect width={COMMENT_WIDTH} height={COMMENT_HEIGHT} fill={layer.fill} shadowColor="black" shadowBlur={10} shadowOpacity={0.1} cornerRadius={4} />
-                <Text
-                    x={10}
-                    y={10}
-                    text={layer.text}
-                    fill="#0f172a"
-                    fontSize={16}
-                    width={COMMENT_WIDTH - 20}
-                    onDblClick={(event) => {
-                        if (activeTool === 'select' && !isLocked) {
-                            onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
-                        }
-                    }}
-                />
+                {!isLowDetail && (
+                    <Text
+                        x={10}
+                        y={10}
+                        text={layer.text}
+                        fill="#0f172a"
+                        fontSize={16}
+                        width={COMMENT_WIDTH - 20}
+                        onDblClick={(event) => {
+                            if (activeTool === 'select' && !isLocked) {
+                                onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
+                            }
+                        }}
+                    />
+                )}
             </Group>
         );
     }
@@ -353,7 +361,7 @@ export default function LayerRenderer({
         const textCol = layer.fill === '#ffffff' || layer.fill === '#eab308' || layer.fill === '#f97316' ? '#0f172a' : '#ffffff';
 
         const renderShapeContent = () => {
-            if (isSketchMode && layer.type !== 'star') { 
+            if (isSketchMode && layer.type !== 'star' && !isLowDetail) { 
                 return <RoughShape layer={{...layer, x: 0, y: 0}} commonProps={{}} />;
             }
             if (layer.type === 'rectangle')
@@ -386,7 +394,7 @@ export default function LayerRenderer({
             >
                 {renderShapeContent()}
                 
-                {layer.text && (
+                {!isLowDetail && layer.text && (
                     <Text
                         x={10}
                         y={10}
