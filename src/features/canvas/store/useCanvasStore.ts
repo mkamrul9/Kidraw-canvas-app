@@ -79,6 +79,9 @@ interface CanvasState {
     history: Layer[][];
     historyStep: number;
 
+    exportCodeContent: string | null;
+    setExportCodeContent: (code: string | null) => void;
+
     setActiveTool: (tool: Tool) => void;
     setActiveColor: (color: Color) => void;
     setBackgroundColor: (color: string) => void;
@@ -148,6 +151,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     history: [[]], // Start with one empty state
     historyStep: 0,
+
+    exportCodeContent: null,
+    setExportCodeContent: (code) => set({ exportCodeContent: code }),
 
     setActiveTool: (tool) => set({ activeTool: tool }),
     setActiveColor: (color) => {

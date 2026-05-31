@@ -5,14 +5,15 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
+import { exportToReactCode } from '@/features/canvas/lib/exportReact';
 
 export default function ActionToolbar() {
-    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode } = useCanvasStore();
+    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
 
     const selectedLayer = selectedLayerId ? layers.find(l => l.id === selectedLayerId) : null;
@@ -37,6 +38,22 @@ export default function ActionToolbar() {
                 )}
                 {isGroupSelected && (
                     <ToolButton icon={<Ungroup className="w-4 h-4" />} label="Ungroup (Ctrl+Shift+G)" onClick={() => ungroupLayers(selectedLayerId!)} />
+                )}
+
+                {selectedLayerIds.length > 0 && (
+                    <>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton 
+                            icon={<Code2 className="w-4 h-4" />} 
+                            label="Export to React/Tailwind" 
+                            onClick={() => {
+                                const selected = layers.filter(l => selectedLayerIds.includes(l.id));
+                                const code = exportToReactCode(selected);
+                                setExportCodeContent(code);
+                            }} 
+                            className="!text-emerald-400 hover:!bg-emerald-500/20"
+                        />
+                    </>
                 )}
 
                 <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>

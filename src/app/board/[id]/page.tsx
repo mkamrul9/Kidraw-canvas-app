@@ -8,6 +8,7 @@ import ZoomHUD from '@/widgets/ZoomHUD';
 import NavigationHUD from '@/widgets/NavigationHUD';
 import LibrarySidebar from '@/widgets/LibrarySidebar';
 import CommentSidebar from '@/widgets/CommentSidebar';
+import ExportCodeModal from '@/widgets/ExportCodeModal';
 import { useEffect, use } from 'react';
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 import { useCommentStore } from '@/features/canvas/store/useCommentStore';
@@ -42,6 +43,7 @@ export default function CanvasPage({ params }: { params: Promise<{ id: string }>
       <PropertiesPanel />
       <CommentSidebar />
       <ZoomHUD />
+      <ExportCodeModal />
     </main>
   );
 }
