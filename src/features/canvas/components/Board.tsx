@@ -15,6 +15,7 @@ import { renderPDFPages } from '@/features/canvas/lib/pdf';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
 import { Shapes, Loader2 } from 'lucide-react';
+import CommentOverlay from './CommentOverlay';
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -263,6 +264,7 @@ export default function Board() {
             return;
         }
         if (activeTool === 'object-eraser') return;
+        if (activeTool === 'comment') return; // Handled by CommentOverlay
 
         const storeLayers = useCanvasStore.getState().layers;
 
@@ -318,12 +320,10 @@ export default function Board() {
             return;
         }
 
-        if (activeTool === 'text' || activeTool === 'comment' || activeTool === 'sticky') {
+        if (activeTool === 'text' || activeTool === 'sticky') {
             setSelectedLayerId(null);
             const newId = uuidv4();
-            if (activeTool === 'comment') {
-                addLayer({ id: newId, type: 'comment', x: pos.x, y: pos.y, width: COMMENT_WIDTH, height: COMMENT_HEIGHT, fill: COMMENT_FILL, text: '' });
-            } else if (activeTool === 'sticky') {
+            if (activeTool === 'sticky') {
                 const finalColor = activeColor !== '#000000' ? activeColor : DEFAULT_STICKY_FILL;
                 addLayer({ id: newId, type: 'sticky', x: pos.x, y: pos.y, width: STICKY_WIDTH, height: STICKY_HEIGHT, fill: finalColor, text: '', opacity: activeOpacity });
             } else {
@@ -1029,6 +1029,7 @@ export default function Board() {
                     )}
                 </KonvaLayer>
             </Stage>
+            <CommentOverlay />
         </div>
     );
 }

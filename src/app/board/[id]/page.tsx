@@ -7,8 +7,10 @@ import PropertiesPanel from '@/widgets/PropertiesPanel';
 import ZoomHUD from '@/widgets/ZoomHUD';
 import NavigationHUD from '@/widgets/NavigationHUD';
 import LibrarySidebar from '@/widgets/LibrarySidebar';
+import CommentSidebar from '@/widgets/CommentSidebar';
 import { useEffect, use } from 'react';
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
+import { useCommentStore } from '@/features/canvas/store/useCommentStore';
 
 const Board = dynamic(() => import('@/features/canvas/components/Board'), {
   ssr: false,
@@ -20,13 +22,15 @@ export default function CanvasPage({ params }: { params: Promise<{ id: string }>
   const boardId = resolvedParams.id;
 
   const { loadFromCloud, setBoardId } = useCanvasStore();
+  const { fetchComments } = useCommentStore();
 
   useEffect(() => {
     if (boardId) {
       setBoardId(boardId);
       loadFromCloud(boardId);
+      fetchComments(boardId);
     }
-  }, [boardId, loadFromCloud, setBoardId]);
+  }, [boardId, loadFromCloud, setBoardId, fetchComments]);
 
   return (
     <main className="h-screen w-screen overflow-hidden relative bg-slate-50">
@@ -36,6 +40,7 @@ export default function CanvasPage({ params }: { params: Promise<{ id: string }>
       <Toolbar />
       <ActionToolbar />
       <PropertiesPanel />
+      <CommentSidebar />
       <ZoomHUD />
     </main>
   );

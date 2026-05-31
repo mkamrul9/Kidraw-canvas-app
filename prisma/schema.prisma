@@ -17,6 +17,7 @@ model User {
   accounts      Account[]
   sessions      Session[]
   boards        Board[]   // A user can have many boards
+  comments      Comment[]
 }
 
 model Account {
@@ -47,15 +48,38 @@ model Session {
 
 // Updated Board Model
 model Board {
-  id              String   @id @default(cuid())
-  title           String   @default("Untitled Whiteboard")
-  description     String?  // NEW: Optional description
-  backgroundColor String   @default("#ffffff")
-  layers          Json     @default("[]")
+  id              String    @id @default(cuid())
+  title           String    @default("Untitled Whiteboard")
+  description     String?   // NEW: Optional description
+  backgroundColor String    @default("#ffffff")
+  layers          Json      @default("[]")
   
   authorId        String?
-  author          User?    @relation(fields: [authorId], references: [id])
+  author          User?     @relation(fields: [authorId], references: [id])
+  comments        Comment[]
   
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Canvas Threads & Commenting
+model Comment {
+  id         String    @id @default(cuid())
+  content    String
+  x          Float
+  y          Float
+  resolved   Boolean   @default(false)
+
+  boardId    String
+  board      Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  authorId   String
+  author     User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  parentId   String?
+  parent     Comment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    Comment[] @relation("CommentThread")
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 }
