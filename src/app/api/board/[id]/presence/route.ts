@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/features/auth/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,10 +19,9 @@ export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const guestId = searchParams.get('guestId');
-    const userId = session?.user?.id || guestId || undefined;
+    const userId = guestId || `anon-${Math.random()}`;
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -92,10 +89,9 @@ export async function POST(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await getServerSession(authOptions);
     const { searchParams } = new URL(request.url);
     const guestId = searchParams.get('guestId');
-    const userId = session?.user?.id || guestId || undefined;
+    const userId = guestId || `anon-${Math.random()}`;
 
     if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

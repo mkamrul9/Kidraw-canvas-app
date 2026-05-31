@@ -3,7 +3,7 @@ export type Color = string;
 // Added arrow, straight-line, and hexagon
 export type ShapeType = 'rectangle' | 'ellipse' | 'triangle' | 'diamond' | 'star' | 'arrow' | 'straight-line' | 'hexagon';
 
-export type LayerType = ShapeType | 'pen' | 'text' | 'eraser' | 'comment' | 'image' | 'sticky' | 'frame' | 'pdf';
+export type LayerType = ShapeType | 'pen' | 'text' | 'eraser' | 'comment' | 'image' | 'sticky' | 'frame' | 'pdf' | 'group';
 
 export type Tool = 'select' | 'lasso' | 'hand' | 'shape' | 'pen' | 'text' | 'eraser' | 'object-eraser' | 'comment' | 'laser' | 'image' | 'sticky' | 'frame' | 'pdf';
 

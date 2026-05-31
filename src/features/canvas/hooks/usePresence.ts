@@ -98,7 +98,7 @@ export function usePresence(boardId: string | null) {
 
     const updateMyPresence = useCallback((x: number, y: number, text: string) => {
         const now = Date.now();
-        const THROTTLE_MS = 60; // Throttled to ~16 updates per second for performance
+        const THROTTLE_MS = 250; // Throttled to 4 updates per second to avoid crashing the server
 
         pendingUpdateRef.current = { x, y, text };
 

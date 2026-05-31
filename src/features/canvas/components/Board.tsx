@@ -429,12 +429,23 @@ export default function Board() {
         const storeLayers = useCanvasStore.getState().layers;
 
         if (activeTool === 'lasso' && lassoPoints.length > 4) {
-            const capturedIds: string[] = [];
+            let capturedIds: string[] = [];
             storeLayers.forEach((layer) => {
                 const cx = layer.x + (layer.width ? layer.width / 2 : 0);
                 const cy = layer.y + (layer.height ? layer.height / 2 : 0);
                 if (isPointInPolygon([cx, cy], lassoPoints)) capturedIds.push(layer.id);
             });
+            
+            // Escalate to group IDs and deduplicate
+            capturedIds = Array.from(new Set(capturedIds.map(id => {
+                const l = storeLayers.find(sl => sl.id === id);
+                if (l?.parentId) {
+                    const p = storeLayers.find(sl => sl.id === l.parentId);
+                    if (p && p.type === 'group') return p.id;
+                }
+                return id;
+            })));
+
             if (capturedIds.length > 0) setSelectedLayerIds(capturedIds);
             setLassoPoints([]);
             return;
@@ -446,13 +457,46 @@ export default function Board() {
                 y: selectionBox.height < 0 ? selectionBox.y + selectionBox.height : selectionBox.y,
                 width: Math.abs(selectionBox.width), height: Math.abs(selectionBox.height),
             };
-            const capturedIds: string[] = [];
+            let capturedIds: string[] = [];
             storeLayers.forEach((layer) => {
-                if (!layer.width && !layer.points) return;
-                if (layer.x >= boxRect.x && layer.x <= boxRect.x + boxRect.width && layer.y >= boxRect.y && layer.y <= boxRect.y + boxRect.height) {
+                let lX1, lY1, lX2, lY2;
+                
+                if (layer.type === 'pen' && layer.points && layer.points.length > 0) {
+                    const xs = layer.points.filter((_, i) => i % 2 === 0);
+                    const ys = layer.points.filter((_, i) => i % 2 !== 0);
+                    lX1 = Math.min(...xs);
+                    lX2 = Math.max(...xs);
+                    lY1 = Math.min(...ys);
+                    lY2 = Math.max(...ys);
+                } else {
+                    if (layer.width === undefined || layer.height === undefined) return;
+                    const layerX2 = layer.x + layer.width;
+                    const layerY2 = layer.y + layer.height;
+                    lX1 = Math.min(layer.x, layerX2);
+                    lX2 = Math.max(layer.x, layerX2);
+                    lY1 = Math.min(layer.y, layerY2);
+                    lY2 = Math.max(layer.y, layerY2);
+                }
+                
+                const bX1 = boxRect.x;
+                const bX2 = boxRect.x + boxRect.width;
+                const bY1 = boxRect.y;
+                const bY2 = boxRect.y + boxRect.height;
+                
+                if (lX1 <= bX2 && lX2 >= bX1 && lY1 <= bY2 && lY2 >= bY1) {
                     capturedIds.push(layer.id);
                 }
             });
+            // Escalate to group IDs and deduplicate
+            capturedIds = Array.from(new Set(capturedIds.map(id => {
+                const l = storeLayers.find(sl => sl.id === id);
+                if (l?.parentId) {
+                    const p = storeLayers.find(sl => sl.id === l.parentId);
+                    if (p && p.type === 'group') return p.id;
+                }
+                return id;
+            })));
+            
             if (capturedIds.length > 0) { setSelectedLayerIds(capturedIds); setSelectedLayerId(capturedIds[0]); }
             setSelectionBox(null);
             return;
@@ -522,7 +566,7 @@ export default function Board() {
         const storeLayers = useCanvasStore.getState().layers;
         const frame = storeLayers.find((l) => l.id === id);
 
-        if (frame && frame.type === 'frame') {
+        if (frame && (frame.type === 'frame' || frame.type === 'group')) {
             const dx = x - frame.x;
             const dy = y - frame.y;
             updateLayer(id, { x, y });
@@ -532,6 +576,12 @@ export default function Board() {
                 const nextChildX = child.x + dx;
                 const nextChildY = child.y + dy;
                 updateLayer(child.id, { x: nextChildX, y: nextChildY });
+                
+                if (child.points) {
+                    const newPoints = child.points.map((p, i) => i % 2 === 0 ? p + dx : p + dy);
+                    updateLayer(child.id, { points: newPoints });
+                }
+                
                 recalculateConnectedArrows(child.id, nextChildX, nextChildY);
             });
         } else {
@@ -604,7 +654,7 @@ export default function Board() {
         const storeLayers = useCanvasStore.getState().layers;
         const frame = storeLayers.find((l) => l.id === id);
 
-        if (frame && frame.type === 'frame') {
+        if (frame && (frame.type === 'frame' || frame.type === 'group')) {
             const dx = x - frame.x;
             const dy = y - frame.y;
             updateLayer(id, { x, y });
@@ -613,10 +663,16 @@ export default function Board() {
             children.forEach((child) => {
                 const nextChildX = child.x + dx;
                 const nextChildY = child.y + dy;
-                updateLayer(child.id, { x: nextChildX, y: nextChildY });
+                let updates: any = { x: nextChildX, y: nextChildY };
+                if (child.points) {
+                    updates.points = child.points.map((p, i) => i % 2 === 0 ? p + dx : p + dy);
+                }
+                updateLayer(child.id, updates);
                 recalculateConnectedArrows(child.id, nextChildX, nextChildY);
             });
-            updateAllFramesContainment();
+            if (frame.type === 'frame') {
+                updateAllFramesContainment();
+            }
         } else {
             updateLayer(id, { x, y });
             recalculateConnectedArrows(id, x, y);
@@ -625,27 +681,85 @@ export default function Board() {
         saveHistory();
     }, [updateLayer, recalculateConnectedArrows, checkShapeFrameContainment, updateAllFramesContainment, saveHistory]);
 
-    const handleLayerTransform = useCallback((id: string, x: number, y: number, width: number, height: number) => {
+    const handleGroupTransform = useCallback((id: string, x: number, y: number, width: number, height: number, storeLayers: any[]) => {
+        const layer = storeLayers.find(l => l.id === id);
+        if (!layer) return;
+
+        const oldX = layer.x;
+        const oldY = layer.y;
+        const oldW = Math.max(0.001, layer.width || 1);
+        const oldH = Math.max(0.001, layer.height || 1);
+        
+        const scaleX = width / oldW;
+        const scaleY = height / oldH;
+        
         updateLayer(id, { x, y, width, height });
-        recalculateConnectedArrows(id, x, y);
+        
+        const children = storeLayers.filter(l => l.parentId === id);
+        children.forEach(child => {
+            const cx = x + (child.x - oldX) * scaleX;
+            const cy = y + (child.y - oldY) * scaleY;
+            
+            let updates: any = { x: cx, y: cy };
+            
+            if (child.points) {
+                updates.points = child.points.map((p: number, i: number) => 
+                    i % 2 === 0 ? x + (p - oldX) * scaleX : y + (p - oldY) * scaleY
+                );
+            }
+            
+            if (child.width !== undefined) updates.width = child.width * scaleX;
+            if (child.height !== undefined) updates.height = child.height * scaleY;
+            if (child.fontSize !== undefined) updates.fontSize = child.fontSize * scaleY;
+            if (child.penSize !== undefined) updates.penSize = child.penSize * ((scaleX + scaleY) / 2);
+            
+            updateLayer(child.id, updates);
+            recalculateConnectedArrows(child.id, cx, cy);
+        });
     }, [updateLayer, recalculateConnectedArrows]);
 
-    const handleLayerTransformEnd = useCallback((id: string, x: number, y: number, width: number, height: number) => {
-        updateLayer(id, { x, y, width, height });
-        recalculateConnectedArrows(id, x, y);
+    const handleLayerTransform = useCallback((id: string, x: number, y: number, width: number, height: number) => {
         const storeLayers = useCanvasStore.getState().layers;
-        const layer = storeLayers.find((l) => l.id === id);
-        if (layer?.type === 'frame') {
-            updateAllFramesContainment();
+        const layer = storeLayers.find(l => l.id === id);
+        if (layer?.type === 'group') {
+            handleGroupTransform(id, x, y, width, height, storeLayers);
         } else {
-            checkShapeFrameContainment(id, x, y);
+            updateLayer(id, { x, y, width, height });
+            recalculateConnectedArrows(id, x, y);
+        }
+    }, [updateLayer, recalculateConnectedArrows, handleGroupTransform]);
+
+    const handleLayerTransformEnd = useCallback((id: string, x: number, y: number, width: number, height: number) => {
+        const storeLayers = useCanvasStore.getState().layers;
+        const layer = storeLayers.find(l => l.id === id);
+        if (layer?.type === 'group') {
+            handleGroupTransform(id, x, y, width, height, storeLayers);
+        } else {
+            updateLayer(id, { x, y, width, height });
+            recalculateConnectedArrows(id, x, y);
+            if (layer?.type === 'frame') {
+                updateAllFramesContainment();
+            } else {
+                checkShapeFrameContainment(id, x, y);
+            }
         }
         saveHistory();
-    }, [updateLayer, recalculateConnectedArrows, checkShapeFrameContainment, updateAllFramesContainment, saveHistory]);
+    }, [updateLayer, recalculateConnectedArrows, checkShapeFrameContainment, updateAllFramesContainment, saveHistory, handleGroupTransform]);
 
     const handleLayerClick = useCallback((id: string) => {
-        if (!isLocked && activeTool === 'select') setSelectedLayerId(id);
-        if (!isLocked && activeTool === 'object-eraser') { removeLayer(id); saveHistory(); }
+        const storeLayers = useCanvasStore.getState().layers;
+        let targetId = id;
+        const layer = storeLayers.find(l => l.id === id);
+        
+        if (layer?.parentId) {
+            const parent = storeLayers.find(l => l.id === layer.parentId);
+            if (parent && parent.type === 'group') {
+                targetId = parent.id;
+            }
+        }
+
+        if (!isLocked && activeTool === 'select') setSelectedLayerId(targetId);
+        if (!isLocked && activeTool === 'object-eraser') { removeLayer(targetId); saveHistory(); }
     }, [isLocked, activeTool, setSelectedLayerId, removeLayer, saveHistory]);
 
     const handleTextDblClick = useCallback((id: string, x: number, y: number, text: string) => {

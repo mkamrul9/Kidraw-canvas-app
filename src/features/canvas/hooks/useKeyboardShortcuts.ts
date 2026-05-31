@@ -79,6 +79,22 @@ export const useKeyboardShortcuts = () => {
                 return;
             }
 
+            // Grouping
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'g') {
+                e.preventDefault();
+                if (e.shiftKey) {
+                    const idToUngroup = state.selectedLayerId || (state.selectedLayerIds.length > 0 ? state.selectedLayerIds[0] : null);
+                    if (idToUngroup) {
+                        state.ungroupLayers(idToUngroup);
+                    }
+                } else {
+                    if (state.selectedLayerIds.length > 1) {
+                        state.groupLayers(state.selectedLayerIds);
+                    }
+                }
+                return;
+            }
+
             // Layer Ordering
             if (e.key === '[' || e.key === ']') {
                 if (state.selectedLayerId) {

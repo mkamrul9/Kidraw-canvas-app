@@ -5,15 +5,19 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/tooltip';
 
 export default function ActionToolbar() {
-    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock } = useCanvasStore();
+    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
+
+    const selectedLayer = selectedLayerId ? layers.find(l => l.id === selectedLayerId) : null;
+    const isGroupSelected = selectedLayer?.type === 'group';
+    const canGroup = selectedLayerIds.length > 1;
 
     const handleExport = (format: 'png' | 'jpeg' | 'svg' | 'pdf') => {
         window.dispatchEvent(new CustomEvent('export-canvas', { detail: format }));
@@ -24,6 +28,14 @@ export default function ActionToolbar() {
             <div className="absolute z-50 top-6 right-6 bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-1 p-1.5 transition-all">
                 <ToolButton icon={<MessageSquare className="w-4 h-4" />} label="Add Comment (C)" onClick={() => setActiveTool('comment')} isActive={activeTool === 'comment'} />
                 <ToolButton icon={isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />} label={isLocked ? "Unlock Board" : "Lock Board"} onClick={toggleLock} isActive={isLocked} className={isLocked ? "!bg-amber-500 !text-white" : ""} />
+
+                {(canGroup || isGroupSelected) && <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>}
+                {canGroup && (
+                    <ToolButton icon={<Group className="w-4 h-4" />} label="Group (Ctrl+G)" onClick={() => groupLayers(selectedLayerIds)} />
+                )}
+                {isGroupSelected && (
+                    <ToolButton icon={<Ungroup className="w-4 h-4" />} label="Ungroup (Ctrl+Shift+G)" onClick={() => ungroupLayers(selectedLayerId!)} />
+                )}
 
                 <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
 

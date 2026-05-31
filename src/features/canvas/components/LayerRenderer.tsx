@@ -140,6 +140,24 @@ export default function LayerRenderer({
         );
     }
 
+    // ─── Group ──────────────────────────────────────────
+    if (layer.type === 'group') {
+        return (
+            <Rect 
+                key={layer.id} 
+                {...commonProps} 
+                x={layer.x} 
+                y={layer.y} 
+                width={layer.width} 
+                height={layer.height} 
+                fill="transparent"
+                stroke={isSelected ? "#6366f1" : "transparent"}
+                strokeWidth={1}
+                dash={[4, 4]}
+            />
+        );
+    }
+
     // ─── Image ──────────────────────────────────────────
     if (layer.type === 'image') {
         return <URLImage key={layer.id} layer={layer} {...commonProps} />;

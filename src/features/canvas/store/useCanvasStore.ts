@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { toast } from 'sonner';
+import { v4 as uuidv4 } from 'uuid';
 import { Layer, Color, Tool, ShapeType } from '@/features/canvas/types';
 
 // Throttling mechanism for drawing updates to prevent network spam
@@ -107,6 +108,10 @@ interface CanvasState {
     bringForward: (id: string) => void;
     sendBackward: (id: string) => void;
 
+    // Grouping
+    groupLayers: (ids: string[]) => void;
+    ungroupLayers: (groupId: string) => void;
+
     // Canvas Management Actions
     saveHistory: () => void;
     undo: () => void;
@@ -161,7 +166,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setIsDrawing: (isDrawing) => set({ isDrawing }),
     setBoardId: (id) => set({ boardId: id }),
     setSelectedLayerId: (id) => set({ selectedLayerIds: id ? [id] : [], selectedLayerId: id }),
-    setSelectedLayerIds: (ids) => set({ selectedLayerIds: ids }),
+    setSelectedLayerIds: (ids) => set({ selectedLayerIds: ids, selectedLayerId: ids.length > 0 ? ids[0] : null }),
     setBgPattern: (pattern) => set({ bgPattern: pattern }),
     setActiveEraserType: (type) => set({ activeEraserType: type, activeTool: type }),
     setEraserSize: (size) => set({ eraserSize: size }),
@@ -294,6 +299,76 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     clear: () => {
         set({ layers: [] });
         get().saveHistory(); // Save the cleared state to history so we can undo a clear
+    },
+
+    groupLayers: (ids) => {
+        const { layers } = get();
+        const selected = layers.filter(l => ids.includes(l.id));
+        if (selected.length < 2) return;
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        selected.forEach(layer => {
+            if (layer.type === 'pen' && layer.points) {
+                for (let i = 0; i < layer.points.length; i += 2) {
+                    minX = Math.min(minX, layer.points[i]);
+                    minY = Math.min(minY, layer.points[i+1]);
+                    maxX = Math.max(maxX, layer.points[i]);
+                    maxY = Math.max(maxY, layer.points[i+1]);
+                }
+            } else {
+                const w = Math.abs(layer.width || 0);
+                const h = Math.abs(layer.height || 0);
+                minX = Math.min(minX, layer.x);
+                minY = Math.min(minY, layer.y);
+                maxX = Math.max(maxX, layer.x + w);
+                maxY = Math.max(maxY, layer.y + h);
+            }
+        });
+
+        const groupId = uuidv4();
+        const maxZ = layers.reduce((max, l) => Math.max(max, l.zIndex || 0), 0);
+        
+        const groupLayer = {
+            id: groupId,
+            type: 'group' as const,
+            x: minX,
+            y: minY,
+            width: maxX - minX,
+            height: maxY - minY,
+            fill: 'transparent',
+            zIndex: maxZ + 1,
+        };
+
+        set(state => ({
+            layers: [
+                ...state.layers.map(l => ids.includes(l.id) ? { ...l, parentId: groupId } : l),
+                groupLayer
+            ],
+            selectedLayerIds: [groupId],
+            selectedLayerId: groupId
+        }));
+        
+        get().saveHistory();
+    },
+
+    ungroupLayers: (groupId) => {
+        const { layers } = get();
+        const groupLayer = layers.find(l => l.id === groupId);
+        if (!groupLayer || groupLayer.type !== 'group') return;
+
+        const childrenIds = layers.filter(l => l.parentId === groupId).map(l => l.id);
+
+        set(state => ({
+            layers: state.layers.filter(l => l.id !== groupId).map(l => l.parentId === groupId ? { ...l, parentId: undefined } : l),
+            selectedLayerIds: childrenIds,
+            selectedLayerId: childrenIds[0] || null
+        }));
+        
+        get().saveHistory();
     },
 
     saveToCloud: async (boardId: string) => {
