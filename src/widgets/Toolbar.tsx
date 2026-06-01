@@ -32,7 +32,7 @@ export default function Toolbar() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-50 top-6 left-1/2 -translate-x-1/2 bg-[#0B0F19]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex items-center gap-1 p-1.5 transition-all">
+            <div className="absolute z-[100] top-6 left-1/2 -translate-x-1/2 bg-[#0B0F19]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex items-center gap-1 p-1.5 transition-all">
                 <div className="relative flex items-center">
                     <ToolButton
                         icon={activeTool === 'lasso' ? <Lasso className="w-4 h-4" /> : activeTool === 'select' ? <SquareDashed className="w-4 h-4" /> : <MousePointer2 className="w-4 h-4" />}

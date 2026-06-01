@@ -20,6 +20,7 @@ import CommentOverlay from './CommentOverlay';
 import LiveCursors from './LiveCursors';
 import { usePresence } from '../hooks/usePresence';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
+import type { Layer } from '@/features/canvas/types';
 
 export default function Board() {
     const [dimensions, setDimensions] = useState({ width: window.innerWidth, height: window.innerHeight });
@@ -345,7 +346,7 @@ export default function Board() {
         if (activeTool === 'code') {
             setSelectedLayerId(null);
             const newId = uuidv4();
-            addLayer({ id: newId, type: 'code', x: pos.x, y: pos.y, width: 450, height: 300, fill: '#0f172a', text: '// Write your code here\n', opacity: activeOpacity, codeLanguage: 'javascript' });
+            addLayer({ id: newId, type: 'code', x: pos.x, y: pos.y, width: 450, height: 300, fill: '#0f172a', text: '', opacity: activeOpacity, codeLanguage: '' });
             setActiveTool('select');
             setSelectedLayerId(newId);
             saveHistory();
@@ -376,7 +377,7 @@ export default function Board() {
             x: pos.x, y: pos.y, width: 0, height: 0,
             fill: (activeTool === 'pen' || activeTool === 'pencil') ? 'transparent' : activeColor,
             stroke: activeTool === 'pen' || activeTool === 'pencil' ? activeColor : undefined,
-            points: activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'eraser' ? [pos.x, pos.y] : undefined,
+            points: activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'eraser' ? [0, 0] : undefined,
             eraserSize: activeTool === 'eraser' ? eraserSize : undefined,
             penSize: activeTool === 'pen' || activeTool === 'pencil' ? penSize : undefined,
             opacity: activeOpacity,
@@ -402,8 +403,8 @@ export default function Board() {
         const currentShape = storeLayers.find((layer) => layer.id === currentShapeId.current);
         if (!currentShape) return;
 
-        if (activeTool === 'text' || activeTool === 'sticky' || activeTool === 'comment') {
-            updateLayer(currentShapeId.current, { points: [...(currentShape.points || []), pos.x, pos.y] });
+        if (activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'eraser') {
+            updateLayer(currentShapeId.current, { points: [...(currentShape.points || []), pos.x - currentShape.x, pos.y - currentShape.y] });
         } else {
             if (currentShape.type === 'arrow') {
                 const allSnaps = storeLayers.flatMap((l) => getSnapPoints(l)).filter(s => s.elementId !== currentShape.startBinding?.elementId);
@@ -495,10 +496,10 @@ export default function Board() {
                 if ((layer.type === 'pen' || layer.type === 'pencil') && layer.points && layer.points.length > 0) {
                     const xs = layer.points.filter((_, i) => i % 2 === 0);
                     const ys = layer.points.filter((_, i) => i % 2 !== 0);
-                    lX1 = Math.min(...xs);
-                    lX2 = Math.max(...xs);
-                    lY1 = Math.min(...ys);
-                    lY2 = Math.max(...ys);
+                    lX1 = Math.min(...xs) + layer.x;
+                    lX2 = Math.max(...xs) + layer.x;
+                    lY1 = Math.min(...ys) + layer.y;
+                    lY2 = Math.max(...ys) + layer.y;
                 } else {
                     if (layer.width === undefined || layer.height === undefined) return;
                     const layerX2 = layer.x + layer.width;
@@ -535,10 +536,34 @@ export default function Board() {
 
         if (currentShapeId.current) {
             const currentShape = storeLayers.find((layer) => layer.id === currentShapeId.current);
-            if (currentShape && currentShape.type === 'arrow' && activeSnapPoint) {
-                updateLayer(currentShapeId.current, {
-                    endBinding: { elementId: activeSnapPoint.elementId, snapPoint: activeSnapPoint.type }
-                });
+            if (currentShape) {
+                if (currentShape.type === 'arrow' && activeSnapPoint) {
+                    updateLayer(currentShapeId.current, {
+                        endBinding: { elementId: activeSnapPoint.elementId, snapPoint: activeSnapPoint.type }
+                    });
+                } else if ((currentShape.type === 'pen' || currentShape.type === 'pencil' || currentShape.type === 'eraser') && currentShape.points && currentShape.points.length >= 4) {
+                    const points = currentShape.points;
+                    const xs = points.filter((_, idx) => idx % 2 === 0);
+                    const ys = points.filter((_, idx) => idx % 2 !== 0);
+                    const minX = Math.min(...xs);
+                    const maxX = Math.max(...xs);
+                    const minY = Math.min(...ys);
+                    const maxY = Math.max(...ys);
+                    
+                    const newX = currentShape.x + minX;
+                    const newY = currentShape.y + minY;
+                    const newWidth = maxX - minX;
+                    const newHeight = maxY - minY;
+                    const newPoints = points.map((val, idx) => idx % 2 === 0 ? val - minX : val - minY);
+                    
+                    updateLayer(currentShapeId.current, {
+                        x: newX,
+                        y: newY,
+                        width: newWidth,
+                        height: newHeight,
+                        points: newPoints
+                    });
+                }
             }
             currentShapeId.current = null;
             setActiveSnapPoint(null);
@@ -613,24 +638,44 @@ export default function Board() {
     }, [updateLayer]);
 
     const handleLayerDragMove = useCallback((id: string, x: number, y: number) => {
-        const storeLayers = useCanvasStore.getState().layers;
-        const frame = storeLayers.find((l) => l.id === id);
+        const store = useCanvasStore.getState();
+        const storeLayers = store.layers;
+        const layer = storeLayers.find((l) => l.id === id);
+        if (!layer) return;
 
+        const selectedIds = store.selectedLayerIds;
+        if (selectedIds.includes(id) && selectedIds.length > 1) {
+            const dx = x - layer.x;
+            const dy = y - layer.y;
+            selectedIds.forEach(selectedId => {
+                const sLayer = storeLayers.find(l => l.id === selectedId);
+                if (sLayer) {
+                    const nx = sLayer.x + dx;
+                    const ny = sLayer.y + dy;
+                    updateLayer(selectedId, { x: nx, y: ny });
+                    
+                    if (sLayer.points) {
+                        const newPoints = sLayer.points.map((p, i) => i % 2 === 0 ? p + dx : p + dy);
+                        updateLayer(selectedId, { points: newPoints });
+                    }
+                    
+                    recalculateConnectedArrows(selectedId, nx, ny);
+                }
+            });
+            return;
+        }
+
+        const frame = layer;
         if (frame && (frame.type === 'frame' || frame.type === 'group')) {
             const dx = x - frame.x;
             const dy = y - frame.y;
             updateLayer(id, { x, y });
 
-            const children = storeLayers.filter((l) => l.parentId === id);
+            const children = storeLayers.filter((l) => l.parentId === id || l.frameId === id);
             children.forEach((child) => {
                 const nextChildX = child.x + dx;
                 const nextChildY = child.y + dy;
                 updateLayer(child.id, { x: nextChildX, y: nextChildY });
-                
-                if (child.points) {
-                    const newPoints = child.points.map((p, i) => i % 2 === 0 ? p + dx : p + dy);
-                    updateLayer(child.id, { points: newPoints });
-                }
                 
                 recalculateConnectedArrows(child.id, nextChildX, nextChildY);
             });
@@ -665,8 +710,8 @@ export default function Board() {
             }
         }
 
-        if (shape.parentId !== containingFrameId) {
-            updateLayer(shapeId, { parentId: containingFrameId });
+        if (shape.frameId !== containingFrameId) {
+            updateLayer(shapeId, { frameId: containingFrameId });
         }
     }, [updateLayer]);
 
@@ -694,30 +739,50 @@ export default function Board() {
                 }
             }
 
-            if (shape.parentId !== containingFrameId) {
-                updateLayer(shape.id, { parentId: containingFrameId });
+            if (shape.frameId !== containingFrameId) {
+                updateLayer(shape.id, { frameId: containingFrameId });
             }
         });
     }, [updateLayer]);
 
     const handleLayerDragEnd = useCallback((id: string, x: number, y: number) => {
-        const storeLayers = useCanvasStore.getState().layers;
-        const frame = storeLayers.find((l) => l.id === id);
+        const store = useCanvasStore.getState();
+        const storeLayers = store.layers;
+        const layer = storeLayers.find((l) => l.id === id);
+        if (!layer) return;
 
-        if (frame && (frame.type === 'frame' || frame.type === 'group')) {
+        const selectedIds = store.selectedLayerIds;
+        if (selectedIds.includes(id) && selectedIds.length > 1) {
+            const dx = x - layer.x;
+            const dy = y - layer.y;
+            selectedIds.forEach(selectedId => {
+                const sLayer = storeLayers.find(l => l.id === selectedId);
+                if (sLayer) {
+                    const nx = sLayer.x + dx;
+                    const ny = sLayer.y + dy;
+                    updateLayer(selectedId, { x: nx, y: ny });
+                    
+                    recalculateConnectedArrows(selectedId, nx, ny);
+                    if (sLayer.type !== 'frame' && sLayer.type !== 'group') {
+                        checkShapeFrameContainment(selectedId, nx, ny);
+                    }
+                }
+            });
+            saveHistory();
+            return;
+        }
+
+        const frame = layer;
+        if (frame?.type === 'group' || frame?.type === 'frame') {
             const dx = x - frame.x;
             const dy = y - frame.y;
             updateLayer(id, { x, y });
 
-            const children = storeLayers.filter((l) => l.parentId === id);
+            const children = storeLayers.filter((l) => l.parentId === id || l.frameId === id);
             children.forEach((child) => {
                 const nextChildX = child.x + dx;
                 const nextChildY = child.y + dy;
-                let updates: any = { x: nextChildX, y: nextChildY };
-                if (child.points) {
-                    updates.points = child.points.map((p, i) => i % 2 === 0 ? p + dx : p + dy);
-                }
-                updateLayer(child.id, updates);
+                updateLayer(child.id, { x: nextChildX, y: nextChildY });
                 recalculateConnectedArrows(child.id, nextChildX, nextChildY);
             });
             if (frame.type === 'frame') {
@@ -754,7 +819,7 @@ export default function Board() {
             
             if (child.points) {
                 updates.points = child.points.map((p: number, i: number) => 
-                    i % 2 === 0 ? x + (p - oldX) * scaleX : y + (p - oldY) * scaleY
+                    i % 2 === 0 ? p * scaleX : p * scaleY
                 );
             }
             
@@ -1192,7 +1257,7 @@ export default function Board() {
                             <div className="w-3 h-3 rounded-full bg-red-500 border border-red-600"></div>
                             <div className="w-3 h-3 rounded-full bg-yellow-500 border border-yellow-600"></div>
                             <div className="w-3 h-3 rounded-full bg-green-500 border border-green-600"></div>
-                            <span className="ml-2 text-[11px] font-mono text-slate-400 select-none tracking-wider">{layer.codeLanguage || 'javascript'}</span>
+                            <span className="ml-2 text-[11px] font-mono text-slate-400 select-none tracking-wider">{layer.codeLanguage || ''}</span>
                         </div>
                         
                         <textarea
@@ -1201,6 +1266,7 @@ export default function Board() {
                             onPointerDown={(e) => e.stopPropagation()}
                             onMouseDown={(e) => e.stopPropagation()}
                             onTouchStart={(e) => e.stopPropagation()}
+                            placeholder="Write your code here..."
                             className="w-full h-full pt-12 pb-4 px-4 bg-transparent text-emerald-400 font-mono text-sm leading-relaxed resize-none focus:outline-none"
                             spellCheck={false}
                         />
@@ -1344,13 +1410,13 @@ export default function Board() {
                             let lw = layer.width || 0;
                             let lh = layer.height || 0;
 
-                            if (layer.type === 'pen' || layer.type === 'straight-line' || layer.type === 'laser') {
+                            if (layer.type === 'pen' || layer.type === 'pencil' || layer.type === 'eraser' || layer.type === 'straight-line' || layer.type === 'arrow') {
                                 if (layer.points && layer.points.length > 0) {
                                     let minX = layer.points[0];
                                     let minY = layer.points[1];
                                     let maxX = layer.points[0];
                                     let maxY = layer.points[1];
-                                    for (let i = 2; i < layer.points.length; i += 2) {
+                                    for (let i = 0; i < layer.points.length; i += 2) {
                                         if (layer.points[i] < minX) minX = layer.points[i];
                                         if (layer.points[i] > maxX) maxX = layer.points[i];
                                         if (layer.points[i+1] < minY) minY = layer.points[i+1];

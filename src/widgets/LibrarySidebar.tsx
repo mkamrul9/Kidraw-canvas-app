@@ -138,7 +138,7 @@ export default function LibrarySidebar() {
                 <TooltipTrigger asChild>
                     <button
                         onClick={() => setIsOpen(true)}
-                        className={`absolute top-24 left-6 z-40 p-3.5 bg-[#0B0F19]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-slate-400 hover:text-white hover:bg-slate-800/50 hover:scale-105 active:scale-95 transition-all duration-300 ${
+                        className={`absolute top-24 left-6 z-[100] p-3.5 bg-[#0B0F19]/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl text-slate-400 hover:text-white hover:bg-slate-800/50 hover:scale-105 active:scale-95 transition-all duration-300 ${
                             isOpen ? 'scale-90 opacity-0 pointer-events-none' : 'scale-100 opacity-100'
                         }`}
                     >
@@ -152,7 +152,7 @@ export default function LibrarySidebar() {
 
             {/* SIDEBAR PANEL */}
             <div
-                className={`absolute top-24 left-6 bottom-6 w-80 bg-[#0B0F19]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl flex flex-col z-50 overflow-hidden transition-all duration-300 ease-in-out ${
+                className={`absolute top-24 left-6 bottom-6 w-80 bg-[#0B0F19]/90 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl flex flex-col z-[110] overflow-hidden transition-all duration-300 ease-in-out ${
                     isOpen ? 'translate-x-0 opacity-100' : '-translate-x-12 opacity-0 pointer-events-none'
                 }`}
             >

@@ -57,8 +57,13 @@ export default function LayerRenderer({
 }: LayerRendererProps) {
     const commonProps = {
         id: layer.id,
-        draggable: isSelected && !isLocked,
+        draggable: !isLocked && (activeTool === 'select' || activeTool === 'lasso'),
         name: 'canvas-shape',
+        onDragStart: (event: Konva.KonvaEventObject<DragEvent>) => {
+            if (!isSelected) {
+                onClick(layer.id);
+            }
+        },
         onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => {
             useCanvasStore.getState().setActiveGuides([]);
             onDragEnd(layer.id, event.target.x(), event.target.y());
@@ -154,9 +159,8 @@ export default function LayerRenderer({
     if (layer.type === 'frame') {
         const frameFill = layer.fill || 'rgba(148, 163, 184, 0.03)';
         return (
-            <Group key={layer.id} x={layer.x} y={layer.y}>
+            <Group key={layer.id} {...commonProps} x={layer.x} y={layer.y}>
                 <Rect
-                    {...commonProps}
                     x={0}
                     y={0}
                     width={layer.width}
@@ -471,14 +475,14 @@ export default function LayerRenderer({
         if (isSketchMode && layer.type === 'pencil') {
             return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
         }
-        return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={layer.type === 'pen' ? 0.5 : 0} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
+        return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={layer.type === 'pen' ? 0.5 : 0} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
     }
 
     if (layer.type === 'text')
         return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
 
     if (layer.type === 'eraser')
-        return <Line key={layer.id} {...commonProps} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;
+        return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;
 
     return null;
 }

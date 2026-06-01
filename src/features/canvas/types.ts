@@ -31,6 +31,7 @@ export type Layer = {
     startBinding?: { elementId: string; snapPoint: 'top' | 'right' | 'bottom' | 'left' };
     endBinding?: { elementId: string; snapPoint: 'top' | 'right' | 'bottom' | 'left' };
     parentId?: string;
+    frameId?: string;
     fontSize?: number;
     pdfPages?: string[];
     pdfPageIndex?: number;

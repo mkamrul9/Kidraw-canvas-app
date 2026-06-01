@@ -126,7 +126,7 @@ function MinimapOverlay() {
     return (
         <div className="bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-2 w-56 h-36 relative overflow-hidden select-none flex items-center justify-center">
             <div 
-                className="border border-slate-700 bg-[#06090F] overflow-hidden rounded cursor-crosshair touch-none relative"
+                className="border border-slate-700 bg-white overflow-hidden rounded cursor-crosshair touch-none relative"
                 style={{ width: mapWidth, height: mapHeight }}
             >
                 <svg
@@ -207,10 +207,10 @@ export default function ZoomHUD() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-50 bottom-6 left-6 flex flex-col gap-2">
+            <div className="absolute z-[100] bottom-6 left-6 flex flex-col items-start gap-4 pointer-events-none">
                 {showMinimap && <MinimapOverlay />}
 
-                <div className="bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-2 flex items-center gap-1">
+                <div className="bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-2 flex items-center gap-1 pointer-events-auto">
                     <Dialog>
                         <Tooltip>
                             <TooltipTrigger asChild>

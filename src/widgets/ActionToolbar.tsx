@@ -28,7 +28,7 @@ export default function ActionToolbar() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-50 top-6 right-6 bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-1 p-1.5 transition-all">
+            <div className="absolute z-[100] top-6 right-6 bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-700 flex items-center gap-1 p-1.5 transition-all">
                 <ToolButton icon={<Palette className="w-4 h-4" />} label={isSketchMode ? "Disable Sketch Mode" : "Enable Sketch Mode"} onClick={toggleSketchMode} isActive={isSketchMode} className={isSketchMode ? "!bg-violet-500 !text-white" : ""} />
                 
                 <ToolButton icon={<MessageSquare className="w-4 h-4" />} label="Add Comment (C)" onClick={() => setActiveTool('comment')} isActive={activeTool === 'comment'} />

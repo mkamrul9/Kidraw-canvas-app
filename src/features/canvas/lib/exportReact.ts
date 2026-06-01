@@ -49,11 +49,5 @@ export function exportToReactCode(layers: Layer[]): string {
         return `        {/* Export for layer type ${layer.type} is not fully supported yet */}`;
     }).filter(code => code !== '').join('\n');
 
-    return `export default function CanvasExport() {
-    return (
-        <div className="relative w-[${Math.round(containerWidth)}px] h-[${Math.round(containerHeight)}px] bg-white border border-slate-200 overflow-hidden">
-${elementsCode}
-        </div>
-    );
-}`;
+    return `<div className="relative w-[${Math.round(containerWidth)}px] h-[${Math.round(containerHeight)}px] bg-white overflow-hidden">\n${elementsCode}\n</div>`;
 }

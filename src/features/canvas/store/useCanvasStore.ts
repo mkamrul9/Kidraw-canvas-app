@@ -154,7 +154,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     isLocked: false,
     activeShape: 'rectangle',
     penSize: 4,
-    activeOpacity: 1,
+    activeOpacity: 0.25,
     isSketchMode: false,
     permissionRole: 'owner',
 
