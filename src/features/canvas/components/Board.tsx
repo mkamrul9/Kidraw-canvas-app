@@ -40,7 +40,7 @@ export default function Board() {
 
     const {
         layers, activeTool, setActiveTool, activeShape, activeColor, backgroundColor, bgPattern,
-        activeOpacity, isDrawing, setIsDrawing, addLayer, addLayers, updateLayer, removeLayer,
+        activeOpacity, isDrawing, setIsDrawing, activeGuides, addLayer, addLayers, updateLayer, removeLayer,
         saveHistory, selectedLayerIds, setSelectedLayerIds, setSelectedLayerId,
         eraserSize, penSize, camera, setCamera, zoom, setZoom, isLocked, boardId,
         isSketchMode,
@@ -1418,6 +1418,16 @@ export default function Board() {
                             fill="rgba(79, 70, 229, 0.1)" stroke="#4f46e5" strokeWidth={1 / zoom}
                         />
                     )}
+
+                    {activeGuides.map((guide, i) => (
+                        <Line
+                            key={`guide-${i}`}
+                            points={guide.line}
+                            stroke="#ef4444" // red-500
+                            strokeWidth={1 / zoom}
+                            dash={[4, 4]}
+                        />
+                    ))}
 
                     {(activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && !isLocked && (
                         <Transformer ref={transformerRef} boundBoxFunc={(oldBox, newBox) => newBox.width < 5 || newBox.height < 5 ? oldBox : newBox} />

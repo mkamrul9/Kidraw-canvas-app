@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { Layer, Color, Tool, ShapeType } from '@/features/canvas/types';
+import { GuideLine } from '@/features/canvas/utils/snapping';
 
 // Throttling mechanism for drawing updates to prevent network spam
 let updateTimeout: NodeJS.Timeout | null = null;
@@ -74,6 +75,7 @@ interface CanvasState {
     activeOpacity: number;
     isSketchMode: boolean;
     permissionRole: 'owner' | 'editor' | 'viewer';
+    activeGuides: GuideLine[];
 
     // History State
     history: Layer[][];
@@ -82,6 +84,7 @@ interface CanvasState {
     exportCodeContent: string | null;
     exportType: 'react' | 'mermaid' | null;
     setExportCodeContent: (code: string | null, type?: 'react' | 'mermaid' | null) => void;
+    setActiveGuides: (guides: GuideLine[]) => void;
 
     setActiveTool: (tool: Tool) => void;
     setActiveColor: (color: Color) => void;
@@ -136,6 +139,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     isDrawing: false,
     isSaving: false,
     boardId: null,
+    activeGuides: [],
     selectedLayerId: null,
     selectedLayerIds: [],
     bgPattern: 'dotted',
@@ -156,7 +160,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     exportCodeContent: null,
     exportType: null,
-    setExportCodeContent: (code, type = 'react') => set({ exportCodeContent: code, exportType: code ? type : null }),
+    setExportCodeContent: (code, type = 'react') => set({ exportCodeContent: code, exportType: type }),
+    setActiveGuides: (guides) => set({ activeGuides: guides }),
 
     setActiveTool: (tool) => set({ activeTool: tool }),
     setActiveColor: (color) => {

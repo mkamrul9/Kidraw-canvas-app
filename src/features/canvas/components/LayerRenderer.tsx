@@ -6,6 +6,8 @@ import useImage from 'use-image';
 import type { Layer } from '@/features/canvas/types';
 import { COMMENT_WIDTH, COMMENT_HEIGHT, DEFAULT_FONT_SIZE, DEFAULT_FONT_FAMILY } from '@/features/canvas/constants';
 import RoughShape from '@/features/canvas/components/RoughShape';
+import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
+import { getSnappingGuides, BoundingBox } from '@/features/canvas/utils/snapping';
 
 // ─── URL Image Sub-Component ────────────────────────────────
 const URLImage = ({ layer, ...props }: { layer: { src?: string; x: number; y: number; width: number; height: number; opacity?: number } }) => {
@@ -58,11 +60,46 @@ export default function LayerRenderer({
         draggable: isSelected && !isLocked,
         name: 'canvas-shape',
         onDragEnd: (event: Konva.KonvaEventObject<DragEvent>) => {
+            useCanvasStore.getState().setActiveGuides([]);
             onDragEnd(layer.id, event.target.x(), event.target.y());
         },
         onDragMove: (event: Konva.KonvaEventObject<DragEvent>) => {
+            const node = event.target;
+            const store = useCanvasStore.getState();
+            
+            // Bypass snapping if shift is held
+            if (!event.evt.shiftKey && (layer.type === 'rectangle' || layer.type === 'ellipse' || layer.type === 'image' || layer.type === 'frame')) {
+                const draggedBox: BoundingBox = {
+                    x: node.x(),
+                    y: node.y(),
+                    width: layer.width || 0,
+                    height: layer.height || 0
+                };
+
+                const otherBoxes = store.layers
+                    .filter(l => l.id !== layer.id && !store.selectedLayerIds.includes(l.id) && (l.type === 'rectangle' || l.type === 'ellipse' || l.type === 'image' || l.type === 'frame' || l.type === 'text'))
+                    .map(l => ({
+                        x: l.x,
+                        y: l.y,
+                        width: l.width || 0,
+                        height: l.height || 0
+                    }));
+
+                const { snappedX, snappedY, guides } = getSnappingGuides(draggedBox, otherBoxes);
+
+                if (snappedX !== null) {
+                    node.x(snappedX);
+                }
+                if (snappedY !== null) {
+                    node.y(snappedY);
+                }
+                store.setActiveGuides(guides);
+            } else {
+                store.setActiveGuides([]);
+            }
+
             if (onDragMove) {
-                onDragMove(layer.id, event.target.x(), event.target.y());
+                onDragMove(layer.id, node.x(), node.y());
             }
         },
         onClick: () => onClick(layer.id),
