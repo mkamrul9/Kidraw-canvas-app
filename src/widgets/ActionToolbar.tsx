@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2 } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -15,7 +15,7 @@ import { exportToMermaid } from '@/features/canvas/lib/exportMermaid';
 import { DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
 
 export default function ActionToolbar() {
-    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent } = useCanvasStore();
+    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
 
     const selectedLayer = selectedLayerId ? layers.find(l => l.id === selectedLayerId) : null;
@@ -36,7 +36,20 @@ export default function ActionToolbar() {
 
                 {(canGroup || isGroupSelected) && <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>}
                 {canGroup && (
-                    <ToolButton icon={<Group className="w-4 h-4" />} label="Group (Ctrl+G)" onClick={() => groupLayers(selectedLayerIds)} />
+                    <>
+                        <ToolButton icon={<Group className="w-4 h-4" />} label="Group (Ctrl+G)" onClick={() => groupLayers(selectedLayerIds)} />
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={<AlignStartVertical className="w-4 h-4" />} label="Align Left" onClick={() => alignSelectedLayers('left')} />
+                        <ToolButton icon={<AlignCenterVertical className="w-4 h-4" />} label="Align Center" onClick={() => alignSelectedLayers('center')} />
+                        <ToolButton icon={<AlignEndVertical className="w-4 h-4" />} label="Align Right" onClick={() => alignSelectedLayers('right')} />
+                        <div className="w-[1px] h-4 bg-slate-700 mx-0.5"></div>
+                        <ToolButton icon={<AlignStartHorizontal className="w-4 h-4" />} label="Align Top" onClick={() => alignSelectedLayers('top')} />
+                        <ToolButton icon={<AlignCenterHorizontal className="w-4 h-4" />} label="Align Middle" onClick={() => alignSelectedLayers('middle')} />
+                        <ToolButton icon={<AlignEndHorizontal className="w-4 h-4" />} label="Align Bottom" onClick={() => alignSelectedLayers('bottom')} />
+                        <div className="w-[1px] h-4 bg-slate-700 mx-0.5"></div>
+                        <ToolButton icon={<AlignHorizontalDistributeCenter className="w-4 h-4" />} label="Distribute Horizontally" onClick={() => alignSelectedLayers('distribute-h')} />
+                        <ToolButton icon={<AlignVerticalDistributeCenter className="w-4 h-4" />} label="Distribute Vertically" onClick={() => alignSelectedLayers('distribute-v')} />
+                    </>
                 )}
                 {isGroupSelected && (
                     <ToolButton icon={<Ungroup className="w-4 h-4" />} label="Ungroup (Ctrl+Shift+G)" onClick={() => ungroupLayers(selectedLayerId!)} />

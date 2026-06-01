@@ -121,6 +121,9 @@ interface CanvasState {
     groupLayers: (ids: string[]) => void;
     ungroupLayers: (groupId: string) => void;
 
+    // Alignment
+    alignSelectedLayers: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom' | 'distribute-h' | 'distribute-v') => void;
+
     // Canvas Management Actions
     saveHistory: () => void;
     undo: () => void;
@@ -279,6 +282,95 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         const newZ = prevPrevLayer ? ((prevLayer.zIndex || 0) + (prevPrevLayer.zIndex || 0)) / 2 : (prevLayer.zIndex || 0) - 1;
         updateLayer(id, { zIndex: newZ });
         saveHistory();
+    },
+
+    alignSelectedLayers: (alignmentType) => {
+        const { layers, selectedLayerIds, updateLayer } = get();
+        if (selectedLayerIds.length < 2) return;
+
+        const selectedLayers = layers.filter(l => selectedLayerIds.includes(l.id));
+
+        // Get bounding box of all selected layers
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        selectedLayers.forEach(l => {
+            const w = l.width || 0;
+            const h = l.height || 0;
+            if (l.x < minX) minX = l.x;
+            if (l.y < minY) minY = l.y;
+            if (l.x + w > maxX) maxX = l.x + w;
+            if (l.y + h > maxY) maxY = l.y + h;
+        });
+
+        const centerX = minX + (maxX - minX) / 2;
+        const centerY = minY + (maxY - minY) / 2;
+
+        if (alignmentType === 'distribute-h') {
+            if (selectedLayers.length < 3) return;
+            // Sort by X coordinate
+            const sorted = [...selectedLayers].sort((a, b) => a.x - b.x);
+            const first = sorted[0];
+            const last = sorted[sorted.length - 1];
+            const totalSpace = (last.x) - (first.x + (first.width || 0));
+            
+            // Sum up widths of all middle elements
+            let middleWidths = 0;
+            for (let i = 1; i < sorted.length - 1; i++) {
+                middleWidths += sorted[i].width || 0;
+            }
+
+            const gap = (totalSpace - middleWidths) / (sorted.length - 1);
+            
+            let currentX = first.x + (first.width || 0) + gap;
+            for (let i = 1; i < sorted.length - 1; i++) {
+                updateLayer(sorted[i].id, { x: currentX });
+                currentX += (sorted[i].width || 0) + gap;
+            }
+        } else if (alignmentType === 'distribute-v') {
+            if (selectedLayers.length < 3) return;
+            const sorted = [...selectedLayers].sort((a, b) => a.y - b.y);
+            const first = sorted[0];
+            const last = sorted[sorted.length - 1];
+            const totalSpace = (last.y) - (first.y + (first.height || 0));
+            
+            let middleHeights = 0;
+            for (let i = 1; i < sorted.length - 1; i++) {
+                middleHeights += sorted[i].height || 0;
+            }
+
+            const gap = (totalSpace - middleHeights) / (sorted.length - 1);
+            
+            let currentY = first.y + (first.height || 0) + gap;
+            for (let i = 1; i < sorted.length - 1; i++) {
+                updateLayer(sorted[i].id, { y: currentY });
+                currentY += (sorted[i].height || 0) + gap;
+            }
+        } else {
+            selectedLayers.forEach(l => {
+                const w = l.width || 0;
+                const h = l.height || 0;
+                
+                switch (alignmentType) {
+                    case 'left':
+                        updateLayer(l.id, { x: minX });
+                        break;
+                    case 'center':
+                        updateLayer(l.id, { x: centerX - w / 2 });
+                        break;
+                    case 'right':
+                        updateLayer(l.id, { x: maxX - w });
+                        break;
+                    case 'top':
+                        updateLayer(l.id, { y: minY });
+                        break;
+                    case 'middle':
+                        updateLayer(l.id, { y: centerY - h / 2 });
+                        break;
+                    case 'bottom':
+                        updateLayer(l.id, { y: maxY - h });
+                        break;
+                }
+            });
+        }
     },
 
     // Called only on MouseUp
