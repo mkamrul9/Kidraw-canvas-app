@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { toast } from 'sonner';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
 
-const MINIMAP_SIZE = 160;
+
 const PADDING = 1000; // Extra padding around the world bounds
 
 function MinimapOverlay() {

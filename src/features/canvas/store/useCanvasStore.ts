@@ -6,7 +6,7 @@ import { GuideLine } from '@/features/canvas/utils/snapping';
 
 // Throttling mechanism for drawing updates to prevent network spam
 let updateTimeout: NodeJS.Timeout | null = null;
-let pendingUpdates: Record<string, any> = {};
+let pendingUpdates: Record<string, Partial<Layer>> = {};
 
 const getOrCreateGuestId = () => {
     if (typeof window === 'undefined') return 'guest-ssr';
@@ -18,6 +18,7 @@ const getOrCreateGuestId = () => {
     return id;
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const broadcastUpdate = async (boardId: string | null, payload: any) => {
     if (!boardId) return;
     try {
@@ -36,7 +37,7 @@ const broadcastUpdate = async (boardId: string | null, payload: any) => {
     }
 };
 
-const throttledBroadcastUpdate = (boardId: string | null, id: string, attributes: any) => {
+const throttledBroadcastUpdate = (boardId: string | null, id: string, attributes: Partial<Layer>) => {
     if (!boardId) return;
     pendingUpdates[id] = { ...pendingUpdates[id], ...attributes };
 

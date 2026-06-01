@@ -59,7 +59,7 @@ export default function LayerRenderer({
         id: layer.id,
         draggable: !isLocked && (activeTool === 'select' || activeTool === 'lasso'),
         name: 'canvas-shape',
-        onDragStart: (event: Konva.KonvaEventObject<DragEvent>) => {
+        onDragStart: (_event: Konva.KonvaEventObject<DragEvent>) => {
             if (!isSelected) {
                 onClick(layer.id);
             }
@@ -114,7 +114,7 @@ export default function LayerRenderer({
         onMouseLeave: () => {
             if (onMouseLeave) onMouseLeave(layer.id);
         },
-        onTransform: (event: Konva.KonvaEventObject<any>) => {
+        onTransform: (event: Konva.KonvaEventObject<Event>) => {
             const node = event.target;
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();
@@ -132,7 +132,7 @@ export default function LayerRenderer({
                 );
             }
         },
-        onTransformEnd: (event: Konva.KonvaEventObject<any>) => {
+        onTransformEnd: (event: Konva.KonvaEventObject<Event>) => {
             const node = event.target;
             const scaleX = node.scaleX();
             const scaleY = node.scaleY();

@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Wand2, ImagePlus, Lasso, SquareDashed, Triangle, Diamond, Star, Hexagon, ArrowUpRight, Minus, Shapes, StickyNote, Frame, Pencil, Globe, Code2 } from 'lucide-react';
 import { useState } from 'react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
+import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { PEN_SIZES, ERASER_SIZES } from '@/features/canvas/constants';
 
 type ActiveMenu = 'pen' | 'shape' | 'eraser' | 'select' | null;

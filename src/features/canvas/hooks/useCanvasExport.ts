@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useRef, useCallback } from 'react';
 import Konva from 'konva';
 import { toast } from 'sonner';

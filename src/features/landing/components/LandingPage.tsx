@@ -100,7 +100,7 @@ export default function LandingPage({ isAuthenticated }: LandingPageProps) {
                         <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
                             <div className="w-14 h-14 bg-violet-500/20 border border-violet-500/30 rounded-2xl flex items-center justify-center mb-6"><LayoutDashboard className="w-6 h-6 text-violet-400" /></div>
                             <h3 className="text-2xl font-bold mb-3">1. Initialize</h3>
-                            <p className="text-slate-400 text-base leading-relaxed">Create a boundless canvas. Set your environment to dark mode, dotted grid, or solid colors to match your team's focus.</p>
+                            <p className="text-slate-400 text-base leading-relaxed">Create a boundless canvas. Set your environment to dark mode, dotted grid, or solid colors to match your team&apos;s focus.</p>
                         </div>
                         <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
                             <div className="w-14 h-14 bg-fuchsia-500/20 border border-fuchsia-500/30 rounded-2xl flex items-center justify-center mb-6"><Layers className="w-6 h-6 text-fuchsia-400" /></div>

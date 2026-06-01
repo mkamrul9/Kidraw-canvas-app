@@ -1,3 +1,6 @@
+/* eslint-disable react-hooks/purity */
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable react-hooks/set-state-in-effect */
 'use client';
 
 import { useCommentStore, CanvasComment } from '@/features/canvas/store/useCommentStore';

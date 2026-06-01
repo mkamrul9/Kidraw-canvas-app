@@ -41,7 +41,7 @@ type CommentStore = {
     toggleResolved: (commentId: string, resolved: boolean) => Promise<void>;
 };
 
-export const useCommentStore = create<CommentStore>((set, get) => ({
+export const useCommentStore = create<CommentStore>((set) => ({
     comments: [],
     isLoading: false,
     activeThreadId: null,

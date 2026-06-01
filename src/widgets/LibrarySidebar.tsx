@@ -5,7 +5,7 @@ import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 import { LIBRARY_ITEMS, LibraryItem } from '@/features/canvas/constants/library';
 import { Button } from '@/shared/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
-import { Shapes, X, Search, Check, FolderKanban, Waypoints, Network, Type, Square, LayoutTemplate, ToggleRight, CheckSquare, Sliders } from 'lucide-react';
+import { Shapes, X, Search } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function LibrarySidebar() {

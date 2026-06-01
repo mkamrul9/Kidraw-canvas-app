@@ -51,6 +51,7 @@ export function usePresence(boardId: string | null) {
                     useCanvasStore.getState().updateLayer(data.id, data.attributes, true);
                 } else if (data.type === 'draw-update-batch') {
                     const store = useCanvasStore.getState();
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     data.updates.forEach((item: any) => {
                         store.updateLayer(item.id, item.attributes, true);
                     });
@@ -59,7 +60,7 @@ export function usePresence(boardId: string | null) {
                 } else {
                     updatePresence(data.userId, data);
                 }
-            } catch (err) {
+            } catch (_err) {
                 // Ignore ping or malformed JSON
             }
         };
@@ -94,7 +95,7 @@ export function usePresence(boardId: string | null) {
         } catch (err) {
             console.error('Failed to send presence update:', err);
         }
-    }, [boardId, effectiveUserId, guestId, session?.user?.name, session?.user?.image]);
+    }, [boardId, effectiveUserId, guestId, session]);
 
     const updateMyPresence = useCallback((x: number, y: number, text: string) => {
         const now = Date.now();

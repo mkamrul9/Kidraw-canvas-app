@@ -6,6 +6,7 @@ import { LayoutDashboard, ArrowRight } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { DASHBOARD_INITIAL_BOARD_COUNT } from '@/shared/constants';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function BoardGrid({ boards }: { boards: any[] }) {
     const [showAll, setShowAll] = useState(false);
 

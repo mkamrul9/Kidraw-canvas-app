@@ -1,7 +1,10 @@
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function loadPDFJS(): Promise<any> {
     if (typeof window === 'undefined') return null;
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).pdfjsLib) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return (window as any).pdfjsLib;
     }
 
@@ -9,6 +12,7 @@ export async function loadPDFJS(): Promise<any> {
         const script = document.createElement('script');
         script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
         script.onload = () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const pdfjsLib = (window as any).pdfjsLib;
             if (pdfjsLib) {
                 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';

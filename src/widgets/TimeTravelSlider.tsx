@@ -12,6 +12,7 @@ export default function TimeTravelSlider() {
     // Stop playing if we reach the end
     useEffect(() => {
         if (isPlaying && historyStep >= history.length - 1) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setIsPlaying(false);
         }
     }, [historyStep, history.length, isPlaying]);

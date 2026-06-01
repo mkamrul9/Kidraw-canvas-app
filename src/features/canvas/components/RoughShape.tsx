@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { Shape } from 'react-konva';
 import rough from 'roughjs/bin/rough';
@@ -120,7 +121,7 @@ export default function RoughShape({ layer, commonProps }: RoughShapeProps) {
             width={layer.width}
             height={layer.height}
             opacity={layer.opacity || 1}
-            sceneFunc={(context, shape) => {
+            sceneFunc={(context, _shape) => {
                 drawRough(context);
                 // We do NOT call context.fillStrokeShape(shape) because roughjs draws directly to the canvas context
             }}

@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
 import { useState } from 'react';
@@ -19,6 +20,7 @@ export default function CommentSidebar() {
     const displayedComments = activeTab === 'Open' ? openComments : resolvedComments;
 
     const timeAgo = (dateStr: string) => {
+        // eslint-disable-next-line react-hooks/purity
         const diff = Date.now() - new Date(dateStr).getTime();
         const mins = Math.floor(diff / 60000);
         if (mins < 1) return 'just now';

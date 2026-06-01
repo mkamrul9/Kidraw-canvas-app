@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
@@ -42,7 +43,7 @@ export async function GET(
             const pingInterval = setInterval(() => {
                 try {
                     controller.enqueue(new TextEncoder().encode(': ping\n\n'));
-                } catch (err) {
+                } catch (_err) {
                     clearInterval(pingInterval);
                 }
             }, 15000);
@@ -61,7 +62,7 @@ export async function GET(
                         if (otherClient.userId !== userId) {
                             try {
                                 otherClient.controller.enqueue(encoder.encode(`data: ${disconnectPayload}\n\n`));
-                            } catch (e) {
+                            } catch (_e) {
                                 // Broken pipe
                             }
                         }
@@ -113,7 +114,7 @@ export async function POST(
             if (client.userId !== userId) {
                 try {
                     client.controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
-                } catch (err) {
+                } catch (_err) {
                     // Cleanup client if writing to stream fails
                     clients.delete(client);
                 }
