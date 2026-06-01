@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/shared/components/ui/dialog';
-import { LogIn, Plus, LayoutDashboard, Sparkles, ArrowRight, User, Settings, CreditCard, Keyboard, Box } from 'lucide-react';
+import { Plus, Sparkles, User, Settings, CreditCard, Keyboard, Star, LogIn, LayoutDashboard, ArrowRight, Box, LayoutTemplate, Blocks, Rocket } from 'lucide-react';
 import BoardGrid from './BoardGrid';
 import Footer from '@/shared/components/Footer';
 import { createNewBoard } from '@/features/dashboard/actions/board-actions';
@@ -27,26 +27,6 @@ export default function DashboardView({ session, boards }: DashboardViewProps) {
     return (
         <div className="min-h-screen bg-black text-slate-50 flex flex-col font-sans relative overflow-x-hidden selection:bg-violet-500/30">
             
-            {/* Custom Keyframes */}
-            <style jsx global>{`
-                @keyframes float-slow {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    33% { transform: translate(30px, -50px) scale(1.1); }
-                    66% { transform: translate(-20px, 20px) scale(0.9); }
-                }
-                .animate-float-slow {
-                    animation: float-slow 15s ease-in-out infinite;
-                }
-                @keyframes float-delayed {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    33% { transform: translate(-30px, 40px) scale(0.9); }
-                    66% { transform: translate(20px, -30px) scale(1.1); }
-                }
-                .animate-float-delayed {
-                    animation: float-delayed 18s ease-in-out infinite reverse;
-                }
-            `}</style>
-
             {/* Background Layers */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 {/* Glowing Orbs */}
@@ -82,6 +62,18 @@ export default function DashboardView({ session, boards }: DashboardViewProps) {
                         <DropdownMenuGroup className="py-1">
                             <Link href="/?view=landing">
                                 <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><Sparkles className="w-4 h-4 mr-2 text-violet-400" /> View Landing Page</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/features">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><Star className="w-4 h-4 mr-2 text-amber-400" /> App Features</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/templates">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><LayoutTemplate className="w-4 h-4 mr-2 text-fuchsia-400" /> Templates</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/integrations">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><Blocks className="w-4 h-4 mr-2 text-rose-400" /> Integrations</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/changelog">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><Rocket className="w-4 h-4 mr-2 text-cyan-400" /> Changelog</DropdownMenuItem>
                             </Link>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator className="bg-white/10" />

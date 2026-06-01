@@ -927,7 +927,7 @@ export default function Board() {
                 left: editingText.x,
                 width: '140px',
                 height: '26px',
-                backgroundColor: '#0B0F19',
+                backgroundColor: '#000000',
                 color: '#94a3b8',
                 fontSize: `${14 * zoom}px`,
                 padding: '2px 6px',
@@ -1119,22 +1119,22 @@ export default function Board() {
                 >
                     {/* Top */}
                     <button 
-                        className="absolute left-1/2 -translate-x-1/2 -top-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        className="absolute left-1/2 -translate-x-1/2 -top-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-black"
                         onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('top', selectedLayer); }}
                     ><Plus className="w-4 h-4" /></button>
                     {/* Right */}
                     <button 
-                        className="absolute top-1/2 -translate-y-1/2 -right-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        className="absolute top-1/2 -translate-y-1/2 -right-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-black"
                         onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('right', selectedLayer); }}
                     ><Plus className="w-4 h-4" /></button>
                     {/* Bottom */}
                     <button 
-                        className="absolute left-1/2 -translate-x-1/2 -bottom-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        className="absolute left-1/2 -translate-x-1/2 -bottom-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-black"
                         onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('bottom', selectedLayer); }}
                     ><Plus className="w-4 h-4" /></button>
                     {/* Left */}
                     <button 
-                        className="absolute top-1/2 -translate-y-1/2 -left-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-[#0B0F19]"
+                        className="absolute top-1/2 -translate-y-1/2 -left-8 w-6 h-6 bg-violet-600 hover:bg-violet-500 hover:scale-110 active:scale-95 text-white rounded-full flex items-center justify-center shadow-lg pointer-events-auto transition-all duration-200 ring-2 ring-black"
                         onPointerDown={(e) => { e.preventDefault(); e.stopPropagation(); handleAddNode('left', selectedLayer); }}
                     ><Plus className="w-4 h-4" /></button>
                 </div>
@@ -1142,7 +1142,7 @@ export default function Board() {
 
             {embedPrompt && (
                 <div 
-                    className="absolute z-[60] bg-[#0B0F19]/90 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-white/10 flex gap-2 animate-in fade-in zoom-in-95"
+                    className="absolute z-[60] bg-zinc-950/90 backdrop-blur-md p-4 rounded-xl shadow-2xl border border-white/10 flex gap-2 animate-in fade-in zoom-in-95"
                     style={{
                         left: camera.x + embedPrompt.x * zoom,
                         top: camera.y + embedPrompt.y * zoom,
@@ -1369,7 +1369,7 @@ export default function Board() {
             )}
 
             {uploadProgress !== null && (
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#0B0F19]/90 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 z-[110] min-w-[280px]">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-zinc-950/90 backdrop-blur-xl border border-white/10 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 z-[110] min-w-[280px]">
                     <div className="flex items-center gap-2 text-white">
                         <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
                         <span className="font-bold text-sm">Processing Document...</span>

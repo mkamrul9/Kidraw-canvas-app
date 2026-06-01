@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { Sparkles, User, Settings, LayoutDashboard, CreditCard } from "lucide-react";
+import { Sparkles, User, Settings, LayoutDashboard, CreditCard, Star, LayoutTemplate, Blocks, Rocket } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/components/ui/tooltip";
@@ -49,6 +49,10 @@ export default function NavigationHUD() {
                         <DropdownMenuGroup className="py-1">
                             <Link href="/"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><LayoutDashboard className="w-4 h-4 mr-2" /> Dashboard</DropdownMenuItem></Link>
                             <Link href="/?view=landing"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><Sparkles className="w-4 h-4 mr-2" /> Landing Page</DropdownMenuItem></Link>
+                            <Link href="/info/features"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><Star className="w-4 h-4 mr-2 text-amber-400" /> App Features</DropdownMenuItem></Link>
+                            <Link href="/info/templates"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><LayoutTemplate className="w-4 h-4 mr-2 text-fuchsia-400" /> Templates</DropdownMenuItem></Link>
+                            <Link href="/info/integrations"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><Blocks className="w-4 h-4 mr-2 text-rose-400" /> Integrations</DropdownMenuItem></Link>
+                            <Link href="/info/changelog"><DropdownMenuItem className="cursor-pointer focus:bg-violet-600 focus:text-white rounded-md text-slate-300"><Rocket className="w-4 h-4 mr-2 text-cyan-400" /> Changelog</DropdownMenuItem></Link>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator className="bg-slate-700" />
                         <DropdownMenuGroup className="py-1">

@@ -160,3 +160,31 @@
 .animate-cursor-chat-fade-out {
   animation: cursorChatFadeOut 6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
 }
+
+@keyframes float-slow {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.9); }
+}
+
+.animate-float-slow {
+  animation: float-slow 15s ease-in-out infinite;
+}
+
+@keyframes float-delayed {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-30px, 40px) scale(0.9); }
+  66% { transform: translate(20px, -30px) scale(1.1); }
+}
+
+.animate-float-delayed {
+  animation: float-delayed 18s ease-in-out infinite reverse;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}

@@ -106,7 +106,7 @@ function CommentPin({ comment, zoom, camera }: CommentPinProps) {
 
             {/* Hover tooltip (when not active) */}
             {!isActive && (
-                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 bg-[#0B0F19]/95 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 scale-95 group-hover:scale-100">
+                <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 bg-zinc-950/95 backdrop-blur-xl border border-white/10 rounded-xl p-2.5 shadow-2xl opacity-0 group-hover:opacity-100 pointer-events-none transition-all duration-200 scale-95 group-hover:scale-100">
                     <div className="flex items-center gap-1.5 mb-1">
                         {comment.author.image ? (
                             <img src={comment.author.image} alt="" className="w-4 h-4 rounded-full" />
@@ -126,7 +126,7 @@ function CommentPin({ comment, zoom, camera }: CommentPinProps) {
             {isActive && (
                 <div
                     ref={popoverRef}
-                    className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-72 bg-[#0B0F19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-cursor-chat-pop"
+                    className="absolute left-1/2 -translate-x-1/2 bottom-full mb-3 w-72 bg-zinc-950/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden animate-cursor-chat-pop"
                     onClick={(e) => e.stopPropagation()}
                 >
                     {/* Thread Header */}
@@ -250,7 +250,7 @@ function NewCommentInput({ position, onSubmit, onCancel }: NewCommentInputProps)
                 transform: 'translate(-50%, -100%) translateY(-12px)',
             }}
         >
-            <div className="w-64 bg-[#0B0F19]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+            <div className="w-64 bg-zinc-950/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
                 <div className="px-3 pt-3 pb-2 border-b border-white/5">
                     <span className="text-xs font-extrabold text-white uppercase tracking-wider">New Comment</span>
                 </div>

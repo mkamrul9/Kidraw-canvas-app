@@ -9,17 +9,7 @@ export default function SignIn() {
     return (
         <div className="min-h-screen bg-black flex flex-col justify-center items-center relative overflow-hidden text-slate-50 font-sans selection:bg-violet-500/30">
 
-            {/* Custom Keyframes */}
-            <style jsx global>{`
-                @keyframes float-slow {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    33% { transform: translate(30px, -50px) scale(1.1); }
-                    66% { transform: translate(-20px, 20px) scale(0.9); }
-                }
-                .animate-float-slow {
-                    animation: float-slow 15s ease-in-out infinite;
-                }
-            `}</style>
+
 
             {/* Background Layers */}
             <div className="fixed inset-0 pointer-events-none z-0">

@@ -59,32 +59,7 @@ export default function LandingPage({ isAuthenticated }: LandingPageProps) {
     return (
         <div className="min-h-screen bg-black text-slate-50 overflow-x-hidden flex flex-col font-sans relative selection:bg-violet-500/30">
             
-            {/* Custom Keyframes for Marquee and Floats */}
-            <style jsx global>{`
-                @keyframes marquee {
-                    0% { transform: translateX(0%); }
-                    100% { transform: translateX(-50%); }
-                }
-                .animate-marquee {
-                    animation: marquee 30s linear infinite;
-                }
-                @keyframes float-slow {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    33% { transform: translate(30px, -50px) scale(1.1); }
-                    66% { transform: translate(-20px, 20px) scale(0.9); }
-                }
-                .animate-float-slow {
-                    animation: float-slow 15s ease-in-out infinite;
-                }
-                @keyframes float-delayed {
-                    0%, 100% { transform: translate(0, 0) scale(1); }
-                    33% { transform: translate(-30px, 40px) scale(0.9); }
-                    66% { transform: translate(20px, -30px) scale(1.1); }
-                }
-                .animate-float-delayed {
-                    animation: float-delayed 18s ease-in-out infinite reverse;
-                }
-            `}</style>
+
 
             {/* ─── BACKGROUND LAYERS ─── */}
             <div className="fixed inset-0 pointer-events-none z-0">

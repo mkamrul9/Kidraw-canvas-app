@@ -78,7 +78,7 @@ export default function LiveCursors() {
 
                             {/* Chat bubble if they are currently typing cursor chat */}
                             {user.text && (
-                                <div className="flex items-center bg-[#0B0F19]/90 border border-white/10 text-white text-xs px-3 py-1.5 shadow-2xl rounded-r-xl rounded-bl-xl rounded-tl-none max-w-[200px] min-h-[28px] break-words animate-cursor-chat-pop">
+                                <div className="flex items-center bg-zinc-950/90 border border-white/10 text-white text-xs px-3 py-1.5 shadow-2xl rounded-r-xl rounded-bl-xl rounded-tl-none max-w-[200px] min-h-[28px] break-words animate-cursor-chat-pop">
                                     <span className="font-medium pr-1 select-text">
                                         {user.text}
                                     </span>

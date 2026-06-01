@@ -253,7 +253,7 @@ export default function LayerRenderer({
                         <Rect
                             width={120}
                             height={26}
-                            fill="#0B0F19"
+                            fill="#09090b"
                             stroke="#334155"
                             strokeWidth={1}
                             cornerRadius={13}
