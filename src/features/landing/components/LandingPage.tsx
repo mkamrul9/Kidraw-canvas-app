@@ -1,170 +1,425 @@
+'use client';
+
+import React, { useEffect, useRef, useState, ReactNode } from 'react';
 import Link from 'next/link';
 import { Button } from '@/shared/components/ui/button';
-import { Sparkles, LayoutDashboard, Layers, Share2, MousePointer2, ArrowRight, Zap as FastIcon, HeartHandshake, ShieldCheck, Shapes, Type, ArrowUpRight } from 'lucide-react';
+import { 
+  Sparkles, 
+  LayoutDashboard, 
+  Layers, 
+  MousePointer2, 
+  ArrowRight, 
+  Shapes, 
+  Type, 
+  MessageSquare,
+  Box,
+  CheckCircle2,
+  Globe,
+  Lock,
+  Cpu
+} from 'lucide-react';
 import Footer from '@/shared/components/Footer';
 
+// ─── FADE IN ANIMATION COMPONENT ─────────────────────────────────────────────
+const FadeIn = ({ children, delay = 0, className = "" }: { children: ReactNode, delay?: number, className?: string }) => {
+    const ref = useRef<HTMLDivElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                if (entry.isIntersecting) {
+                    setIsVisible(true);
+                    observer.unobserve(entry.target);
+                }
+            },
+            { threshold: 0.1, rootMargin: "50px" }
+        );
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+    }, []);
+
+    return (
+        <div 
+            ref={ref} 
+            className={`transition-all duration-1000 ease-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'} ${className}`}
+            style={{ transitionDelay: `${delay}ms` }}
+        >
+            {children}
+        </div>
+    );
+};
+
+// ─── PROPS ───────────────────────────────────────────────────────────────────
 interface LandingPageProps {
     isAuthenticated: boolean;
 }
 
-/**
- * Full SaaS landing page — extracted from the 379-line page.tsx.
- * Renders hero, how-it-works, use-cases, testimonials, and footer.
- */
 export default function LandingPage({ isAuthenticated }: LandingPageProps) {
     return (
-        <div className="min-h-screen bg-[#0B0F19] text-slate-50 selection:bg-fuchsia-500/30 overflow-x-hidden flex flex-col font-sans">
+        <div className="min-h-screen bg-black text-slate-50 overflow-x-hidden flex flex-col font-sans relative selection:bg-violet-500/30">
+            
+            {/* Custom Keyframes for Marquee and Floats */}
+            <style jsx global>{`
+                @keyframes marquee {
+                    0% { transform: translateX(0%); }
+                    100% { transform: translateX(-50%); }
+                }
+                .animate-marquee {
+                    animation: marquee 30s linear infinite;
+                }
+                @keyframes float-slow {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(30px, -50px) scale(1.1); }
+                    66% { transform: translate(-20px, 20px) scale(0.9); }
+                }
+                .animate-float-slow {
+                    animation: float-slow 15s ease-in-out infinite;
+                }
+                @keyframes float-delayed {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(-30px, 40px) scale(0.9); }
+                    66% { transform: translate(20px, -30px) scale(1.1); }
+                }
+                .animate-float-delayed {
+                    animation: float-delayed 18s ease-in-out infinite reverse;
+                }
+            `}</style>
 
-            <nav className="h-20 border-b border-white/5 bg-[#0B0F19]/80 backdrop-blur-xl px-8 flex items-center justify-between fixed top-0 w-full z-50">
+            {/* ─── BACKGROUND LAYERS ─── */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                {/* Glowing Orbs */}
+                <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-violet-600/20 blur-[120px] rounded-full animate-float-slow"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[600px] h-[600px] bg-blue-600/10 blur-[150px] rounded-full animate-float-delayed"></div>
+                
+                {/* Masked Grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_50%,#000_20%,transparent_100%)]"></div>
+            </div>
+
+            {/* ─── NAVBAR ─── */}
+            <nav className="h-16 border-b border-white/5 bg-black/50 backdrop-blur-xl px-6 flex items-center justify-between fixed top-0 w-full z-50">
                 <div className="flex items-center gap-10">
-                    <Link href="/" className="flex items-center gap-2 cursor-pointer hover:scale-[1.02] transition-transform">
-                        <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-2 rounded-xl shadow-lg shadow-violet-500/20"><Sparkles className="w-5 h-5 text-white" /></div>
-                        <span className="font-extrabold text-xl text-white tracking-tight">Kidraw</span>
+                    <Link href="/" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
+                        <div className="bg-white p-1.5 rounded-md"><Box className="w-4 h-4 text-black" /></div>
+                        <span className="font-bold text-lg text-white tracking-tight">Kidraw</span>
                     </Link>
 
-                    <div className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-400">
-                        <Link href="#how-it-works" className="hover:text-white transition-colors">How it Works</Link>
-                        <Link href="#use-cases" className="hover:text-white transition-colors">Use Cases</Link>
-                        <Link href="#testimonials" className="hover:text-white transition-colors">Wall of Love</Link>
+                    <div className="hidden md:flex items-center gap-6 text-sm font-medium text-zinc-400">
+                        <Link href="#features" className="hover:text-white transition-colors">Features</Link>
+                        <Link href="#pricing" className="hover:text-white transition-colors">Pricing</Link>
+                        <Link href="#testimonials" className="hover:text-white transition-colors">Customers</Link>
                     </div>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-3">
                     {isAuthenticated ? (
-                        <Link href="/"><Button className="bg-white text-slate-950 hover:bg-slate-200 font-bold rounded-full px-6">Go to Dashboard</Button></Link>
+                        <Link href="/">
+                            <Button className="bg-white text-black hover:bg-zinc-200 font-semibold rounded-full px-5 h-9 text-sm">
+                                Go to Dashboard
+                            </Button>
+                        </Link>
                     ) : (
                         <>
-                            <Link href="/api/auth/signin"><Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10 font-medium">Log in</Button></Link>
-                            <Link href="/api/auth/signin"><Button className="bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white hover:from-violet-500 hover:to-fuchsia-500 font-bold rounded-full px-6">Sign up free</Button></Link>
+                            <Link href="/api/auth/signin">
+                                <Button variant="ghost" className="text-zinc-300 hover:text-white hover:bg-white/10 font-medium rounded-full px-4 h-9 text-sm">
+                                    Log in
+                                </Button>
+                            </Link>
+                            <Link href="/api/auth/signin">
+                                <Button className="bg-white text-black hover:bg-zinc-200 font-semibold rounded-full px-5 h-9 text-sm transition-transform hover:scale-105 active:scale-95">
+                                    Sign up free
+                                </Button>
+                            </Link>
                         </>
                     )}
                 </div>
             </nav>
 
-            {/* HERO SECTION WITH FLOATING MOCKUP */}
-            <div className="relative pt-32 pb-32 overflow-hidden flex-1 mt-20">
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-gradient-to-tr from-violet-600 via-fuchsia-600 to-amber-500 blur-[150px] opacity-20 rounded-full animate-pulse"></div>
-                <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
-
-                <div className="relative z-10 max-w-6xl mx-auto px-6 text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-fuchsia-300 mb-8 backdrop-blur-md shadow-lg shadow-fuchsia-500/10">
-                        <Sparkles className="w-4 h-4" /> Kidraw v2.0 is now live
-                    </div>
-                    <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight mb-8 leading-tight">
-                        Where engineering teams <br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 via-fuchsia-400 to-amber-400">
+            {/* ─── HERO SECTION ─── */}
+            <div className="relative pt-40 pb-20 flex-1 z-10 flex flex-col items-center">
+                <div className="max-w-5xl mx-auto px-6 text-center flex flex-col items-center">
+                    <FadeIn delay={0}>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-semibold text-zinc-300 mb-8 backdrop-blur-sm shadow-xl">
+                            <Sparkles className="w-3.5 h-3.5 text-violet-400" /> Kidraw v2.0 is now live
+                        </div>
+                    </FadeIn>
+                    
+                    <FadeIn delay={100}>
+                        <h1 className="text-6xl md:text-[90px] font-bold tracking-tighter mb-8 leading-[1.05] text-transparent bg-clip-text bg-gradient-to-b from-white via-white to-white/60">
+                            Where engineering teams <br className="hidden md:block" />
                             think out loud.
-                        </span>
-                    </h1>
-                    <p className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">
-                        The ultimate visual workspace. Map complex architectures, wireframe user flows, and collaborate in real-time on an infinite, blazing-fast canvas.
-                    </p>
-                    <div className="flex justify-center mb-20">
+                        </h1>
+                    </FadeIn>
+                    
+                    <FadeIn delay={200}>
+                        <p className="text-lg md:text-xl text-zinc-400 mb-10 max-w-2xl mx-auto leading-relaxed font-medium">
+                            The ultimate visual workspace. Map complex architectures, wireframe user flows, and collaborate in real-time on an infinite, blazing-fast canvas.
+                        </p>
+                    </FadeIn>
+                    
+                    <FadeIn delay={300}>
+                        <div className="flex justify-center mb-24">
+                            <Link href="/api/auth/signin">
+                                <Button size="lg" className="bg-violet-600 text-white hover:bg-violet-500 text-base px-8 py-6 rounded-full shadow-[0_0_40px_rgba(124,58,237,0.3)] transition-all hover:-translate-y-1 font-semibold border border-violet-400/30">
+                                    Start drawing for free <ArrowRight className="ml-2 w-4 h-4" />
+                                </Button>
+                            </Link>
+                        </div>
+                    </FadeIn>
+
+                    {/* HERO ABSTRACT GRAPHIC */}
+                    <FadeIn delay={400} className="w-full">
+                        <div className="relative w-full max-w-4xl mx-auto h-[400px] md:h-[500px] [perspective:1000px]">
+                            <div className="absolute inset-0 rounded-2xl bg-zinc-950/80 border border-white/10 backdrop-blur-2xl shadow-2xl overflow-hidden flex items-center justify-center">
+                                {/* Inner Grid */}
+                                <div className="absolute inset-0 bg-[radial-gradient(#ffffff15_1px,transparent_1px)] [background-size:20px_20px]"></div>
+
+                                {/* Center Node */}
+                                <div className="absolute w-40 h-24 bg-white/5 border border-white/10 rounded-xl backdrop-blur-md shadow-2xl flex flex-col items-center justify-center z-20">
+                                    <Globe className="w-6 h-6 text-zinc-300 mb-2" />
+                                    <span className="font-semibold text-white tracking-tight text-sm">API Gateway</span>
+                                </div>
+
+                                {/* Left Node */}
+                                <div className="absolute -translate-x-56 translate-y-12 w-32 h-32 bg-violet-500/10 border border-violet-500/20 rounded-full backdrop-blur-md shadow-2xl flex flex-col items-center justify-center z-10">
+                                    <Cpu className="w-6 h-6 text-violet-300 mb-2" />
+                                    <span className="font-semibold text-violet-200 text-sm">Client App</span>
+                                </div>
+
+                                {/* Right Node */}
+                                <div className="absolute translate-x-56 -translate-y-16 w-36 h-28 bg-emerald-500/10 border border-emerald-500/20 rounded-xl backdrop-blur-md shadow-2xl flex flex-col items-center justify-center z-10">
+                                    <Layers className="w-6 h-6 text-emerald-300 mb-2" />
+                                    <span className="font-semibold text-emerald-200 text-sm">PostgreSQL</span>
+                                </div>
+
+                                {/* Connecting Lines */}
+                                <svg className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
+                                    <path d="M 330 250 L 420 250" stroke="rgba(255,255,255,0.15)" strokeWidth="2" strokeDasharray="4 4" fill="none" className="animate-pulse" />
+                                    <path d="M 540 250 L 610 200" stroke="rgba(255,255,255,0.15)" strokeWidth="2" fill="none" />
+                                </svg>
+
+                                {/* Collaborator Cursor 1 */}
+                                <div className="absolute translate-x-12 translate-y-24 z-30 animate-bounce" style={{ animationDuration: '3s' }}>
+                                    <MousePointer2 className="w-5 h-5 text-fuchsia-500 fill-fuchsia-500 -rotate-12" />
+                                    <div className="bg-fuchsia-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ml-3 shadow-lg">Sarah</div>
+                                </div>
+
+                                {/* Collaborator Cursor 2 */}
+                                <div className="absolute -translate-x-32 -translate-y-20 z-30 animate-bounce" style={{ animationDuration: '4s', animationDelay: '1s' }}>
+                                    <MousePointer2 className="w-5 h-5 text-sky-500 fill-sky-500 -rotate-12" />
+                                    <div className="bg-sky-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full mt-1 ml-3 shadow-lg">Alex</div>
+                                </div>
+
+                                {/* Floating Toolbar */}
+                                <div className="absolute bottom-6 left-1/2 -translate-x-1/2 bg-zinc-900/80 backdrop-blur-xl border border-white/10 rounded-full p-2 flex gap-2 shadow-2xl z-40">
+                                    <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center cursor-pointer"><MousePointer2 className="w-4 h-4 text-white" /></div>
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"><Shapes className="w-4 h-4 text-zinc-400" /></div>
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"><Type className="w-4 h-4 text-zinc-400" /></div>
+                                    <div className="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer"><MessageSquare className="w-4 h-4 text-zinc-400" /></div>
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+                </div>
+            </div>
+
+            {/* ─── TRUSTED BY LOGOS ─── */}
+            <div className="relative z-10 py-10 border-y border-white/5 bg-zinc-950/30 backdrop-blur-sm overflow-hidden">
+                <p className="text-center text-sm font-semibold text-zinc-500 tracking-widest uppercase mb-8">Trusted by innovative teams worldwide</p>
+                <div className="relative w-full overflow-hidden flex">
+                    <div className="flex whitespace-nowrap animate-marquee items-center opacity-50">
+                        {/* Duplicate logos for infinite marquee effect */}
+                        {[...Array(2)].map((_, i) => (
+                            <div key={i} className="flex gap-24 px-12 items-center">
+                                <span className="text-2xl font-bold font-serif tracking-tighter text-zinc-400">Acme Corp</span>
+                                <span className="text-2xl font-black italic tracking-widest text-zinc-400">GLOBEX</span>
+                                <span className="text-xl font-bold tracking-tight text-zinc-400 flex items-center gap-1"><Box className="w-6 h-6"/> SOYUZ</span>
+                                <span className="text-2xl font-bold text-zinc-400">Initech</span>
+                                <span className="text-xl font-black uppercase text-zinc-400">Stark Ind</span>
+                                <span className="text-2xl font-serif italic text-zinc-400">Umbrella</span>
+                            </div>
+                        ))}
+                    </div>
+                    {/* Fade Edges */}
+                    <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-black to-transparent z-10"></div>
+                    <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-black to-transparent z-10"></div>
+                </div>
+            </div>
+
+            {/* ─── BENTO GRID FEATURES ─── */}
+            <div id="features" className="relative z-10 py-32 max-w-6xl mx-auto px-6">
+                <FadeIn>
+                    <div className="text-center mb-20">
+                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Everything you need to build.</h2>
+                        <p className="text-zinc-400 text-lg md:text-xl font-medium max-w-2xl mx-auto">A powerful toolkit designed for modern engineering teams to move fast without breaking things.</p>
+                    </div>
+                </FadeIn>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 auto-rows-[300px]">
+                    <FadeIn delay={100} className="md:col-span-2 bg-zinc-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div className="relative z-10 h-full flex flex-col justify-between">
+                            <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center"><Globe className="w-5 h-5 text-violet-400" /></div>
+                            <div>
+                                <h3 className="text-2xl font-bold mb-2">Real-time Multiplayer</h3>
+                                <p className="text-zinc-400 max-w-sm">Collaborate instantly with zero latency. See cursors move, shapes drawn, and ideas form in real-time across the globe.</p>
+                            </div>
+                        </div>
+                        {/* Decorative Graphic */}
+                        <div className="absolute -right-10 -bottom-10 w-64 h-64 bg-violet-500/10 rounded-full blur-[50px] group-hover:bg-violet-500/20 transition-colors"></div>
+                    </FadeIn>
+
+                    <FadeIn delay={200} className="md:col-span-1 bg-zinc-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="relative z-10 h-full flex flex-col justify-between">
+                            <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center"><Shapes className="w-5 h-5 text-fuchsia-400" /></div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-2">Smart Geometry</h3>
+                                <p className="text-zinc-400 text-sm">Auto-snapping shapes and orthogonal routing.</p>
+                            </div>
+                        </div>
+                    </FadeIn>
+
+                    <FadeIn delay={300} className="md:col-span-1 bg-zinc-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="relative z-10 h-full flex flex-col justify-between">
+                            <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center"><Lock className="w-5 h-5 text-emerald-400" /></div>
+                            <div>
+                                <h3 className="text-xl font-bold mb-2">Enterprise Security</h3>
+                                <p className="text-zinc-400 text-sm">Role-based access control and end-to-end encryption.</p>
+                            </div>
+                        </div>
+                    </FadeIn>
+
+                    <FadeIn delay={400} className="md:col-span-2 bg-zinc-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="absolute inset-0 bg-gradient-to-tl from-blue-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                        <div className="relative z-10 h-full flex flex-col justify-between">
+                            <div className="w-12 h-12 bg-white/5 border border-white/10 rounded-xl flex items-center justify-center"><LayoutDashboard className="w-5 h-5 text-blue-400" /></div>
+                            <div>
+                                <h3 className="text-2xl font-bold mb-2">Infinite Canvas</h3>
+                                <p className="text-zinc-400 max-w-sm">Never run out of space. Our hardware-accelerated WebGL engine can handle thousands of layers without dropping a frame.</p>
+                            </div>
+                        </div>
+                        <div className="absolute -right-10 -top-10 w-64 h-64 bg-blue-500/10 rounded-full blur-[50px] group-hover:bg-blue-500/20 transition-colors"></div>
+                    </FadeIn>
+                </div>
+            </div>
+
+            {/* ─── PRICING SECTION ─── */}
+            <div id="pricing" className="relative z-10 py-32 bg-zinc-950/50 border-y border-white/5">
+                <div className="max-w-6xl mx-auto px-6">
+                    <FadeIn>
+                        <div className="text-center mb-20">
+                            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Simple, transparent pricing.</h2>
+                            <p className="text-zinc-400 text-lg font-medium">Start for free, upgrade when you need more power.</p>
+                        </div>
+                    </FadeIn>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+                        {/* Free Tier */}
+                        <FadeIn delay={100}>
+                            <div className="bg-zinc-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm h-full flex flex-col">
+                                <h3 className="text-xl font-bold text-white mb-2">Starter</h3>
+                                <div className="text-4xl font-bold mb-6">$0<span className="text-lg text-zinc-500 font-medium">/mo</span></div>
+                                <p className="text-zinc-400 text-sm mb-8">Perfect for individuals and small projects.</p>
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    <li className="flex items-center text-sm text-zinc-300"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Up to 3 Boards</li>
+                                    <li className="flex items-center text-sm text-zinc-300"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Basic Shapes</li>
+                                    <li className="flex items-center text-sm text-zinc-300"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> 2 Collaborators</li>
+                                </ul>
+                                <Button className="w-full bg-white/10 hover:bg-white/20 text-white rounded-full">Get Started</Button>
+                            </div>
+                        </FadeIn>
+
+                        {/* Pro Tier */}
+                        <FadeIn delay={200}>
+                            <div className="bg-zinc-900/80 border border-violet-500/50 rounded-3xl p-8 backdrop-blur-sm h-full flex flex-col relative shadow-[0_0_30px_rgba(124,58,237,0.1)] scale-105">
+                                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-violet-600 text-white text-xs font-bold px-3 py-1 rounded-full">MOST POPULAR</div>
+                                <h3 className="text-xl font-bold text-white mb-2">Pro</h3>
+                                <div className="text-4xl font-bold mb-6">$12<span className="text-lg text-zinc-500 font-medium">/mo</span></div>
+                                <p className="text-zinc-400 text-sm mb-8">For professional teams shipping fast.</p>
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    <li className="flex items-center text-sm text-white"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Unlimited Boards</li>
+                                    <li className="flex items-center text-sm text-white"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Advanced Architecture Tools</li>
+                                    <li className="flex items-center text-sm text-white"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Unlimited Collaborators</li>
+                                    <li className="flex items-center text-sm text-white"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> PDF & Image Export</li>
+                                </ul>
+                                <Button className="w-full bg-violet-600 hover:bg-violet-500 text-white rounded-full font-bold">Start Free Trial</Button>
+                            </div>
+                        </FadeIn>
+
+                        {/* Enterprise Tier */}
+                        <FadeIn delay={300}>
+                            <div className="bg-zinc-900/40 border border-white/5 rounded-3xl p-8 backdrop-blur-sm h-full flex flex-col">
+                                <h3 className="text-xl font-bold text-white mb-2">Enterprise</h3>
+                                <div className="text-4xl font-bold mb-6">Custom</div>
+                                <p className="text-zinc-400 text-sm mb-8">For large organizations with strict security.</p>
+                                <ul className="space-y-4 mb-8 flex-1">
+                                    <li className="flex items-center text-sm text-zinc-300"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Everything in Pro</li>
+                                    <li className="flex items-center text-sm text-zinc-300"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> SSO & SAML</li>
+                                    <li className="flex items-center text-sm text-zinc-300"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Audit Logs</li>
+                                    <li className="flex items-center text-sm text-zinc-300"><CheckCircle2 className="w-4 h-4 mr-3 text-violet-400"/> Dedicated Support</li>
+                                </ul>
+                                <Button className="w-full bg-white/10 hover:bg-white/20 text-white rounded-full">Contact Sales</Button>
+                            </div>
+                        </FadeIn>
+                    </div>
+                </div>
+            </div>
+
+            {/* ─── WALL OF LOVE ─── */}
+            <div id="testimonials" className="relative z-10 py-32 max-w-6xl mx-auto px-6">
+                <FadeIn>
+                    <div className="text-center mb-20">
+                        <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4">Wall of Love</h2>
+                        <p className="text-zinc-400 text-lg font-medium">Don&apos;t just take our word for it.</p>
+                    </div>
+                </FadeIn>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FadeIn delay={100}>
+                        <div className="bg-white/[0.02] border border-white/5 p-10 rounded-3xl hover:bg-white/[0.04] transition-colors">
+                            <p className="text-lg text-zinc-300 mb-8 leading-relaxed italic">&quot;Kidraw replaced three different tools in our stack. The infinite canvas and smart routing allowed us to map our microservices in half the time.&quot;</p>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold">AL</div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Alex Larson</p>
+                                    <p className="text-zinc-500 text-xs font-medium">Engineering Lead @ TechCorp</p>
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+                    <FadeIn delay={200}>
+                        <div className="bg-white/[0.02] border border-white/5 p-10 rounded-3xl hover:bg-white/[0.04] transition-colors">
+                            <p className="text-lg text-zinc-300 mb-8 leading-relaxed italic">&quot;The real-time collaboration is flawless. We use it for remote sprint planning and architectural reviews. It feels like we are all in the same room.&quot;</p>
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 bg-zinc-800 rounded-full flex items-center justify-center text-white font-bold">SM</div>
+                                <div>
+                                    <p className="font-bold text-white text-sm">Sarah Mitchell</p>
+                                    <p className="text-zinc-500 text-xs font-medium">Product Manager @ StartupInc</p>
+                                </div>
+                            </div>
+                        </div>
+                    </FadeIn>
+                </div>
+            </div>
+
+            {/* ─── PRE-FOOTER CTA ─── */}
+            <div className="relative z-10 py-32 border-t border-white/5 bg-gradient-to-b from-transparent to-violet-900/10">
+                <div className="max-w-4xl mx-auto px-6 text-center">
+                    <FadeIn>
+                        <h2 className="text-5xl md:text-7xl font-bold tracking-tighter mb-8 text-white">Ready to start building?</h2>
+                        <p className="text-xl text-zinc-400 mb-10 max-w-2xl mx-auto">Join thousands of engineers who are visualizing their architecture faster than ever before.</p>
                         <Link href="/api/auth/signin">
-                            <Button size="lg" className="bg-white text-slate-950 hover:bg-slate-200 text-lg px-10 py-7 rounded-full shadow-[0_0_50px_rgba(217,70,239,0.3)] transition-all hover:scale-105 font-bold">
-                                Start Drawing Free <ArrowRight className="w-5 h-5 ml-2" />
+                            <Button size="lg" className="bg-white text-black hover:bg-zinc-200 text-base px-10 py-7 rounded-full shadow-[0_0_40px_rgba(255,255,255,0.2)] transition-all hover:scale-105 font-bold">
+                                Get Started for Free
                             </Button>
                         </Link>
-                    </div>
-
-                    {/* THE VISUAL SHOWCASE (3D Floating Canvas) */}
-                    <div className="relative mx-auto w-full max-w-5xl hidden md:block" style={{ perspective: '1200px' }}>
-                        <div className="relative rounded-2xl border border-white/10 bg-[#0F172A]/80 backdrop-blur-xl shadow-2xl overflow-hidden h-[500px] w-full transform rotate-x-[10deg] rotate-y-[-5deg] hover:rotate-x-0 hover:rotate-y-0 transition-transform duration-700 ease-out flex items-center justify-center">
-                            <div className="absolute inset-0 bg-[radial-gradient(#ffffff20_1px,transparent_1px)] [background-size:20px_20px]"></div>
-                            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 flex gap-2">
-                                <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center"><MousePointer2 className="w-4 h-4 text-white" /></div>
-                                <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center"><Shapes className="w-4 h-4 text-white" /></div>
-                                <div className="w-8 h-8 rounded bg-white/5 flex items-center justify-center"><Type className="w-4 h-4 text-white" /></div>
-                            </div>
-                            <div className="absolute top-[30%] left-[20%] w-48 h-32 bg-indigo-500/30 border-2 border-indigo-400 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-lg shadow-indigo-500/20 animate-pulse">
-                                <span className="font-bold text-indigo-200">Database Layer</span>
-                            </div>
-                            <div className="absolute top-[40%] right-[25%] w-40 h-40 bg-fuchsia-500/30 border-2 border-fuchsia-400 rounded-full flex items-center justify-center backdrop-blur-sm shadow-lg shadow-fuchsia-500/20">
-                                <span className="font-bold text-fuchsia-200">Load Balancer</span>
-                            </div>
-                            <div className="absolute top-[40%] left-[45%] w-32 h-[2px] bg-white/50 rotate-12"></div>
-                            <ArrowUpRight className="absolute top-[42%] left-[58%] w-6 h-6 text-white/50" />
-                        </div>
-                    </div>
+                    </FadeIn>
                 </div>
             </div>
 
-            {/* HOW TO USE SECTION */}
-            <div id="how-it-works" className="bg-[#0F172A] py-24 relative z-10 border-t border-white/5">
-                <div className="max-w-6xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className="text-3xl md:text-5xl font-extrabold mb-4">How it works</h2>
-                        <p className="text-slate-400 text-xl">Go from chaos to clarity in three simple steps.</p>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
-                            <div className="w-14 h-14 bg-violet-500/20 border border-violet-500/30 rounded-2xl flex items-center justify-center mb-6"><LayoutDashboard className="w-6 h-6 text-violet-400" /></div>
-                            <h3 className="text-2xl font-bold mb-3">1. Initialize</h3>
-                            <p className="text-slate-400 text-base leading-relaxed">Create a boundless canvas. Set your environment to dark mode, dotted grid, or solid colors to match your team&apos;s focus.</p>
-                        </div>
-                        <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
-                            <div className="w-14 h-14 bg-fuchsia-500/20 border border-fuchsia-500/30 rounded-2xl flex items-center justify-center mb-6"><Layers className="w-6 h-6 text-fuchsia-400" /></div>
-                            <h3 className="text-2xl font-bold mb-3">2. Architect</h3>
-                            <p className="text-slate-400 text-base leading-relaxed">Utilize our smart geometry, freehand pens, and image uploads to wireframe databases, UI flows, and logic trees instantly.</p>
-                        </div>
-                        <div className="bg-white/[0.02] border border-white/5 p-8 rounded-3xl backdrop-blur-md">
-                            <div className="w-14 h-14 bg-emerald-500/20 border border-emerald-500/30 rounded-2xl flex items-center justify-center mb-6"><Share2 className="w-6 h-6 text-emerald-400" /></div>
-                            <h3 className="text-2xl font-bold mb-3">3. Collaborate</h3>
-                            <p className="text-slate-400 text-base leading-relaxed">Generate role-based share links. Let stakeholders view, or invite engineers to edit and drop sticky-note comments in real-time.</p>
-                        </div>
-                    </div>
-                </div>
+            <div className="relative z-10">
+                <Footer />
             </div>
-
-            {/* WHO IS IT FOR SECTION */}
-            <div id="use-cases" className="bg-[#0B0F19] max-w-6xl mx-auto px-6 py-24 relative z-10 w-full">
-                <div className="text-center mb-16">
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-4">Built for builders.</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
-                        <FastIcon className="w-10 h-10 text-amber-400 mb-6" /><h3 className="text-xl font-bold mb-3">Full-Stack Devs</h3>
-                        <p className="text-slate-400 text-sm">Visualize complex Next.js, Prisma, and PostgreSQL data schemas before writing code.</p>
-                    </div>
-                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
-                        <ShieldCheck className="w-10 h-10 text-emerald-400 mb-6" /><h3 className="text-xl font-bold mb-3">System Architects</h3>
-                        <p className="text-slate-400 text-sm">Design load balancers, microservices, and CI/CD pipelines on an infinite grid.</p>
-                    </div>
-                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
-                        <HeartHandshake className="w-10 h-10 text-rose-400 mb-6" /><h3 className="text-xl font-bold mb-3">Product Managers</h3>
-                        <p className="text-slate-400 text-sm">Wireframe user journeys and gather contextual feedback via sticky-note comments.</p>
-                    </div>
-                    <div className="bg-white/[0.02] border border-white/5 rounded-2xl p-8 backdrop-blur-md hover:-translate-y-2 transition-transform">
-                        <Layers className="w-10 h-10 text-blue-400 mb-6" /><h3 className="text-xl font-bold mb-3">UI/UX Designers</h3>
-                        <p className="text-slate-400 text-sm">Rapidly prototype interface layouts and map out component hierarchies.</p>
-                    </div>
-                </div>
-            </div>
-
-            {/* TESTIMONIALS SECTION */}
-            <div id="testimonials" className="bg-[#0D0B1A] py-24 relative z-10 border-t border-white/5">
-                <div className="max-w-6xl mx-auto px-6">
-                    <h2 className="text-3xl md:text-5xl font-extrabold mb-12 text-center">Wall of Love</h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                        <div className="bg-white/[0.03] border border-violet-500/20 p-10 rounded-3xl shadow-xl shadow-violet-900/20">
-                            <p className="text-xl text-slate-300 italic mb-8">&quot;Kidraw was instrumental when mapping out the real-time websocket infrastructure. The infinite canvas and smart geometry allowed us to see the entire system at a glance.&quot;</p>
-                            <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 bg-violet-500/20 rounded-full flex items-center justify-center border border-violet-500/30 text-violet-300 font-bold text-xl">AL</div>
-                                <div><p className="font-bold text-white text-lg">Alex Larson</p><p className="text-slate-500">Engineering Lead</p></div>
-                            </div>
-                        </div>
-                        <div className="bg-white/[0.03] border border-fuchsia-500/20 p-10 rounded-3xl shadow-xl shadow-fuchsia-900/20">
-                            <p className="text-xl text-slate-300 italic mb-8">&quot;Wireframing payment flow logic was effortless. The laser pointer tool made our virtual pitch meetings incredibly seamless and focused.&quot;</p>
-                            <div className="flex items-center gap-4">
-                                <div className="w-14 h-14 bg-fuchsia-500/20 rounded-full flex items-center justify-center border border-fuchsia-500/30 text-fuchsia-300 font-bold text-xl">SM</div>
-                                <div><p className="font-bold text-white text-lg">Sarah Mitchell</p><p className="text-slate-500">Product Manager</p></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <Footer />
         </div>
     );
 }

@@ -2,30 +2,47 @@
 
 import { signIn } from "next-auth/react";
 import { Button } from "@/shared/components/ui/button";
-import { Sparkles } from "lucide-react";
+import { Box } from "lucide-react";
 import Link from "next/link";
 
 export default function SignIn() {
     return (
-        <div className="min-h-screen bg-[#0B0F19] flex flex-col justify-center items-center relative overflow-hidden text-slate-50">
+        <div className="min-h-screen bg-black flex flex-col justify-center items-center relative overflow-hidden text-slate-50 font-sans selection:bg-violet-500/30">
 
-            {/* Background Aurora Glow */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-gradient-to-tr from-violet-600 via-fuchsia-600 to-amber-500 blur-[150px] opacity-20 rounded-full animate-pulse"></div>
-            <div className="absolute inset-0 bg-[radial-gradient(#ffffff10_1px,transparent_1px)] [background-size:24px_24px] opacity-30"></div>
+            {/* Custom Keyframes */}
+            <style jsx global>{`
+                @keyframes float-slow {
+                    0%, 100% { transform: translate(0, 0) scale(1); }
+                    33% { transform: translate(30px, -50px) scale(1.1); }
+                    66% { transform: translate(-20px, 20px) scale(0.9); }
+                }
+                .animate-float-slow {
+                    animation: float-slow 15s ease-in-out infinite;
+                }
+            `}</style>
 
-            <div className="relative z-10 w-full max-w-md bg-white/[0.02] border border-white/10 p-8 rounded-3xl backdrop-blur-2xl shadow-2xl">
-                <div className="flex flex-col items-center mb-8">
-                    <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-3 rounded-2xl shadow-lg mb-4 shadow-violet-500/20">
-                        <Sparkles className="w-8 h-8 text-white" />
+            {/* Background Layers */}
+            <div className="fixed inset-0 pointer-events-none z-0">
+                {/* Glowing Orbs */}
+                <div className="absolute top-[20%] left-[30%] w-[500px] h-[500px] bg-violet-600/20 blur-[120px] rounded-full animate-float-slow"></div>
+                
+                {/* Masked Grid */}
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_50%,#000_20%,transparent_100%)]"></div>
+            </div>
+
+            <div className="relative z-10 w-full max-w-md bg-zinc-900/40 border border-white/5 p-10 rounded-3xl backdrop-blur-2xl shadow-2xl">
+                <div className="flex flex-col items-center mb-10">
+                    <div className="bg-white p-2 rounded-xl shadow-lg mb-6">
+                        <Box className="w-8 h-8 text-black" />
                     </div>
-                    <h1 className="text-3xl font-extrabold tracking-tight mb-2">Welcome to Kidraw</h1>
-                    <p className="text-slate-400 text-center text-sm">Sign in to access your infinite workspaces and collaborate with your team.</p>
+                    <h1 className="text-3xl font-bold tracking-tight mb-3 text-white">Welcome back</h1>
+                    <p className="text-zinc-400 text-center text-sm font-medium">Sign in to access your workspaces and collaborate with your team.</p>
                 </div>
 
                 <div className="flex flex-col gap-4">
                     <Button
                         onClick={() => signIn('github', { callbackUrl: '/' })}
-                        className="w-full h-12 bg-white text-slate-950 hover:bg-slate-200 font-semibold rounded-xl transition-all hover:scale-[1.02] shadow-md"
+                        className="w-full h-12 bg-white text-black hover:bg-zinc-200 font-bold rounded-xl transition-all hover:scale-[1.02] shadow-md"
                     >
                         {/* Native GitHub SVG */}
                         <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -36,7 +53,7 @@ export default function SignIn() {
 
                     <Button
                         onClick={() => signIn('google', { callbackUrl: '/' })}
-                        className="w-full h-12 bg-white/[0.05] text-white hover:bg-white/[0.1] border border-white/10 font-semibold rounded-xl transition-all hover:scale-[1.02]"
+                        className="w-full h-12 bg-white/5 text-white hover:bg-white/10 border border-white/10 font-bold rounded-xl transition-all hover:scale-[1.02]"
                     >
                         {/* Native Google SVG */}
                         <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
@@ -49,8 +66,8 @@ export default function SignIn() {
                     </Button>
                 </div>
 
-                <p className="mt-8 text-center text-xs text-slate-500">
-                    By signing in, you agree to our <Link href="#" className="underline hover:text-slate-300">Terms of Service</Link> and <Link href="#" className="underline hover:text-slate-300">Privacy Policy</Link>.
+                <p className="mt-8 text-center text-xs text-zinc-500 font-medium">
+                    By signing in, you agree to our <Link href="#" className="underline hover:text-zinc-300">Terms of Service</Link> and <Link href="#" className="underline hover:text-zinc-300">Privacy Policy</Link>.
                 </p>
             </div>
         </div>
