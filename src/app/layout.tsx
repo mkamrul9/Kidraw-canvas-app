@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import SessionProvider from "@/providers/SessionProvider";
+import { ThemeProvider } from "@/providers/ThemeProvider";
 import { Toaster } from "@/shared/components/ui/sonner";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
@@ -16,8 +17,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <html lang="en" className="dark">
             <body className={`${inter.variable} font-sans antialiased`}>
                 <SessionProvider>
-                    {children}
-                    <Toaster richColors />
+                    <ThemeProvider
+                        attribute="class"
+                        defaultTheme="dark"
+                        enableSystem
+                        disableTransitionOnChange
+                    >
+                        {children}
+                        <Toaster richColors />
+                    </ThemeProvider>
                 </SessionProvider>
             </body>
         </html>

@@ -1,7 +1,7 @@
 /* eslint-disable react/no-unescaped-entities */
-import Link from "next/link";
 import { ArrowLeft, FileText, Lock, Cookie, ShieldCheck } from "lucide-react";
 import { notFound } from "next/navigation";
+import GlobalNavbar from "@/shared/components/GlobalNavbar";
 
 function getPolicyContent(slug: string) {
     switch (slug) {
@@ -171,30 +171,26 @@ export default async function InfoPage({ params }: { params: Promise<{ slug: str
     }
 
     return (
-        <div className="min-h-screen bg-black text-slate-50 flex flex-col relative overflow-hidden font-sans selection:bg-violet-500/30">
+        <div className="min-h-screen bg-background text-foreground flex flex-col relative overflow-hidden font-sans selection:bg-violet-500/30">
             {/* Background Layers */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-violet-600/10 blur-[120px] rounded-full animate-float-slow"></div>
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_20%,transparent_100%)]"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(124,58,237,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(124,58,237,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_20%,transparent_100%)]"></div>
             </div>
 
-            <nav className="h-16 border-b border-white/5 bg-black/50 backdrop-blur-xl px-8 flex items-center sticky top-0 z-50">
-                <Link href="/" className="flex items-center text-zinc-400 hover:text-white transition-colors text-sm font-medium">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
-                </Link>
-            </nav>
+            <GlobalNavbar />
 
             <main className="flex-1 max-w-4xl w-full mx-auto p-8 py-20 relative z-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-white mb-6 shadow-sm">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-secondary/50 border border-border text-xs font-bold text-foreground mb-6 shadow-sm">
                     {policy.icon} Kidraw Information
                 </div>
-                <h1 className="text-4xl font-bold text-white mb-8 tracking-tight">{policy.title}</h1>
+                <h1 className="text-4xl font-bold text-foreground mb-8 tracking-tight">{policy.title}</h1>
 
-                <div className="prose prose-invert prose-zinc max-w-none prose-headings:text-white prose-p:text-zinc-300 prose-a:text-violet-400 hover:prose-a:text-violet-300 prose-li:text-zinc-300">
+                <div className="prose prose-invert prose-zinc max-w-none prose-headings:text-foreground prose-p:text-muted-foreground prose-a:text-violet-400 hover:prose-a:text-violet-300 prose-li:text-muted-foreground">
                     {policy.content}
                     
-                    <div className="h-[1px] bg-white/5 my-12 w-full"></div>
-                    <p className="text-zinc-500 font-medium text-sm">Last updated: {new Date().toLocaleDateString()}</p>
+                    <div className="h-[1px] bg-secondary/50 my-12 w-full"></div>
+                    <p className="text-muted-foreground font-medium text-sm">Last updated: {new Date().toLocaleDateString()}</p>
                 </div>
             </main>
         </div>

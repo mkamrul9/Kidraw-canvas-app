@@ -1,6 +1,7 @@
 'use client';
 
-import Link from "next/link";
+import Link from 'next/link';
+import KidrawLogo from '@/shared/components/KidrawLogo';
 import { useSession } from "next-auth/react";
 import { Sparkles, User, Settings, LayoutDashboard, CreditCard, Star, LayoutTemplate, Blocks, Rocket, BookOpen, Users, PenTool, Code } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
@@ -17,8 +18,7 @@ export default function NavigationHUD() {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link href="/?view=landing" className="flex items-center gap-2 bg-[#0B0F19] px-4 py-2 rounded-xl shadow-2xl border border-slate-700 hover:bg-slate-900 hover:scale-105 transition-all">
-                            <div className="bg-gradient-to-br from-violet-600 to-fuchsia-600 p-1.5 rounded-lg"><Sparkles className="w-4 h-4 text-white" /></div>
-                            <span className="font-extrabold text-white tracking-tight">Kidraw</span>
+                            <KidrawLogo iconSize={20} textClassName="font-extrabold text-white tracking-tight" />
                         </Link>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">View Homepage</TooltipContent>

@@ -1,21 +1,18 @@
 import Link from "next/link";
-import { ArrowLeft, Sparkles, PencilRuler, Users, FileCode2, History, Zap, Lock, Palette } from "lucide-react";
+import { Sparkles, PencilRuler, Users, FileCode2, History, Zap, Lock, Palette } from "lucide-react";
+import GlobalNavbar from "@/shared/components/GlobalNavbar";
 
 export default function FeaturesPage() {
     return (
-        <div className="min-h-screen bg-black text-slate-50 relative overflow-hidden font-sans selection:bg-violet-500/30">
+        <div className="min-h-screen bg-background text-foreground relative overflow-hidden font-sans selection:bg-violet-500/30">
             {/* Background Layers */}
             <div className="fixed inset-0 pointer-events-none z-0">
                 <div className="absolute top-[20%] right-[-10%] w-[500px] h-[500px] bg-violet-600/10 blur-[120px] rounded-full animate-float-slow"></div>
                 <div className="absolute bottom-[10%] left-[-10%] w-[600px] h-[600px] bg-blue-600/10 blur-[150px] rounded-full animate-float-delayed"></div>
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff0a_1px,transparent_1px),linear-gradient(to_bottom,#ffffff0a_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_20%,transparent_100%)]"></div>
+                <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(124,58,237,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(124,58,237,0.05)_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] [background-size:40px_40px] [mask-image:radial-gradient(ellipse_80%_80%_at_50%_0%,#000_20%,transparent_100%)]"></div>
             </div>
 
-            <nav className="h-16 border-b border-white/5 bg-black/50 backdrop-blur-xl px-8 flex items-center sticky top-0 z-50">
-                <Link href="/" className="flex items-center text-zinc-400 hover:text-white transition-colors text-sm font-medium">
-                    <ArrowLeft className="w-4 h-4 mr-2" /> Back to Dashboard
-                </Link>
-            </nav>
+            <GlobalNavbar />
 
             <main className="flex-1 max-w-6xl w-full mx-auto p-8 py-20 relative z-10">
                 
@@ -24,13 +21,13 @@ export default function FeaturesPage() {
                     <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-violet-500/10 border border-violet-500/20 text-xs font-bold text-violet-400 mb-8 shadow-sm">
                         <Sparkles className="w-4 h-4" /> Everything you need to create
                     </div>
-                    <h1 className="text-5xl md:text-6xl font-extrabold text-white mb-6 tracking-tighter">
+                    <h1 className="text-5xl md:text-6xl font-extrabold text-foreground mb-6 tracking-tighter">
                         Powerful Features for <br/>
                         <span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-fuchsia-400">
                             Limitless Creativity
                         </span>
                     </h1>
-                    <p className="text-zinc-400 text-xl max-w-2xl mx-auto leading-relaxed">
+                    <p className="text-muted-foreground text-xl max-w-2xl mx-auto leading-relaxed">
                         Kidraw combines the freedom of an infinite canvas with the power of real-time collaboration, built for teams that move fast.
                     </p>
                 </div>
@@ -70,7 +67,7 @@ export default function FeaturesPage() {
                         },
                         { 
                             title: "Secure & Private", 
-                            icon: <Lock className="w-8 h-8 text-zinc-400" />, 
+                            icon: <Lock className="w-8 h-8 text-muted-foreground" />, 
                             desc: "Enterprise-grade security. Control access with private boards, read-only links, and password protection.",
                             bg: "from-zinc-500/10 to-slate-500/10"
                         },
@@ -81,13 +78,13 @@ export default function FeaturesPage() {
                             bg: "from-pink-500/10 to-rose-500/10"
                         }
                     ].map((feature, i) => (
-                        <div key={i} className="group relative rounded-[2rem] overflow-hidden border border-white/5 bg-zinc-900/40 backdrop-blur-sm transition-all hover:border-white/20 p-8 flex flex-col h-full">
+                        <div key={i} className="group relative rounded-[2rem] overflow-hidden border border-border bg-card backdrop-blur-sm transition-all hover:border-white/20 p-8 flex flex-col h-full">
                             <div className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${feature.bg} opacity-0 group-hover:opacity-100 transition-opacity`}></div>
-                            <div className={`bg-gradient-to-br ${feature.bg} w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border border-white/5 group-hover:scale-110 transition-transform`}>
+                            <div className={`bg-gradient-to-br ${feature.bg} w-16 h-16 rounded-2xl flex items-center justify-center mb-6 border border-border group-hover:scale-110 transition-transform`}>
                                 {feature.icon}
                             </div>
-                            <h3 className="text-2xl font-bold text-white mb-3 tracking-tight">{feature.title}</h3>
-                            <p className="text-zinc-400 leading-relaxed flex-1">{feature.desc}</p>
+                            <h3 className="text-2xl font-bold text-foreground mb-3 tracking-tight">{feature.title}</h3>
+                            <p className="text-muted-foreground leading-relaxed flex-1">{feature.desc}</p>
                         </div>
                     ))}
                 </div>
