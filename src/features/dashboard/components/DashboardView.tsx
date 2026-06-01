@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuShortcut, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/shared/components/ui/dialog';
-import { Plus, Sparkles, User, Settings, CreditCard, Keyboard, Star, LogIn, LayoutDashboard, ArrowRight, Box, LayoutTemplate, Blocks, Rocket } from 'lucide-react';
+import { Plus, Sparkles, User, Settings, CreditCard, Keyboard, Star, LogIn, LayoutDashboard, ArrowRight, Box, LayoutTemplate, Blocks, Rocket, BookOpen, Users, PenTool, Code } from 'lucide-react';
 import BoardGrid from './BoardGrid';
 import Footer from '@/shared/components/Footer';
 import { createNewBoard } from '@/features/dashboard/actions/board-actions';
@@ -74,6 +74,21 @@ export default function DashboardView({ session, boards }: DashboardViewProps) {
                             </Link>
                             <Link href="/info/changelog">
                                 <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><Rocket className="w-4 h-4 mr-2 text-cyan-400" /> Changelog</DropdownMenuItem>
+                            </Link>
+                        </DropdownMenuGroup>
+                        <DropdownMenuSeparator className="bg-white/10" />
+                        <DropdownMenuGroup className="py-1">
+                            <Link href="/info/help-center">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><BookOpen className="w-4 h-4 mr-2 text-emerald-400" /> Help Center</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/community">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><Users className="w-4 h-4 mr-2 text-emerald-400" /> Community</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/blog">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><PenTool className="w-4 h-4 mr-2 text-amber-400" /> Blog</DropdownMenuItem>
+                            </Link>
+                            <Link href="/info/developers-api">
+                                <DropdownMenuItem className="cursor-pointer focus:bg-white/10 focus:text-white rounded-md text-zinc-300 transition-colors"><Code className="w-4 h-4 mr-2 text-blue-400" /> Developer API</DropdownMenuItem>
                             </Link>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator className="bg-white/10" />
