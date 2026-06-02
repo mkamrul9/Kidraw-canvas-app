@@ -3,7 +3,7 @@
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
-import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Wand2, ImagePlus, Lasso, SquareDashed, Triangle, Diamond, Star, Hexagon, ArrowUpRight, Minus, Shapes, StickyNote, Frame, Pencil, Globe, Code2 } from 'lucide-react';
+import { MousePointer2, Hand, Square, Circle, Pen, Undo, Redo, Type, Eraser, XSquare, Wand2, ImagePlus, Lasso, SquareDashed, Triangle, Diamond, Star, Hexagon, ArrowUpRight, Minus, Shapes, StickyNote, Frame, Pencil, Globe, Code2, ChevronDown, ChevronUp } from 'lucide-react';
 import { useState } from 'react';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { PEN_SIZES, ERASER_SIZES } from '@/features/canvas/constants';
@@ -21,6 +21,7 @@ export default function Toolbar() {
 
     // state to manage which dropdown menu is open. null means no menu is open
     const [activeMenu, setActiveMenu] = useState<ActiveMenu>(null);
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
     // if menu was already open and user clicks the same tool, we close the menu. if user clicks a different tool, we open the new menu
     const toggleMenu = (menu: Exclude<ActiveMenu, null>) => setActiveMenu(activeMenu === menu ? null : menu);
@@ -32,8 +33,17 @@ export default function Toolbar() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-[100] top-6 left-1/2 -translate-x-1/2 bg-[#0B0F19]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex items-center gap-1 p-1.5 transition-all">
-                <div className="relative flex items-center">
+            <div className={`absolute z-[100] top-20 sm:top-6 left-1/2 -translate-x-1/2 bg-[#0B0F19]/80 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/10 flex flex-col sm:flex-row items-center p-1.5 transition-all ${isMobileExpanded ? 'w-[310px]' : 'w-auto'} sm:w-auto`}>
+                
+                <div className="sm:hidden w-full flex justify-center">
+                    <Button variant="ghost" size="sm" onClick={() => setIsMobileExpanded(!isMobileExpanded)} className="text-slate-300 w-full h-8">
+                        {isMobileExpanded ? <ChevronUp className="w-4 h-4 mr-2" /> : <ChevronDown className="w-4 h-4 mr-2" />}
+                        <span className="text-xs font-semibold">{isMobileExpanded ? "Hide Tools" : "Tools"}</span>
+                    </Button>
+                </div>
+
+                <div className={`${isMobileExpanded ? 'flex' : 'hidden'} sm:flex flex-wrap sm:flex-nowrap items-center justify-center gap-1 w-full pt-1 sm:pt-0`}>
+                    <div className="relative flex items-center">
                     <ToolButton
                         icon={activeTool === 'lasso' ? <Lasso className="w-4 h-4" /> : activeTool === 'select' ? <SquareDashed className="w-4 h-4" /> : <MousePointer2 className="w-4 h-4" />}
                         label="Select Tools (V)"
@@ -150,8 +160,9 @@ export default function Toolbar() {
 
                 <div className="w-[1px] h-8 bg-white/10 mx-1"></div>
 
-                <ToolButton icon={<Undo className="w-4 h-4" />} label="Undo (Ctrl+Z)" onClick={undo} disabled={historyStep === 0 || isLocked} />
-                <ToolButton icon={<Redo className="w-4 h-4" />} label="Redo (Ctrl+Y)" onClick={redo} disabled={historyStep === history.length - 1 || isLocked} />
+                    <ToolButton icon={<Undo className="w-4 h-4" />} label="Undo (Ctrl+Z)" onClick={undo} disabled={historyStep === 0 || isLocked} />
+                    <ToolButton icon={<Redo className="w-4 h-4" />} label="Redo (Ctrl+Y)" onClick={redo} disabled={historyStep === history.length - 1 || isLocked} />
+                </div>
             </div>
         </TooltipProvider>
     );

@@ -14,7 +14,7 @@ export default function NavigationHUD() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-50 top-6 left-6 flex items-center gap-3">
+            <div className="absolute z-50 top-4 left-4 sm:top-6 sm:left-6 flex items-center gap-2 sm:gap-3">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Link href="/?view=landing" className="flex items-center gap-2 bg-[#0B0F19] px-4 py-2 rounded-xl shadow-2xl border border-slate-700 hover:bg-slate-900 hover:scale-105 transition-all">

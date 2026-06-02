@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
-import { Sparkles, User, Settings, CreditCard, Keyboard, Star, LogIn, LayoutDashboard, LayoutTemplate, Blocks, Rocket, BookOpen, Users, PenTool, Code, Sun, Moon } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
+import { Sparkles, User, Settings, CreditCard, Keyboard, Star, LogIn, LayoutDashboard, LayoutTemplate, Blocks, Rocket, BookOpen, Users, PenTool, Code, Sun, Moon, Menu } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { useTheme } from 'next-themes';
 import { Avatar, AvatarFallback, AvatarImage } from '@/shared/components/ui/avatar';
@@ -14,9 +14,9 @@ export default function GlobalNavbar() {
     const { theme, setTheme } = useTheme();
 
     return (
-        <nav className="h-16 border-b border-border bg-background/80 backdrop-blur-xl px-4 md:px-8 flex items-center justify-between sticky top-0 z-50">
+        <nav className="h-14 sm:h-16 border-b border-border bg-background/80 backdrop-blur-xl px-3 sm:px-4 md:px-8 flex items-center justify-between sticky top-0 z-50">
             {/* Left Section: Logo & Breadcrumb */}
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3 sm:gap-6">
                 <Link href="/?view=landing" className="flex items-center gap-2 cursor-pointer hover:opacity-80 transition-opacity">
                     <KidrawLogo textClassName="font-bold text-lg text-foreground tracking-tight hidden sm:inline-block" />
                 </Link>
@@ -32,15 +32,15 @@ export default function GlobalNavbar() {
             </div>
 
             {/* Right Section: Actions & Avatar */}
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 sm:gap-4">
                 <Button 
                     variant="ghost" 
                     size="icon" 
-                    className="text-muted-foreground hover:text-foreground rounded-full" 
+                    className="text-muted-foreground hover:text-foreground rounded-full h-8 w-8 sm:h-10 sm:w-10" 
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
                 >
-                    <Sun className="h-5 w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-                    <Moon className="absolute h-5 w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                    <Sun className="h-4 w-4 sm:h-5 sm:w-5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                    <Moon className="absolute h-4 w-4 sm:h-5 sm:w-5 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
                     <span className="sr-only">Toggle theme</span>
                 </Button>
 
@@ -48,7 +48,7 @@ export default function GlobalNavbar() {
                     <>
                         <DropdownMenu>
                             <DropdownMenuTrigger className="outline-none">
-                                <Avatar className="h-9 w-9 border-2 border-border shadow-sm ring-2 ring-transparent hover:ring-violet-500 transition-all cursor-pointer">
+                                <Avatar className="h-8 w-8 sm:h-9 sm:w-9 border-2 border-border shadow-sm ring-2 ring-transparent hover:ring-violet-500 transition-all cursor-pointer">
                                     <AvatarImage src={session.user.image || ''} />
                                     <AvatarFallback className="bg-muted text-violet-500 font-bold">{session.user.name?.charAt(0) || 'U'}</AvatarFallback>
                                 </Avatar>
@@ -119,15 +119,54 @@ export default function GlobalNavbar() {
                         </DropdownMenu>
                     </>
                 ) : (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2 sm:gap-3">
                         <Link href="/auth/signin">
                             <Button variant="ghost" className="hidden sm:flex text-foreground hover:bg-accent hover:text-accent-foreground rounded-xl font-medium">Log in</Button>
                         </Link>
                         <Link href="/auth/signin">
-                            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] border border-primary/50 rounded-xl font-bold transition-all px-6">
-                                <Sparkles className="w-4 h-4 mr-2" /> Start Drawing
+                            <Button className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_0_15px_rgba(124,58,237,0.3)] border border-primary/50 rounded-xl font-bold transition-all px-4 sm:px-6 h-9 sm:h-10 text-sm sm:text-base">
+                                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" /> 
+                                <span className="hidden sm:inline">Start Drawing</span>
+                                <span className="sm:hidden">Start</span>
                             </Button>
                         </Link>
+                        <div className="sm:hidden flex items-center">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground rounded-full h-8 w-8">
+                                        <Menu className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56 p-2 rounded-xl bg-popover border border-border shadow-2xl">
+                                    <DropdownMenuGroup>
+                                        <Link href="/auth/signin">
+                                            <DropdownMenuItem className="cursor-pointer font-medium"><LogIn className="w-4 h-4 mr-2" /> Log in</DropdownMenuItem>
+                                        </Link>
+                                    </DropdownMenuGroup>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuGroup className="py-1">
+                                        <Link href="/info/features">
+                                            <DropdownMenuItem className="cursor-pointer"><Star className="w-4 h-4 mr-2 text-amber-500" /> App Features</DropdownMenuItem>
+                                        </Link>
+                                        <Link href="/info/templates">
+                                            <DropdownMenuItem className="cursor-pointer"><LayoutTemplate className="w-4 h-4 mr-2 text-fuchsia-500" /> Templates</DropdownMenuItem>
+                                        </Link>
+                                        <Link href="/info/integrations">
+                                            <DropdownMenuItem className="cursor-pointer"><Blocks className="w-4 h-4 mr-2 text-rose-500" /> Integrations</DropdownMenuItem>
+                                        </Link>
+                                    </DropdownMenuGroup>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuGroup className="py-1">
+                                        <Link href="/info/help-center">
+                                            <DropdownMenuItem className="cursor-pointer"><BookOpen className="w-4 h-4 mr-2 text-emerald-500" /> Help Center</DropdownMenuItem>
+                                        </Link>
+                                        <Link href="/info/blog">
+                                            <DropdownMenuItem className="cursor-pointer"><PenTool className="w-4 h-4 mr-2 text-amber-500" /> Blog</DropdownMenuItem>
+                                        </Link>
+                                    </DropdownMenuGroup>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
                 )}
             </div>

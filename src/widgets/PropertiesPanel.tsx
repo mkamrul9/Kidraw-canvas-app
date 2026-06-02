@@ -1,7 +1,7 @@
 'use client';
 
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
-import { Plus, Blend, Grid, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, Layers } from 'lucide-react';
+import { Plus, Blend, Grid, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, Layers, Palette, X } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -12,6 +12,7 @@ export default function PropertiesPanel() {
     const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward } = useCanvasStore();
 
     const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | 'arrange' | null>(null);
+    const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
     const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const op = parseFloat(e.target.value);
@@ -21,8 +22,16 @@ export default function PropertiesPanel() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-50 right-6 top-1/2 -translate-y-1/2 bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-700 w-14 flex flex-col items-center py-3 gap-2 transition-all">
-                <div className="relative w-full flex justify-center">
+            <div className="absolute z-50 right-4 sm:right-6 top-1/2 -translate-y-1/2 bg-[#0B0F19] rounded-2xl shadow-2xl border border-slate-700 w-14 flex flex-col items-center py-2 sm:py-3 gap-2 transition-all">
+                
+                <div className="sm:hidden w-full flex justify-center">
+                    <Button variant="ghost" size="icon" onClick={() => setIsMobileExpanded(!isMobileExpanded)} className="text-slate-300 w-10 h-10">
+                        {isMobileExpanded ? <X className="w-5 h-5" /> : <Palette className="w-5 h-5" />}
+                    </Button>
+                </div>
+
+                <div className={`${isMobileExpanded ? 'flex' : 'hidden'} sm:flex flex-col items-center gap-2 w-full pb-2 sm:pb-0`}>
+                    <div className="relative w-full flex justify-center">
                     <ToolButton icon={<Blend className="w-4 h-4" />} label="Opacity Settings" onClick={() => setActiveMenu(activeMenu === 'opacity' ? null : 'opacity')} isActive={activeMenu === 'opacity'} tooltipSide="left" tooltipClassName="mr-2" />
                     {activeMenu === 'opacity' && (
                         <div className="absolute right-16 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-4 w-56 flex flex-col gap-4 z-50">
@@ -91,6 +100,7 @@ export default function PropertiesPanel() {
                     {[...customColors, ...DEFAULT_COLORS].slice(0, 6).map((color, index) => (
                         <button key={`${color}-${index}`} onClick={() => setActiveColor(color)} className={`w-6 h-6 rounded-full border-2 transition-all shadow-md ${activeColor === color ? 'border-violet-500 scale-125' : 'border-slate-700 hover:scale-110'}`} style={{ backgroundColor: color }} />
                     ))}
+                </div>
                 </div>
             </div>
         </TooltipProvider>

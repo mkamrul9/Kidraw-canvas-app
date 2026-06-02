@@ -207,7 +207,7 @@ export default function ZoomHUD() {
 
     return (
         <TooltipProvider delayDuration={200}>
-            <div className="absolute z-[100] bottom-6 left-6 flex flex-col items-start gap-4 pointer-events-none">
+            <div className="absolute z-[100] bottom-4 left-4 sm:bottom-6 sm:left-6 flex flex-col items-start gap-4 pointer-events-none">
                 {showMinimap && <MinimapOverlay />}
 
                 <div className="bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-2 flex items-center gap-1 pointer-events-auto">

@@ -3,11 +3,12 @@
 import Link from 'next/link';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/shared/components/ui/dialog';
 import { Button } from '@/shared/components/ui/button';
-import { Plus, LayoutDashboard, ArrowRight } from 'lucide-react';
+import { Plus, LayoutDashboard, ArrowRight, LayoutTemplate, Workflow, Component, SquareTerminal } from 'lucide-react';
 import BoardGrid from './BoardGrid';
 import Footer from '@/shared/components/Footer';
 import GlobalNavbar from '@/shared/components/GlobalNavbar';
 import { createNewBoard } from '@/features/dashboard/actions/board-actions';
+import { useState } from 'react';
 
 interface DashboardViewProps {
     session: {
@@ -22,7 +23,17 @@ interface DashboardViewProps {
     boards: any[];
 }
 
+const TEMPLATES = [
+    { id: 'blank', name: 'Blank Canvas', icon: LayoutDashboard, desc: 'Start from scratch', color: 'text-violet-500', bg: 'bg-violet-500/10' },
+    { id: 'flowchart', name: 'Flowchart', icon: Workflow, desc: 'Process mapping', color: 'text-blue-500', bg: 'bg-blue-500/10' },
+    { id: 'wireframe', name: 'Wireframe', icon: Component, desc: 'UI/UX design', color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/10' },
+    { id: 'architecture', name: 'Architecture', icon: SquareTerminal, desc: 'System design', color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+];
+
 export default function DashboardView({ session, boards }: DashboardViewProps) {
+    const [selectedTemplate, setSelectedTemplate] = useState('blank');
+    const [isCreating, setIsCreating] = useState(false);
+
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col font-sans relative overflow-x-hidden selection:bg-violet-500/30">
             
@@ -39,7 +50,7 @@ export default function DashboardView({ session, boards }: DashboardViewProps) {
             {/* Global Navbar */}
             <GlobalNavbar />
 
-            <main className="flex-1 max-w-7xl w-full mx-auto p-8 relative z-10 mb-20">
+            <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 relative z-10 mb-20">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-end mb-12 mt-6 gap-6">
                     <div>
                         <h1 className="text-4xl font-bold text-foreground mb-2 tracking-tight">My Workspaces</h1>
@@ -47,42 +58,88 @@ export default function DashboardView({ session, boards }: DashboardViewProps) {
                     </div>
 
                     <Dialog>
-                        <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-md transition-all hover:scale-105 h-10 font-bold text-sm">
-                            <Plus className="w-4 h-4 mr-2" /> New Board
+                        <DialogTrigger className="inline-flex items-center justify-center whitespace-nowrap bg-primary text-primary-foreground hover:bg-primary/90 rounded-full px-6 shadow-lg shadow-primary/20 transition-all hover:scale-105 h-11 font-bold text-sm">
+                            <Plus className="w-5 h-5 mr-2" /> New Board
                         </DialogTrigger>
-                        <DialogContent className="bg-card border border-border text-foreground sm:max-w-[450px] shadow-2xl rounded-2xl p-0 overflow-hidden">
-                            <form action={createNewBoard}>
-                                <DialogHeader className="px-6 pt-6 mb-2">
-                                    <DialogTitle className="text-xl font-bold">Create New Workspace</DialogTitle>
-                                    <DialogDescription className="text-muted-foreground">Give your whiteboard a name and description to keep your team organized.</DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-5 px-6 py-4">
-                                    <div className="grid gap-2">
-                                        <label htmlFor="title" className="text-sm font-semibold text-foreground">Workspace Title</label>
-                                        <input id="title" name="title" required placeholder="e.g. System Architecture Diagram" className="flex h-10 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring transition-all" />
+                        <DialogContent className="bg-card border border-border text-foreground sm:max-w-3xl shadow-2xl rounded-3xl p-0 overflow-hidden">
+                            <form action={createNewBoard} onSubmit={() => setIsCreating(true)}>
+                                <div className="grid grid-cols-1 md:grid-cols-5 h-full">
+                                    
+                                    {/* Left: Templates (3 columns) */}
+                                    <div className="md:col-span-2 bg-muted/30 border-r border-border p-8">
+                                        <div className="mb-6">
+                                            <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
+                                                <LayoutTemplate className="w-5 h-5 text-primary" /> Start with a Template
+                                            </h3>
+                                            <p className="text-sm text-muted-foreground mt-1">Select a foundation for your new workspace.</p>
+                                        </div>
+                                        <div className="grid grid-cols-1 gap-3">
+                                            {TEMPLATES.map((t) => {
+                                                const isSelected = selectedTemplate === t.id;
+                                                const Icon = t.icon;
+                                                return (
+                                                    <button 
+                                                        key={t.id} 
+                                                        type="button"
+                                                        onClick={() => setSelectedTemplate(t.id)}
+                                                        className={`flex items-center gap-4 p-4 rounded-2xl border text-left transition-all duration-300 ${isSelected ? 'bg-background border-primary shadow-md scale-[1.02]' : 'bg-transparent border-transparent hover:bg-muted/50 hover:border-border'}`}
+                                                    >
+                                                        <div className={`p-2 rounded-xl ${isSelected ? t.bg : 'bg-background border border-border'}`}>
+                                                            <Icon className={`w-6 h-6 ${isSelected ? t.color : 'text-muted-foreground'}`} />
+                                                        </div>
+                                                        <div>
+                                                            <p className={`font-bold text-sm ${isSelected ? 'text-foreground' : 'text-muted-foreground'}`}>{t.name}</p>
+                                                            <p className="text-xs text-muted-foreground mt-0.5">{t.desc}</p>
+                                                        </div>
+                                                    </button>
+                                                )
+                                            })}
+                                        </div>
                                     </div>
-                                    <div className="grid gap-2">
-                                        <label htmlFor="description" className="text-sm font-semibold text-foreground">Description <span className="text-muted-foreground font-normal">(Optional)</span></label>
-                                        <textarea id="description" name="description" placeholder="Briefly describe the purpose of this board..." className="flex min-h-[100px] w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring resize-none transition-all" />
+
+                                    {/* Right: Details (2 columns) */}
+                                    <div className="md:col-span-3 flex flex-col bg-card">
+                                        <DialogHeader className="px-8 pt-8 mb-4">
+                                            <DialogTitle className="text-2xl font-bold">Workspace Details</DialogTitle>
+                                            <DialogDescription className="text-muted-foreground text-base">Give your board a name and description to keep your team organized.</DialogDescription>
+                                        </DialogHeader>
+                                        
+                                        <div className="flex-1 px-8 pb-4 space-y-6">
+                                            <input type="hidden" name="template" value={selectedTemplate} />
+                                            <div className="space-y-2">
+                                                <label htmlFor="title" className="text-sm font-bold text-foreground">Workspace Title</label>
+                                                <input id="title" name="title" required placeholder="e.g. System Architecture Diagram" className="flex h-12 w-full rounded-xl border border-border bg-background px-4 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all font-medium shadow-sm" />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label htmlFor="description" className="text-sm font-bold text-foreground">Description <span className="text-muted-foreground font-normal">(Optional)</span></label>
+                                                <textarea id="description" name="description" placeholder="Briefly describe the purpose of this board..." className="flex min-h-[120px] w-full rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none transition-all font-medium shadow-sm" />
+                                            </div>
+                                        </div>
+                                        
+                                        <DialogFooter className="px-8 py-6 border-t border-border bg-muted/10 sm:justify-end">
+                                            <DialogTrigger asChild>
+                                                <Button type="button" variant="ghost" className="rounded-xl h-11 font-bold mr-2 text-muted-foreground hover:text-foreground">Cancel</Button>
+                                            </DialogTrigger>
+                                            <Button type="submit" disabled={isCreating} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-11 px-8 font-bold shadow-lg transition-all hover:scale-105">
+                                                {isCreating ? "Initializing..." : "Create Workspace"} <ArrowRight className="w-4 h-4 ml-2" />
+                                            </Button>
+                                        </DialogFooter>
                                     </div>
+
                                 </div>
-                                <DialogFooter className="px-6 py-4 border-t border-border bg-muted/30 sm:justify-center">
-                                    <Button type="submit" className="bg-primary text-primary-foreground hover:bg-primary/90 w-full rounded-xl h-10 font-bold shadow-lg">
-                                        Initialize Workspace <ArrowRight className="w-4 h-4 ml-2" />
-                                    </Button>
-                                </DialogFooter>
                             </form>
                         </DialogContent>
                     </Dialog>
                 </div>
 
                 {boards.length === 0 ? (
-                    <div className="py-32 flex flex-col items-center justify-center border border-dashed border-border rounded-3xl bg-accent/30 backdrop-blur-sm">
-                        <div className="bg-secondary/50 p-4 rounded-2xl mb-6 border border-border shadow-xl">
+                    <div className="py-32 flex flex-col items-center justify-center border border-dashed border-border rounded-3xl bg-card shadow-xl relative overflow-hidden backdrop-blur-sm">
+                        <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent"></div>
+                        <div className="bg-muted p-4 rounded-2xl mb-6 border border-border shadow-md relative z-10">
                             <LayoutDashboard className="w-8 h-8 text-muted-foreground" />
                         </div>
-                        <p className="text-foreground font-medium mb-2 text-xl">Your workspace is empty.</p>
-                        <p className="text-muted-foreground mb-8 max-w-sm text-center">Create a new board to start mapping out your ideas, wireframing, or collaborating with your team.</p>
+                        <p className="text-foreground font-bold mb-2 text-2xl relative z-10">Your workspace is empty.</p>
+                        <p className="text-muted-foreground mb-8 max-w-sm text-center relative z-10">Create a new board to start mapping out your ideas, wireframing, or collaborating with your team.</p>
                     </div>
                 ) : (
                     <BoardGrid boards={boards} />
