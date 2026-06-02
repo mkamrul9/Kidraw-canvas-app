@@ -367,7 +367,11 @@ The canvas uses **React-Konva** (a React wrapper around Konva.js) for declarativ
 | **Laser Pointer**  | `laser`           | Red fading laser trail for presentations                           |
 | **Eraser**         | `eraser`          | Pixel eraser using `globalCompositeOperation: destination-out`     |
 | **Object Eraser**  | `object-eraser`   | Click-to-delete entire layers/objects                              |
+| **Sticky Note**    | `sticky`          | Auto-scaling text inside a styled rectangle container              |
 | **Comment**        | `comment`         | Place yellow sticky-note comments on canvas                        |
+| **Frame**          | `frame`           | Artboards/Frames for grouping and organizing canvas content        |
+| **PDF**            | `pdf`             | Embedded PDF pages with custom pagination controls                 |
+| **Code**           | `code`            | Embedded code snippets/blocks                                      |
 
 ### Supported Shape Types
 
@@ -400,6 +404,12 @@ The canvas uses **React-Konva** (a React wrapper around Konva.js) for declarativ
 | Resize via transformer        | ✅     | Selected objects show resize handles (min 5px constraint)                         |
 | Pixel eraser                  | ✅     | 3 sizes: 10px, 20px, 50px; uses `destination-out` compositing                    |
 | Object eraser                 | ✅     | Click any object to delete it instantly                                           |
+| Canvas Frames / Artboards     | ✅     | Parent container bounding boxes for grouping designs                              |
+| Auto-scaling Sticky Notes     | ✅     | Notes with heuristic font size scaling based on bounds                            |
+| PDF Annotation                | ✅     | Multi-page PDF viewer directly embedded on the canvas                             |
+| Keyboard Shortcuts            | ✅     | Copy, Paste, Undo, Redo, Group, Order, and single-key tool swapping               |
+| Magnetic Smart Guides         | ✅     | Snaps objects into alignment with nearby objects horizontally and vertically      |
+| Contextual Alignment Tools    | ✅     | Distribute evenly, align edges, etc. via multi-select toolbar                     |
 | Laser pointer                 | ✅     | Red trail with fading animation (30ms interval decay)                             |
 | Per-shape opacity             | ✅     | Opacity slider (10% – 100%) applies to new and selected shapes                   |
 | Custom fill colors            | ✅     | Native color picker + 8 preset colors + 5 recent custom colors                   |
@@ -505,11 +515,11 @@ The export system uses an **off-screen canvas compilation** strategy:
 |------------------------|-----------------------------------------------|--------|-----------------------------------------------------------------------|
 | `Board`                | `src/components/canvas/Board.tsx`             | Client | Main Konva Stage; handles all drawing, selection, and erasing logic   |
 | `BoardGrid`            | `src/components/dashboard/BoardGrid.tsx`      | Client | Responsive grid of board cards with show-more/less toggle             |
-| `Toolbar`              | `src/components/layout/Toolbar.tsx`           | Client | Top-center floating toolbar with all drawing tools                    |
-| `ActionToolbar`        | `src/components/layout/ActionToolbar.tsx`      | Client | Top-right floating toolbar (comments, lock, reset, export, save)      |
-| `PropertiesPanel`      | `src/components/layout/PropertiesPanel.tsx`    | Client | Right-side vertical panel (opacity, background, color palette)        |
-| `ZoomHUD`              | `src/components/layout/ZoomHUD.tsx`           | Client | Bottom-left HUD (share, minimap, zoom in/out, zoom percentage)        |
-| `NavigationHUD`        | `src/components/layout/NavigationHUD.tsx`      | Client | Top-left HUD (logo, user avatar, navigation dropdown)                 |
+| `Toolbar`              | `src/widgets/Toolbar.tsx`                     | Client | Top-center drawing tools (Responsive & collapsible on mobile)         |
+| `ActionToolbar`        | `src/widgets/ActionToolbar.tsx`               | Client | Top-right actions (save, export, lock) (Collapsible on mobile)        |
+| `PropertiesPanel`      | `src/widgets/PropertiesPanel.tsx`             | Client | Right-side panel (opacity, background, color) (Collapsible on mobile) |
+| `ZoomHUD`              | `src/widgets/ZoomHUD.tsx`                     | Client | Bottom-left HUD (share, minimap, zoom in/out, zoom percentage)        |
+| `NavigationHUD`        | `src/widgets/NavigationHUD.tsx`               | Client | Top-left HUD (logo, user avatar, navigation dropdown)                 |
 | `SessionProvider`      | `src/components/providers/SessionProvider.tsx` | Client | Wraps app with NextAuth `SessionProvider`                             |
 | `Footer`               | `src/app/page.tsx` (inline)                   | Server | Shared footer with product/resources/legal links                      |
 
@@ -669,6 +679,8 @@ Augments NextAuth's `Session` interface to include `user.id: string`.
 | **Canvas HUD**    | Top-right ActionToolbar (save, export, lock, reset, comment)   |
 | **Canvas HUD**    | Right-side PropertiesPanel (colors, opacity, background)       |
 | **Canvas HUD**    | Bottom-left ZoomHUD (zoom, minimap, share)                     |
+| **Canvas HUD**    | Mobile-responsive collapsible logic for all toolbars           |
+| **Core App**      | Resolved next-themes hydration mismatches                      |
 | **Pages**         | User profile page (avatar, name edit, email display, OAuth badge)|
 | **Pages**         | System settings page (theme toggle, notifications toggle, danger zone)|
 | **Pages**         | Billing page (current plan info, feature list, payment methods)|

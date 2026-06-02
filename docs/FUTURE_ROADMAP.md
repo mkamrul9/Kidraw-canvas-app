@@ -1,6 +1,6 @@
 # 🚀 Kidraw — Industry-Grade Future Roadmap & Enhancements
 
-This document outlines a detailed, production-grade roadmap of **22 new features, architectural upgrades, and enhancements** designed to elevate Kidraw to a top-tier visual workspace, competing directly with industry leaders like **Excalidraw**, **tldraw**, **Miro**, and **Figma**.
+This document outlines a detailed, production-grade roadmap of **24 new features, architectural upgrades, and enhancements** designed to elevate Kidraw to a top-tier visual workspace, competing directly with industry leaders like **Excalidraw**, **tldraw**, **Miro**, and **Figma**.
 
 ---
 
@@ -13,7 +13,8 @@ This document outlines a detailed, production-grade roadmap of **22 new features
 5. [AI-Assisted Design & Automation](#5-ai-assisted-design--automation)
 6. [Developer-Centric Features](#6-developer-centric-features)
 7. [Enterprise & Performance Upgrades](#7-enterprise--performance-upgrades)
-8. [Phased Implementation Strategy](#phased-implementation-strategy)
+8. [Mobile & UI/UX Polish](#8-mobile--uiux-polish)
+9. [Phased Implementation Strategy](#phased-implementation-strategy)
 
 ---
 
@@ -81,29 +82,15 @@ This document outlines a detailed, production-grade roadmap of **22 new features
 * **Industry Inspiration:** Figma, Adobe Illustrator.
 * **Priority / Difficulty:** Medium / 🛠️ Hard
 
-### 7. Canvas Frames / Artboards
-* **Description:** Create designated bounding boxes (Frames) that act as parent containers for shapes, allowing users to organize their ideas.
-* **Technical Stack:** Introduce a `Frame` layer type. Nested shapes are stored as children or referenced by a `parentId`. Moving the frame moves all nested elements.
-* **UX/UI Design:** 
-  * Frame names are visible at the top-left of the frame boundaries.
-  * Double-clicking the frame name enables renaming.
-  * Ability to export a specific Frame directly as PNG/SVG.
-* **Industry Inspiration:** Figma, Miro.
-* **Priority / Difficulty:** High / Medium
+### 7. Canvas Frames / Artboards (✅ IMPLEMENTED)
+* **Status:** Completed! Frame hierarchy and parent bounding boxes are now fully integrated.
 
 ---
 
 ## 📝 Rich Content & Structuring
 
-### 8. Collaborative Sticky Notes
-* **Description:** Sticky notes with automatic text scaling, word-wrapping, and grid alignment.
-* **Technical Stack:** Konva `Text` combined with a background rectangle styling. Input auto-resizes font sizes dynamically as more text is typed to fit the note boundary.
-* **UX/UI Design:** 
-  * Traditional sticky colors (Yellow, Green, Pink, Blue) with rich drop shadows.
-  * Double-clicking instantly opens a rich text editor inline.
-  * Dragging shapes onto a grid triggers clean magnetic snapping.
-* **Industry Inspiration:** Miro, Mural.
-* **Priority / Difficulty:** 🔥 High / Easy
+### 8. Collaborative Sticky Notes (✅ IMPLEMENTED)
+* **Status:** Completed! Auto-scaling text and styled rectangle containers are fully functional.
 
 ### 9. Mind-Mapping Nodes & Auto-Layout
 * **Description:** Create nodes that connect hierarchically to form mind maps, with auto-layout features to clean up the workspace.
@@ -137,14 +124,8 @@ This document outlines a detailed, production-grade roadmap of **22 new features
 * **Industry Inspiration:** Miro, tldraw, Muse.
 * **Priority / Difficulty:** Low / 🛠️ Hard
 
-### 12. Local Image & PDF Annotation
-* **Description:** Drag-and-drop images or multi-page PDF documents onto the canvas and draw annotations directly on top of them.
-* **Technical Stack:** HTML5 File API. For PDFs, integrate [PDF.js](https://mozilla.github.io/pdf.js/) to render pages as canvas images, laying them out side-by-side or stacked.
-* **UX/UI Design:** 
-  * Dropping a file shows an interactive loading progress bar.
-  * PDF components have navigation arrows ("Page 1 of 5") floating directly above them.
-* **Industry Inspiration:** Miro, Muse.
-* **Priority / Difficulty:** High / Medium
+### 12. Local Image & PDF Annotation (✅ IMPLEMENTED)
+* **Status:** Completed! Multi-page PDF viewer directly embedded on the canvas with custom pagination controls.
 
 ---
 
@@ -248,6 +229,28 @@ This document outlines a detailed, production-grade roadmap of **22 new features
   * Searchable sidebar panel containing drag-and-drop components (Wireframe iOS kit, flowchart symbols).
 * **Industry Inspiration:** Miro, Whimsical.
 * **Priority / Difficulty:** High / Easy
+
+---
+
+## 📱 8. Mobile & UI/UX Polish
+
+### 23. Pinch-to-Zoom & Advanced Mobile Touch Handling
+* **Description:** Provide a native app-like experience for tablet and mobile users with seamless two-finger panning and zooming.
+* **Technical Stack:** Implement custom `onTouchMove` event listeners tracking the Euclidean distance and midpoint between two touch pointers, updating the Konva stage scale and position seamlessly.
+* **UX/UI Design:** 
+  * Smooth zooming with physics/momentum.
+  * Palm rejection algorithms for iPad/tablet drawing.
+* **Industry Inspiration:** Procreate, Figma Mobile, Concepts.
+* **Priority / Difficulty:** 🔥 High / Medium
+
+### 24. Context Menus & Cheat Sheet Modal
+* **Description:** A robust context-menu system and comprehensive cheat sheet modal for power users.
+* **Technical Stack:** Intercept standard right-click context menus (`onContextMenu`). Render custom floating React components using cursor coordinate positioning.
+* **UX/UI Design:** 
+  * Context menu offering actions like "Bring to Front", "Copy Style", "Group", and "Export".
+  * Pressing `?` or `Cmd/Ctrl + /` reveals a beautiful, glassmorphic cheat sheet overlay showing all active hotkeys.
+* **Industry Inspiration:** Linear, Miro, Notion.
+* **Priority / Difficulty:** Medium / Easy
 
 ---
 

@@ -36,12 +36,15 @@ Experience the live application here: [https://kidraw-canvas.vercel.app/](https:
 
 - **♾️ Infinite Panning & Zoom:** Navigate a boundless workspace with smooth `Ctrl/Cmd + Scroll` zoom mechanics, paired with an interactive inverse-kinematic Minimap HUD.
 - **📐 Smart Geometry & Vector Engine:** Utilize freehand pens with tension-smoothing, text stamping, and a robust library of geometric shapes.
+- **🖼️ Canvas Frames & PDF Annotation:** Organize your designs in parent bounding boxes (Artboards) or drag-and-drop multi-page PDF documents right onto the canvas for annotation.
+- **🧲 Magnetic Smart Guides:** Experience precision alignment with horizontal/vertical snapping guides and a contextual multi-selection distribution toolbar.
+- **📝 Collaborative Sticky Notes:** Drop auto-scaling, word-wrapping sticky notes anywhere on the board.
+- **⌨️ Keyboard Shortcut Mastery:** Rapidly design with full hotkey support for grouping, layering, Undo/Redo, and quick tool swapping.
 - **🎯 Ray-Casting Lasso Selection:** Select multiple complex objects instantly using an advanced freehand lasso tool powered by point-in-polygon ray-casting mathematics.
 - **🪄 Presentation Tools:** Guide team focus during pitch meetings with a dynamic laser pointer that features a fading coordinate tail.
 - **🖼️ Native Multi-Format Export Engine:** Export your architectural diagrams to high-resolution PNG, JPEG, or scalable SVG. The custom export compiler natively renders CSS background grids and dot patterns directly into the final image blob.
 - **🔐 Authentication & Cloud Sync:** Secure OAuth integration (GitHub & Google) via Auth.js. Workspaces are saved in real-time to a serverless PostgreSQL database using Prisma ORM.
-- **🤝 Collaborative Foundation:** Role-based sharing system (Viewer, Commenter, Editor) and real-time sticky-note commenting functionality.
-- **🌙 Midnight Aurora Glassmorphism:** A premium, fully responsive UI built with Tailwind CSS, featuring frosted glass components, dynamic ambient lighting, and omni-routing navigation.
+- **🌙 Global Theme Engine & Premium UI:** A fully mobile-responsive UI built with Tailwind CSS, featuring Light/Dark modes, frosted glass components, collapsible toolbars on mobile, and dynamic ambient lighting.
 
 ---
 
