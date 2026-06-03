@@ -71,6 +71,7 @@ model Comment {
   y          Float
   resolved   Boolean   @default(false)
 
+  elementId  String?   // NEW: ID of the shape this comment is attached to
   boardId    String
   board      Board     @relation(fields: [boardId], references: [id], onDelete: Cascade)
 

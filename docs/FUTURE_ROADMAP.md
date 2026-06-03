@@ -78,9 +78,8 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
   * Arrow `startBinding` and `endBinding` with snap points (top/right/bottom/left) on shapes.
   * Moving connected shapes auto-updates arrow routing in real-time.
 * **Remaining work:**
-  * Curved connector paths (not just orthogonal right-angle routing).
-  * Visual snap point indicators (circular dots on shape edges) when hovering with arrow tool.
-  * Magnetic blue glow highlight on destination shapes.
+  * Curved connector paths are now built in!
+  * Visual snap point indicators (circular dots on shape edges) and magnetic blue glow highlight on destination shapes are now built in!
 
 ### ✅ 5. Rough.js Hand-Drawn Sketch Styling — SHIPPED
 * **Status:** Fully implemented as a global toggle with `RoughShape` component.
@@ -93,9 +92,9 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
   * `isSketchMode` toggle in `useCanvasStore` with `toggleSketchMode()` action.
   * Roughness: 1.5, Bowing: 1, Fill style: hachure.
 * **Remaining work:**
-  * Hand-written font (Virgil) for text in sketch mode.
-  * Per-shape sketch toggle (currently global only).
-  * Configurable roughness/bowing parameters.
+  * Hand-written font (Virgil) for text in sketch mode is built in!
+  * Per-shape sketch toggle is built in!
+  * Configurable roughness/bowing parameters are built in!
 
 ### 6. Bezier Curve Pen Tool & Path Smoothing
 * **Description:** A vector pen tool that supports drawing curved lines (cubic bezier curves) with handle manipulation, plus automatic smoothing of freehand pen drawings.
@@ -116,15 +115,11 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
 ### ✅ 8. Collaborative Sticky Notes — SHIPPED
 * **Status:** Completed! Auto-scaling text, 5 color options, and styled rectangle containers are fully functional.
 
-### 9. Mind-Mapping Nodes & Auto-Layout
-* **Description:** Create nodes that connect hierarchically to form mind maps, with auto-layout features to clean up the workspace.
-* **Technical Stack:** [D3-Hierarchy](https://github.com/d3/d3-hierarchy) or Dagre algorithm for computing automatic tree layouts on the canvas coordinate space.
-* **UX/UI Design:**
-  * Selecting a node shows a floating `+` button in four directions.
-  * Clicking `+` instantly generates a child node, connects it with an arrow, and centers keyboard focus on it.
-  * **Note:** A static Mind Map template already exists in the Library sidebar — this feature would add dynamic auto-layout behavior.
-* **Industry Inspiration:** Miro, Whimsical.
-* **Priority / Difficulty:** Medium / 🛠️ Hard
+### ✅ 9. Mind-Mapping Nodes & Auto-Layout (Quick Add) — SHIPPED
+* **Status:** Completed! When a shape is selected, four directional `+` buttons appear. Clicking one instantly clones the shape, offsets it, connects it with an arrow, and triggers text editing.
+* **What was built:**
+  * `MindMapOverlay.tsx` HTML portal overlay.
+  * Clones the active layer, computes layout offset, and automatically generates an `arrow` connecting the two using `startBinding` and `endBinding`.
 
 ### 10. Embedded Code Sandbox Component
 * **Description:** Place functional code blocks on the canvas with syntax highlighting and live code editing capability.
@@ -190,30 +185,24 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
 
 ## 💻 6. Developer-Centric Features
 
-### ✅ 16. Mermaid.js Export — SHIPPED (Import Not Yet)
-* **Status:** Export is fully implemented. Import is not yet built.
+### ✅ 16. Mermaid.js Export & Import — SHIPPED
+* **Status:** Both Export and Import are fully implemented.
 * **What was built:**
   * `exportMermaid.ts` — Converts canvas shapes + connected arrows into Mermaid.js flowchart syntax.
   * Maps shape types to Mermaid node syntax: rectangle → `[]`, ellipse → `()`, diamond → `{}`, hexagon → `{{}}`.
   * Traces arrow `startBinding`/`endBinding` to generate `-->` connections.
   * Uses shape `text` content as node labels.
   * `ExportCodeModal` — Displays generated Mermaid code with syntax coloring and copy-to-clipboard.
-  * Triggered from `ActionToolbar` via the code export dropdown.
-* **Remaining work:**
-  * **Import:** Parse Mermaid.js code blocks and generate canvas shapes from them.
-  * Right-click context menu "Copy as Mermaid" for selected shapes.
+  * `importMermaid.ts` — Parses `graph TD`/`graph LR` syntax into nodes and edges, applying an automatic rank-based layout heuristic to build diagrams from text.
+  * `ImportMermaidModal` — Allows pasting Mermaid code to instantly spawn interactive canvas flowcharts.
 
 ### ✅ 17. Export to Tailwind/React Code — SHIPPED
-* **Status:** Fully implemented.
+* **Status:** Fully implemented with intelligent layout engine.
 * **What was built:**
-  * `exportReact.ts` — Translates canvas layers into absolute-positioned `<div>` elements with Tailwind CSS classes.
+  * `exportReact.ts` — Translates canvas layers into a React component with Tailwind classes.
+  * **Layout Heuristic Engine:** Replaced absolute positioning with a recursive axis-projection algorithm. The engine detects when elements are aligned side-by-side or stacked vertically, and automatically groups them into `flex-row` or `flex-col` containers with calculated `gap` properties.
   * Handles rectangles, ellipses, text, sticky notes, and frames.
-  * Generates a complete React component with proper JSX structure.
-  * `ExportCodeModal` — Displays generated React code with syntax coloring and copy-to-clipboard.
-  * Triggered from `ActionToolbar` via the code export dropdown.
-* **Remaining work:**
-  * Flex/Grid layout heuristic (detect row/col alignment and generate responsive layouts instead of absolute positioning).
-  * Component extraction (detect repeated patterns and generate reusable components).
+  * `ExportCodeModal` — Displays generated responsive React code with syntax coloring and copy-to-clipboard.
 
 ### 18. Developer API & Custom Webhooks
 * **Description:** Allow developers to programmatically generate boards, fetch canvas JSON data, or trigger actions via webhooks (e.g., auto-update an architecture diagram on git commit).
@@ -238,14 +227,12 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
 * **Industry Inspiration:** Linear, tldraw.
 * **Priority / Difficulty:** 🔥 High / 🛠️ Hard
 
-### 20. Infinite Canvas Virtualization (LOD Rendering)
-* **Description:** Support high-performance rendering of boards containing over 50,000 shapes without stuttering or dropping frame rates.
-* **Technical Stack:** Level of Detail (LOD) rendering. Determine which shapes are within the current viewport (`camera.x`, `camera.y` + zoom scale) and cull off-screen shapes. Simplify rendering logic (e.g., render bounding boxes instead of complex SVG text) when zoomed out past 10%.
-* **UX/UI Design:**
-  * Maintaining 60fps even when panning large boards.
-  * Smooth transition animations when zooming in/out.
-* **Industry Inspiration:** Figma, Miro.
-* **Priority / Difficulty:** High / 🛠️ Hard
+### ✅ 20. Infinite Canvas Virtualization (LOD Rendering) — SHIPPED
+* **Status:** Completed! The canvas automatically culls off-screen shapes and simplifies details when zoomed out.
+* **What was built:**
+  * Viewport bounding box intersection checks in `Board.tsx` skip rendering layers completely if they are out of the camera view.
+  * Level of Detail (LOD) trigger: `isLowDetail = zoom < 0.4`.
+  * `LayerRenderer.tsx` respects `isLowDetail` by hiding text components and disabling complex Sketch mode rendering, ensuring massive boards stay at 60fps.
 
 ### ✅ 21. Canvas Time Travel & History Slider — SHIPPED (In-Memory Only)
 * **Status:** In-memory time travel is fully implemented. Database-persisted version history is not yet built.

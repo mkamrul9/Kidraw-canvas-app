@@ -23,9 +23,22 @@ function CommentPin({ comment, zoom, camera }: CommentPinProps) {
 
     const isActive = activeThreadId === comment.id;
 
+    // Resolve canvas coordinates if attached to a shape
+    const storeLayers = useCanvasStore((state) => state.layers);
+    let resolvedCanvasX = comment.x;
+    let resolvedCanvasY = comment.y;
+
+    if (comment.elementId) {
+        const parentLayer = storeLayers.find(l => l.id === comment.elementId);
+        if (parentLayer) {
+            resolvedCanvasX = parentLayer.x + comment.x;
+            resolvedCanvasY = parentLayer.y + comment.y;
+        }
+    }
+
     // Convert canvas-space coordinates to screen-space
-    const screenX = comment.x * zoom + camera.x;
-    const screenY = comment.y * zoom + camera.y;
+    const screenX = resolvedCanvasX * zoom + camera.x;
+    const screenY = resolvedCanvasY * zoom + camera.y;
 
     const handleSubmitReply = async () => {
         if (!replyText.trim() || isSubmitting) return;
@@ -288,7 +301,7 @@ function NewCommentInput({ position, onSubmit, onCancel }: NewCommentInputProps)
 export default function CommentOverlay() {
     const { comments, addComment, setActiveThreadId } = useCommentStore();
     const { activeTool, camera, zoom, boardId } = useCanvasStore();
-    const [newCommentPos, setNewCommentPos] = useState<{ screenX: number; screenY: number; canvasX: number; canvasY: number } | null>(null);
+    const [newCommentPos, setNewCommentPos] = useState<{ screenX: number; screenY: number; canvasX: number; canvasY: number; elementId: string | null } | null>(null);
 
     const isCommentTool = activeTool === 'comment';
 
@@ -307,11 +320,33 @@ export default function CommentOverlay() {
         const canvasX = (e.clientX - camera.x) / zoom;
         const canvasY = (e.clientY - camera.y) / zoom;
 
+        // Check if pointer intersects any shape
+        const storeLayers = useCanvasStore.getState().layers;
+        let intersectedElementId: string | null = null;
+        let finalCanvasX = canvasX;
+        let finalCanvasY = canvasY;
+
+        for (let i = storeLayers.length - 1; i >= 0; i--) {
+            const layer = storeLayers[i];
+            const w = Math.abs(layer.width || 0);
+            const h = Math.abs(layer.height || 0);
+            
+            // Allow clicking inside frame area or bounding box of other shapes
+            if (canvasX >= layer.x && canvasX <= layer.x + w && canvasY >= layer.y && canvasY <= layer.y + h) {
+                intersectedElementId = layer.id;
+                // Store offset relative to the shape instead of absolute canvas coordinates
+                finalCanvasX = canvasX - layer.x;
+                finalCanvasY = canvasY - layer.y;
+                break;
+            }
+        }
+
         setNewCommentPos({
             screenX: e.clientX,
             screenY: e.clientY,
-            canvasX,
-            canvasY,
+            canvasX: finalCanvasX,
+            canvasY: finalCanvasY,
+            elementId: intersectedElementId,
         });
         setActiveThreadId(null);
     }, [isCommentTool, boardId, setActiveThreadId]);
@@ -329,7 +364,7 @@ export default function CommentOverlay() {
 
     const handleSubmitNewComment = async (content: string) => {
         if (!boardId || !newCommentPos) return;
-        await addComment(boardId, content, newCommentPos.canvasX, newCommentPos.canvasY);
+        await addComment(boardId, content, newCommentPos.canvasX, newCommentPos.canvasY, newCommentPos.elementId);
         setNewCommentPos(null);
     };
 

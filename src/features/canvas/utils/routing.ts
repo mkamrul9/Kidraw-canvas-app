@@ -172,3 +172,37 @@ export function getOrthogonalPath(start: Point, end: Point, startObsId?: string,
 
     return simplified.flatMap(p => [p.x, p.y]);
 }
+
+export function getCurvedPath(start: Point, end: Point, startSnapDir?: 'top'|'right'|'bottom'|'left', endSnapDir?: 'top'|'right'|'bottom'|'left'): number[] {
+    const dist = Math.hypot(end.x - start.x, end.y - start.y);
+    const offset = Math.max(50, dist * 0.4);
+
+    const cp1 = { x: start.x, y: start.y };
+    if (startSnapDir === 'top') cp1.y -= offset;
+    else if (startSnapDir === 'bottom') cp1.y += offset;
+    else if (startSnapDir === 'left') cp1.x -= offset;
+    else if (startSnapDir === 'right') cp1.x += offset;
+
+    const cp2 = { x: end.x, y: end.y };
+    if (endSnapDir === 'top') cp2.y -= offset;
+    else if (endSnapDir === 'bottom') cp2.y += offset;
+    else if (endSnapDir === 'left') cp2.x -= offset;
+    else if (endSnapDir === 'right') cp2.x += offset;
+
+    const points: number[] = [];
+    const segments = 20;
+    for (let i = 0; i <= segments; i++) {
+        const t = i / segments;
+        const mt = 1 - t;
+        const mt2 = mt * mt;
+        const t2 = t * t;
+        const x = mt2 * mt * start.x + 3 * mt2 * t * cp1.x + 3 * mt * t2 * cp2.x + t2 * t * end.x;
+        const y = mt2 * mt * start.y + 3 * mt2 * t * cp1.y + 3 * mt * t2 * cp2.y + t2 * t * end.y;
+        points.push(x, y);
+    }
+    return points;
+}
+
+export function getStraightPath(start: Point, end: Point): number[] {
+    return [start.x, start.y, end.x, end.y];
+}

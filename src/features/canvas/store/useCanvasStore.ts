@@ -75,6 +75,8 @@ interface CanvasState {
     penSize: number;
     activeOpacity: number;
     isSketchMode: boolean;
+    activeRoughness: number;
+    activeBowing: number;
     permissionRole: 'owner' | 'editor' | 'viewer';
     activeGuides: GuideLine[];
 
@@ -106,6 +108,8 @@ interface CanvasState {
     setPenSize: (size: number) => void;
     setOpacity: (opacity: number) => void;
     toggleSketchMode: () => void;
+    setActiveRoughness: (roughness: number) => void;
+    setActiveBowing: (bowing: number) => void;
     setPermissionRole: (role: 'owner' | 'editor' | 'viewer') => void;
 
     addLayer: (layer: Layer, isRemote?: boolean) => void;
@@ -155,8 +159,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     isLocked: false,
     activeShape: 'rectangle',
     penSize: 4,
-    activeOpacity: 0.25,
+    activeOpacity: 1,
     isSketchMode: false,
+    activeRoughness: 1.5,
+    activeBowing: 1,
     permissionRole: 'owner',
 
     history: [[]], // Start with one empty state
@@ -210,6 +216,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setPenSize: (size) => set({ penSize: size }),
     setOpacity: (opacity) => set({ activeOpacity: opacity }),
     toggleSketchMode: () => set((state) => ({ isSketchMode: !state.isSketchMode })),
+    setActiveRoughness: (roughness) => set({ activeRoughness: roughness }),
+    setActiveBowing: (bowing) => set({ activeBowing: bowing }),
     setPermissionRole: (role) => set({ permissionRole: role }),
 
     addLayer: (layer, isRemote = false) => {

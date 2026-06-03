@@ -57,6 +57,7 @@ export default function LayerRenderer({
     isLowDetail = false,
     isMagneticTarget = false,
 }: LayerRendererProps) {
+    const isSketch = layer.isSketch ?? isSketchMode;
     const commonProps = {
         id: layer.id,
         draggable: !isLocked && (activeTool === 'select' || activeTool === 'lasso'),
@@ -359,7 +360,7 @@ export default function LayerRenderer({
                         text={layer.text}
                         fill="#0f172a"
                         fontSize={fontSize}
-                        fontFamily={isSketchMode ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif"}
+                        fontFamily={isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif"}
                         align="center"
                         verticalAlign="middle"
                         width={textWidth}
@@ -406,7 +407,7 @@ export default function LayerRenderer({
         const textCol = layer.fill === '#ffffff' || layer.fill === '#eab308' || layer.fill === '#f97316' ? '#0f172a' : '#ffffff';
 
         const renderShapeContent = () => {
-            if (isSketchMode && layer.type !== 'star' && !isLowDetail) { 
+            if (isSketch && layer.type !== 'star' && !isLowDetail) { 
                 return <RoughShape layer={{...layer, x: 0, y: 0}} commonProps={{}} />;
             }
             if (layer.type === 'rectangle')
@@ -459,7 +460,7 @@ export default function LayerRenderer({
                         fontSize={textFontSize}
                         align="center"
                         verticalAlign="middle"
-                        fontFamily={isSketchMode ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif"}
+                        fontFamily={isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif"}
                     />
                 )}
             </Group>
@@ -468,7 +469,7 @@ export default function LayerRenderer({
 
     // ─── Lines & Arrows ─────────────────────────────────
     if (layer.type === 'straight-line' || layer.type === 'arrow') {
-        if (isSketchMode) {
+        if (isSketch) {
             return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
         }
         
@@ -485,14 +486,14 @@ export default function LayerRenderer({
 
     // ─── Freehand & Text ────────────────────────────────
     if (layer.type === 'pen' || layer.type === 'pencil') {
-        if (isSketchMode && layer.type === 'pencil') {
+        if (isSketch && layer.type === 'pencil') {
             return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
         }
         return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={layer.points || []} stroke={layer.stroke} strokeWidth={layer.penSize || 4} tension={layer.type === 'pen' ? 0.5 : 0} lineCap="round" lineJoin="round" opacity={shapeOpacity} />;
     }
 
     if (layer.type === 'text')
-        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={isSketchMode ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
+        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
 
     if (layer.type === 'eraser')
         return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;

@@ -4,6 +4,7 @@ import { Shape } from 'react-konva';
 import rough from 'roughjs/bin/rough';
 import { Layer } from '@/features/canvas/types';
 import Konva from 'konva';
+import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 
 interface RoughShapeProps {
     layer: Layer;
@@ -11,6 +12,8 @@ interface RoughShapeProps {
 }
 
 export default function RoughShape({ layer, commonProps }: RoughShapeProps) {
+    const { activeRoughness, activeBowing } = useCanvasStore();
+
     const drawRough = (context: Konva.Context) => {
         // roughjs expects a canvas-like object with a getContext method
         const fakeCanvas = {
@@ -24,8 +27,8 @@ export default function RoughShape({ layer, commonProps }: RoughShapeProps) {
             fill: layer.fill,
             stroke: layer.stroke || '#0f172a',
             strokeWidth: layer.penSize || 2,
-            roughness: 1.5,
-            bowing: 1,
+            roughness: layer.roughness ?? activeRoughness,
+            bowing: layer.bowing ?? activeBowing,
             fillStyle: 'hachure',
         };
 

@@ -15,10 +15,11 @@ import { getBackgroundStyle } from '@/features/canvas/lib/background';
 import { isPointInPolygon, getSnapPoints, getSnapPointCoords, SnapPoint } from '@/features/canvas/lib/geometry';
 import { useCanvasExport } from '@/features/canvas/hooks/useCanvasExport';
 import { LASER_FADE_INTERVAL_MS, COMMENT_WIDTH, COMMENT_HEIGHT, IMAGE_MAX_WIDTH, STICKY_WIDTH, STICKY_HEIGHT, DEFAULT_STICKY_FILL } from '@/features/canvas/constants';
-import { getOrthogonalPath, BoundingBox } from '@/features/canvas/utils/routing';
+import { getOrthogonalPath, getCurvedPath, getStraightPath, BoundingBox } from '@/features/canvas/utils/routing';
 import { renderPDFPages } from '@/features/canvas/lib/pdf';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
+import MindMapOverlay from '@/features/canvas/components/MindMapOverlay';
 import { Shapes, Loader2, Plus } from 'lucide-react';
 import CommentOverlay from './CommentOverlay';
 import LiveCursors from './LiveCursors';
@@ -242,6 +243,15 @@ export default function Board() {
     }, [cursorChat?.text, cursorChat?.isOpen, boardId, updateMyPresence]);
 
     useEffect(() => {
+        const handleEditLayerText = (e: Event) => {
+            const ce = e as CustomEvent;
+            setEditingText({ id: ce.detail.id, x: ce.detail.x, y: ce.detail.y, text: '' });
+        };
+        window.addEventListener('edit-layer-text', handleEditLayerText);
+        return () => window.removeEventListener('edit-layer-text', handleEditLayerText);
+    }, []);
+
+    useEffect(() => {
         if ((activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && transformerRef.current && stageRef.current) {
             const nodes = selectedLayerIds.map((id) => stageRef.current?.findOne(`#${id}`)).filter(Boolean) as Konva.Node[];
             if (nodes.length > 0) {
@@ -445,13 +455,25 @@ export default function Board() {
                     .filter(l => l.type !== 'arrow' && l.type !== 'straight-line' && l.type !== 'pen' && l.type !== 'pencil')
                     .map(l => ({ id: l.id, x: l.x, y: l.y, width: Math.abs(l.width || 0), height: Math.abs(l.height || 0) }));
 
-                const absPoints = getOrthogonalPath(
-                    { x: currentShape.x, y: currentShape.y },
-                    { x: endX, y: endY },
-                    currentShape.startBinding?.elementId,
-                    hoverSnap?.elementId,
-                    allObstacles
-                );
+                let absPoints: number[];
+                if (currentShape.connectorStyle === 'curved') {
+                    absPoints = getCurvedPath(
+                        { x: currentShape.x, y: currentShape.y },
+                        { x: endX, y: endY },
+                        currentShape.startBinding?.snapPoint,
+                        hoverSnap?.type as any
+                    );
+                } else if (currentShape.connectorStyle === 'straight') {
+                    absPoints = getStraightPath({ x: currentShape.x, y: currentShape.y }, { x: endX, y: endY });
+                } else {
+                    absPoints = getOrthogonalPath(
+                        { x: currentShape.x, y: currentShape.y },
+                        { x: endX, y: endY },
+                        currentShape.startBinding?.elementId,
+                        hoverSnap?.elementId,
+                        allObstacles
+                    );
+                }
                 
                 updateLayer(currentShapeId.current, {
                     width: endX - currentShape.x,
@@ -631,13 +653,25 @@ export default function Board() {
                     height: Math.abs(l.height || 0),
                 }));
 
-            const absPoints = getOrthogonalPath(
-                { x: startX, y: startY },
-                { x: endX, y: endY },
-                arrow.startBinding?.elementId,
-                arrow.endBinding?.elementId,
-                allObstacles
-            );
+            let absPoints: number[];
+            if (arrow.connectorStyle === 'curved') {
+                absPoints = getCurvedPath(
+                    { x: startX, y: startY },
+                    { x: endX, y: endY },
+                    arrow.startBinding?.snapPoint,
+                    arrow.endBinding?.snapPoint
+                );
+            } else if (arrow.connectorStyle === 'straight') {
+                absPoints = getStraightPath({ x: startX, y: startY }, { x: endX, y: endY });
+            } else {
+                absPoints = getOrthogonalPath(
+                    { x: startX, y: startY },
+                    { x: endX, y: endY },
+                    arrow.startBinding?.elementId,
+                    arrow.endBinding?.elementId,
+                    allObstacles
+                );
+            }
 
             updateLayer(arrow.id, {
                 x: startX,
@@ -1105,7 +1139,7 @@ export default function Board() {
             {editingText && (
                 <textarea
                     className="absolute z-50 shadow-xl rounded outline-none resize-none pointer-events-auto"
-                    style={{ ...textareaStyle, fontFamily: (isSketchMode && editingLayer?.type !== 'frame') ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif" }}
+                    style={{ ...textareaStyle, fontFamily: ((editingLayer?.isSketch ?? isSketchMode) && editingLayer?.type !== 'frame') ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif" }}
                     value={editingText.text}
                     autoFocus
                     onChange={(e) => setEditingText({ ...editingText, text: e.target.value })}
@@ -1612,6 +1646,7 @@ export default function Board() {
                 </KonvaLayer>
             </Stage>
             <CommentOverlay />
+            <MindMapOverlay />
             <LiveCursors />
         </div>
     );

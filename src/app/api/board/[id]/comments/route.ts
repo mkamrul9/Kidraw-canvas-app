@@ -47,7 +47,7 @@ export async function POST(
 
         const { id } = await params;
         const body = await request.json();
-        const { content, x, y } = body;
+        const { content, x, y, elementId } = body;
 
         if (!content || typeof x !== 'number' || typeof y !== 'number') {
             return NextResponse.json({ error: 'Missing required fields: content, x, y' }, { status: 400 });
@@ -58,6 +58,7 @@ export async function POST(
                 content,
                 x,
                 y,
+                elementId: elementId || null,
                 boardId: id,
                 authorId: session.user.id,
             },

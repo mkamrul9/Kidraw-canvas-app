@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -13,15 +13,36 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/shared/components/ui/
 import { exportToReactCode } from '@/features/canvas/lib/exportReact';
 import { exportToMermaid } from '@/features/canvas/lib/exportMermaid';
 import { DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
+import ImportMermaidModal from '@/features/canvas/components/ImportMermaidModal';
 
 export default function ActionToolbar() {
-    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers } = useCanvasStore();
+    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
+    const [importMermaidOpen, setImportMermaidOpen] = useState(false);
 
     const selectedLayer = selectedLayerId ? layers.find(l => l.id === selectedLayerId) : null;
     const isGroupSelected = selectedLayer?.type === 'group';
     const canGroup = selectedLayerIds.length > 1;
+
+    const isSelectedSketch = selectedLayerIds.length > 0
+        ? layers.find(l => l.id === selectedLayerIds[0])?.isSketch ?? isSketchMode
+        : isSketchMode;
+
+    const handleSketchToggle = () => {
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => {
+                const layer = layers.find(l => l.id === id);
+                if (layer) {
+                    const current = layer.isSketch ?? isSketchMode;
+                    updateLayer(id, { isSketch: !current });
+                }
+            });
+            saveHistory();
+        } else {
+            toggleSketchMode();
+        }
+    };
 
     const handleExport = (format: 'png' | 'jpeg' | 'svg' | 'pdf') => {
         window.dispatchEvent(new CustomEvent('export-canvas', { detail: format }));
@@ -38,7 +59,7 @@ export default function ActionToolbar() {
                 </div>
 
                 <div className={`${isMobileExpanded ? 'flex mt-2' : 'hidden'} sm:flex flex-row flex-wrap sm:flex-nowrap items-center justify-end gap-1 max-w-[140px] sm:max-w-none`}>
-                    <ToolButton icon={<Palette className="w-4 h-4" />} label={isSketchMode ? "Disable Sketch Mode" : "Enable Sketch Mode"} onClick={toggleSketchMode} isActive={isSketchMode} className={isSketchMode ? "!bg-violet-500 !text-white" : ""} />
+                    <ToolButton icon={<Palette className="w-4 h-4" />} label={isSelectedSketch ? "Disable Sketch Mode" : "Enable Sketch Mode"} onClick={handleSketchToggle} isActive={isSelectedSketch} className={isSelectedSketch ? "!bg-violet-500 !text-white" : ""} />
                 
                 <ToolButton icon={<MessageSquare className="w-4 h-4" />} label="Add Comment (C)" onClick={() => setActiveTool('comment')} isActive={activeTool === 'comment'} />
                 <ToolButton icon={isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />} label={isLocked ? "Unlock Board" : "Lock Board"} onClick={toggleLock} isActive={isLocked} className={isLocked ? "!bg-amber-500 !text-white" : ""} />
@@ -62,6 +83,15 @@ export default function ActionToolbar() {
                 )}
                 {isGroupSelected && (
                     <ToolButton icon={<Ungroup className="w-4 h-4" />} label="Ungroup (Ctrl+Shift+G)" onClick={() => ungroupLayers(selectedLayerId!)} />
+                )}
+
+                {selectedLayer?.type === 'arrow' && (
+                    <>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={<Route className="w-4 h-4" />} label="Orthogonal" onClick={() => { updateLayer(selectedLayerId!, { connectorStyle: 'orthogonal' }); saveHistory(); }} isActive={!selectedLayer.connectorStyle || selectedLayer.connectorStyle === 'orthogonal'} />
+                        <ToolButton icon={<Spline className="w-4 h-4" />} label="Curved" onClick={() => { updateLayer(selectedLayerId!, { connectorStyle: 'curved' }); saveHistory(); }} isActive={selectedLayer.connectorStyle === 'curved'} />
+                        <ToolButton icon={<Minus className="w-4 h-4" />} label="Straight" onClick={() => { updateLayer(selectedLayerId!, { connectorStyle: 'straight' }); saveHistory(); }} isActive={selectedLayer.connectorStyle === 'straight'} />
+                    </>
                 )}
 
                 {selectedLayerIds.length > 0 && (
@@ -118,9 +148,12 @@ export default function ActionToolbar() {
                         <DropdownMenuItem onClick={() => {
                             const code = exportToMermaid(layers);
                             setExportCodeContent(code, 'mermaid');
-                        }} className="cursor-pointer focus:bg-violet-600 focus:text-white"><Code2 className="w-4 h-4 mr-2" /> Mermaid Syntax (.md)</DropdownMenuItem>
+                        }} className="cursor-pointer focus:bg-violet-600 focus:text-white"><Code2 className="w-4 h-4 mr-2" /> Export Mermaid (.md)</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setImportMermaidOpen(true)} className="cursor-pointer focus:bg-emerald-600 focus:text-white"><Route className="w-4 h-4 mr-2" /> Import Mermaid (.md)</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
+
+                <ImportMermaidModal isOpen={importMermaidOpen} onClose={() => setImportMermaidOpen(false)} />
 
                 <ToolButton icon={<Cloud className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />} label={isSaving ? "Saving..." : "Save to Cloud"} onClick={() => boardId && saveToCloud(boardId)} className="hover:!text-blue-400 hover:!bg-blue-500/10" />
                 </div>

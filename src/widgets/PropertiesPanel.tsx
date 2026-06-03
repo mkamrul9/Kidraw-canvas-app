@@ -1,7 +1,7 @@
 'use client';
 
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
-import { Plus, Blend, Grid, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, Layers, Palette, X } from 'lucide-react';
+import { Plus, Blend, Grid, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, Layers, Palette, X, Wand2 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -9,16 +9,41 @@ import { ToolButton } from '@/shared/components/ToolButton';
 import { DEFAULT_COLORS } from '@/shared/constants';
 
 export default function PropertiesPanel() {
-    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward } = useCanvasStore();
+    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward, activeRoughness, setActiveRoughness, activeBowing, setActiveBowing, isSketchMode, layers, selectedLayerIds } = useCanvasStore();
 
-    const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | 'arrange' | null>(null);
+    const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | 'arrange' | 'sketch' | null>(null);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
     const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const op = parseFloat(e.target.value);
         setOpacity(op);
-        if (selectedLayerId) { updateLayer(selectedLayerId, { opacity: op }); saveHistory(); }
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => updateLayer(id, { opacity: op }));
+            saveHistory();
+        }
     };
+
+    const handleRoughnessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseFloat(e.target.value);
+        setActiveRoughness(val);
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => updateLayer(id, { roughness: val }));
+            saveHistory();
+        }
+    };
+
+    const handleBowingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = parseFloat(e.target.value);
+        setActiveBowing(val);
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => updateLayer(id, { bowing: val }));
+            saveHistory();
+        }
+    };
+
+    const isSelectedSketch = selectedLayerIds.length > 0 
+        ? layers.find(l => l.id === selectedLayerIds[0])?.isSketch ?? isSketchMode 
+        : isSketchMode;
 
     return (
         <TooltipProvider delayDuration={200}>
@@ -54,6 +79,33 @@ export default function PropertiesPanel() {
                                 <Button variant="ghost" size="sm" onClick={() => bringForward(selectedLayerId)} className="justify-start text-xs text-slate-300 hover:text-white hover:bg-slate-800"><ChevronUp className="w-4 h-4 mr-2" /> Bring Forward</Button>
                                 <Button variant="ghost" size="sm" onClick={() => sendBackward(selectedLayerId)} className="justify-start text-xs text-slate-300 hover:text-white hover:bg-slate-800"><ChevronDown className="w-4 h-4 mr-2" /> Send Backward</Button>
                                 <Button variant="ghost" size="sm" onClick={() => sendToBack(selectedLayerId)} className="justify-start text-xs text-slate-300 hover:text-white hover:bg-slate-800"><ChevronsDown className="w-4 h-4 mr-2" /> Send to Back</Button>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {(isSelectedSketch || isSketchMode) && (
+                    <div className="relative w-full flex justify-center">
+                        <ToolButton icon={<Wand2 className="w-4 h-4" />} label="Sketch Settings" onClick={() => setActiveMenu(activeMenu === 'sketch' ? null : 'sketch')} isActive={activeMenu === 'sketch'} tooltipSide="left" tooltipClassName="mr-2" />
+                        {activeMenu === 'sketch' && (
+                            <div className="absolute right-16 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-4 w-56 flex flex-col gap-4 z-50">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Sketch Parameters</span>
+                                
+                                <div className="flex flex-col gap-2">
+                                    <div className="flex justify-between items-center text-xs text-slate-300">
+                                        <span>Roughness</span>
+                                        <span className="text-violet-400 font-mono">{activeRoughness.toFixed(1)}</span>
+                                    </div>
+                                    <input type="range" min="0" max="5" step="0.1" value={activeRoughness} onChange={handleRoughnessChange} className="w-full cursor-pointer accent-violet-500 h-2 bg-slate-800 rounded-lg appearance-none" />
+                                </div>
+
+                                <div className="flex flex-col gap-2 mt-2">
+                                    <div className="flex justify-between items-center text-xs text-slate-300">
+                                        <span>Bowing</span>
+                                        <span className="text-violet-400 font-mono">{activeBowing.toFixed(1)}</span>
+                                    </div>
+                                    <input type="range" min="0" max="5" step="0.1" value={activeBowing} onChange={handleBowingChange} className="w-full cursor-pointer accent-violet-500 h-2 bg-slate-800 rounded-lg appearance-none" />
+                                </div>
                             </div>
                         )}
                     </div>

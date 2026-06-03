@@ -27,6 +27,7 @@ export type CanvasComment = {
     x: number;
     y: number;
     resolved: boolean;
+    elementId: string | null;
     boardId: string;
     author: CommentAuthor;
     replies: CommentReply[];
@@ -44,7 +45,7 @@ type CommentStore = {
     setSidebarOpen: (open: boolean) => void;
 
     fetchComments: (boardId: string) => Promise<void>;
-    addComment: (boardId: string, content: string, x: number, y: number) => Promise<CanvasComment | null>;
+    addComment: (boardId: string, content: string, x: number, y: number, elementId?: string | null) => Promise<CanvasComment | null>;
     addReply: (commentId: string, content: string) => Promise<void>;
     toggleResolved: (commentId: string, resolved: boolean) => Promise<void>;
 };
@@ -72,12 +73,12 @@ export const useCommentStore = create<CommentStore>((set, get) => ({
         }
     },
 
-    addComment: async (boardId, content, x, y) => {
+    addComment: async (boardId, content, x, y, elementId = null) => {
         try {
             const res = await fetch(`/api/board/${boardId}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ content, x, y }),
+                body: JSON.stringify({ content, x, y, elementId }),
             });
             if (!res.ok) throw new Error('Failed to create comment');
             const newComment = await res.json();

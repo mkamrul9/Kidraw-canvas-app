@@ -37,4 +37,8 @@ export type Layer = {
     pdfPageIndex?: number;
     zIndex?: number;
     codeLanguage?: string;
+    isSketch?: boolean;
+    connectorStyle?: 'orthogonal' | 'curved' | 'straight';
+    roughness?: number;
+    bowing?: number;
 };
