@@ -123,7 +123,15 @@ export default function Board() {
             clearTimeout(cursorChatTimerRef.current);
         }
         cursorChatTimerRef.current = setTimeout(() => {
-            setCursorChat(null);
+            setCursorChat((prev) => {
+                if (!prev) return null;
+                if (prev.isEditing) {
+                    // Start the fade-out animation instead of instantly removing it
+                    return { ...prev, isEditing: false };
+                }
+                // If it was already fading out, now we remove it
+                return null;
+            });
         }, durationMs);
     }, []);
 
@@ -1096,8 +1104,8 @@ export default function Board() {
         >
             {editingText && (
                 <textarea
-                    className="absolute z-50 shadow-xl rounded outline-none resize-none pointer-events-auto font-sans"
-                    style={textareaStyle}
+                    className="absolute z-50 shadow-xl rounded outline-none resize-none pointer-events-auto"
+                    style={{ ...textareaStyle, fontFamily: (isSketchMode && editingLayer?.type !== 'frame') ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif" }}
                     value={editingText.text}
                     autoFocus
                     onChange={(e) => setEditingText({ ...editingText, text: e.target.value })}
@@ -1458,6 +1466,7 @@ export default function Board() {
                                 isLocked={isLocked}
                                 isSketchMode={isSketchMode}
                                 isLowDetail={isLowDetail}
+                                isMagneticTarget={isDrawing && activeShape === 'arrow' && activeSnapPoint?.elementId === layer.id}
                                 activeTool={activeTool}
                                 onDragEnd={handleLayerDragEnd}
                                 onDragMove={handleLayerDragMove}
@@ -1478,6 +1487,20 @@ export default function Board() {
 
                     {lassoPoints.length > 0 && !isLocked && (
                         <Line points={lassoPoints} stroke="#4f46e5" strokeWidth={2} dash={[5, 5]} closed fill="rgba(79, 70, 229, 0.1)" />
+                    )}
+
+                    {isDrawing && activeShape === 'arrow' && activeSnapPoint && (
+                        <Circle
+                            x={activeSnapPoint.x}
+                            y={activeSnapPoint.y}
+                            radius={5}
+                            fill="#3b82f6"
+                            stroke="#ffffff"
+                            strokeWidth={2}
+                            shadowColor="black"
+                            shadowBlur={4}
+                            shadowOpacity={0.5}
+                        />
                     )}
 
                     {selectionBox && !isLocked && (

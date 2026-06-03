@@ -32,6 +32,7 @@ interface LayerRendererProps {
     onTransformEnd?: (id: string, x: number, y: number, width: number, height: number) => void;
     onPdfPageChange?: (id: string, pageIndex: number) => void;
     isLowDetail?: boolean;
+    isMagneticTarget?: boolean;
 }
 
 /**
@@ -54,6 +55,7 @@ export default function LayerRenderer({
     onTransformEnd,
     onPdfPageChange,
     isLowDetail = false,
+    isMagneticTarget = false,
 }: LayerRendererProps) {
     const commonProps = {
         id: layer.id,
@@ -219,9 +221,11 @@ export default function LayerRenderer({
                 width={layer.width} 
                 height={layer.height} 
                 fill="transparent"
-                stroke={isSelected ? "#6366f1" : "transparent"}
-                strokeWidth={1}
-                dash={[4, 4]}
+                stroke={isMagneticTarget ? "#3b82f6" : isSelected ? "#6366f1" : "transparent"}
+                strokeWidth={isMagneticTarget ? 2 : 1}
+                shadowColor={isMagneticTarget ? "#3b82f6" : undefined}
+                shadowBlur={isMagneticTarget ? 15 : undefined}
+                dash={isMagneticTarget ? undefined : [4, 4]}
             />
         );
     }
@@ -355,7 +359,7 @@ export default function LayerRenderer({
                         text={layer.text}
                         fill="#0f172a"
                         fontSize={fontSize}
-                        fontFamily="sans-serif"
+                        fontFamily={isSketchMode ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif"}
                         align="center"
                         verticalAlign="middle"
                         width={textWidth}
@@ -433,7 +437,16 @@ export default function LayerRenderer({
                     }
                 }}
             >
-                {renderShapeContent()}
+                <Group
+                    shadowColor={isMagneticTarget ? "#3b82f6" : undefined}
+                    shadowBlur={isMagneticTarget ? 15 : undefined}
+                    shadowOpacity={isMagneticTarget ? 1 : 0}
+                >
+                    {renderShapeContent()}
+                    {isMagneticTarget && (
+                        <Rect width={layer.width} height={layer.height} stroke="#3b82f6" strokeWidth={3} cornerRadius={layer.type === 'rectangle' ? 4 : 0} listening={false} />
+                    )}
+                </Group>
                 
                 {!isLowDetail && layer.text && (
                     <Text
@@ -446,7 +459,7 @@ export default function LayerRenderer({
                         fontSize={textFontSize}
                         align="center"
                         verticalAlign="middle"
-                        fontFamily="sans-serif"
+                        fontFamily={isSketchMode ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif"}
                     />
                 )}
             </Group>
@@ -479,7 +492,7 @@ export default function LayerRenderer({
     }
 
     if (layer.type === 'text')
-        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
+        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={isSketchMode ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
 
     if (layer.type === 'eraser')
         return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;

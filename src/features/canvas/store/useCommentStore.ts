@@ -1,5 +1,13 @@
 import { create } from 'zustand';
 
+const broadcastCommentUpdate = (boardId: string) => {
+    fetch(`/api/board/${boardId}/presence`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'comment-update' }),
+    }).catch(console.error);
+};
+
 export type CommentAuthor = {
     id: string;
     name: string | null;
@@ -41,7 +49,7 @@ type CommentStore = {
     toggleResolved: (commentId: string, resolved: boolean) => Promise<void>;
 };
 
-export const useCommentStore = create<CommentStore>((set) => ({
+export const useCommentStore = create<CommentStore>((set, get) => ({
     comments: [],
     isLoading: false,
     activeThreadId: null,
@@ -76,6 +84,7 @@ export const useCommentStore = create<CommentStore>((set) => ({
             set((state) => ({
                 comments: [newComment, ...state.comments],
             }));
+            broadcastCommentUpdate(boardId);
             return newComment;
         } catch (error) {
             console.error('Failed to create comment:', error);
@@ -92,6 +101,8 @@ export const useCommentStore = create<CommentStore>((set) => ({
             });
             if (!res.ok) throw new Error('Failed to add reply');
             const newReply = await res.json();
+            const state = get();
+            const boardId = state.comments.find((c) => c.id === commentId)?.boardId;
             set((state) => ({
                 comments: state.comments.map((c) =>
                     c.id === commentId
@@ -99,6 +110,7 @@ export const useCommentStore = create<CommentStore>((set) => ({
                         : c
                 ),
             }));
+            if (boardId) broadcastCommentUpdate(boardId);
         } catch (error) {
             console.error('Failed to add reply:', error);
         }
@@ -113,11 +125,14 @@ export const useCommentStore = create<CommentStore>((set) => ({
             });
             if (!res.ok) throw new Error('Failed to toggle resolved');
             const updated = await res.json();
+            const state = get();
+            const boardId = state.comments.find((c) => c.id === commentId)?.boardId;
             set((state) => ({
                 comments: state.comments.map((c) =>
                     c.id === commentId ? { ...c, ...updated } : c
                 ),
             }));
+            if (boardId) broadcastCommentUpdate(boardId);
         } catch (error) {
             console.error('Failed to toggle resolved:', error);
         }

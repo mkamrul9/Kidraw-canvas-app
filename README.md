@@ -28,7 +28,7 @@ Kidraw is a production-grade, infinite canvas SaaS application designed for full
 
 ## 🔗 Live Demo
 
-Experience the live application here: [https://kidraw-canvas.vercel.app/](https://kidraw-canvas.vercel.app/)
+Experience the live application here: [https://kidraw-canvas-app.vercel.app/](https://kidraw-canvas-app.vercel.app/)
 
 ---
 

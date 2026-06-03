@@ -3,6 +3,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { usePresenceStore } from '../store/usePresenceStore';
 import { useCanvasStore } from '../store/useCanvasStore';
+import { useCommentStore } from '../store/useCommentStore';
 import { useSession } from 'next-auth/react';
 
 const getOrCreateGuestId = () => {
@@ -57,6 +58,8 @@ export function usePresence(boardId: string | null) {
                     });
                 } else if (data.type === 'draw-remove') {
                     useCanvasStore.getState().removeLayer(data.id, true);
+                } else if (data.type === 'comment-update') {
+                    if (boardId) useCommentStore.getState().fetchComments(boardId);
                 } else {
                     updatePresence(data.userId, data);
                 }
