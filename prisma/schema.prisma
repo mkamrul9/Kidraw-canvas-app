@@ -19,6 +19,7 @@ model User {
   sessions      Session[]
   boards        Board[]   // A user can have many boards
   comments      Comment[]
+  snapshots     BoardSnapshot[]
 }
 
 model Account {
@@ -58,6 +59,7 @@ model Board {
   authorId        String?
   author          User?     @relation(fields: [authorId], references: [id])
   comments        Comment[]
+  snapshots       BoardSnapshot[]
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -84,4 +86,19 @@ model Comment {
 
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
+}
+
+// Version History Snapshots
+model BoardSnapshot {
+  id         String   @id @default(cuid())
+  name       String   @default("Manual Snapshot")
+  layers     Json
+  
+  boardId    String
+  board      Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  authorId   String?
+  author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  createdAt  DateTime @default(now())
 }

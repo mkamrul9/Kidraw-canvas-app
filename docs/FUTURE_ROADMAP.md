@@ -121,30 +121,21 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
   * `MindMapOverlay.tsx` HTML portal overlay.
   * Clones the active layer, computes layout offset, and automatically generates an `arrow` connecting the two using `startBinding` and `endBinding`.
 
-### 10. Embedded Code Sandbox Component
-* **Description:** Place functional code blocks on the canvas with syntax highlighting and live code editing capability.
-* **Technical Stack:** Render Monaco Editor or CodeMirror as an HTML overlay inside a Konva custom DOM portal (using CSS `transform: matrix3d` mapping).
-* **UX/UI Design:**
-  * Syntax themes automatically match light/dark modes.
-  * Copy-to-clipboard shortcut overlay button.
-  * Resizing handles scale the code viewer bounding box smoothly.
-* **Note:** A basic `code` layer type exists but lacks syntax highlighting or live editing. This would be a significant upgrade.
-* **Industry Inspiration:** tldraw (HTML embeds), Notion.
-* **Priority / Difficulty:** Medium / Medium
+### ✅ 10. Embedded Code Sandbox Component — SHIPPED
+* **Status:** Fully implemented!
+* **What was built:**
+  * `CodeBlockOverlay.tsx` HTML portal mapped to Konva.
+  * Native `<textarea>` editor layered seamlessly over the canvas, scaling with zoom and pan.
+  * Custom `codeLanguage` tagging in headers.
+  * Added `code` tool to the Toolbar.
 
----
-
-## 🌐 4. Media & Interactive Integrations
-
-### 11. Live HTML & Video Embeds
-* **Description:** Embed active external resources (YouTube, Figma embeds, Spotify, or custom webpages) directly into canvas cards.
-* **Technical Stack:** Use absolute-positioned `<iframe>` elements overlaid over the Konva stage, synchronized using 3D transformation matrices based on the zoom scale and camera coordinates.
-* **UX/UI Design:**
-  * Shows a thumbnail state while dragging or panning; becomes interactive (receives mouse inputs) when zoomed in and selected.
-  * Clean, rounded-corner card styling with a loading spinner.
-* **Note:** A basic `embed` layer type and `embedUrl` property exist in the type system but the iframe rendering is not yet implemented.
-* **Industry Inspiration:** Miro, tldraw, Muse.
-* **Priority / Difficulty:** Low / 🛠️ Hard
+### ✅ 11. Live HTML & Video Embeds — SHIPPED
+* **Status:** Fully implemented!
+* **What was built:**
+  * `IframeEmbedOverlay.tsx` HTML portal.
+  * Double-click header to paste a YouTube link or any website.
+  * Added `pointer-events: none` shielding during panning/zooming so the iframe doesn't swallow drag events.
+  * Added `embed` tool to the Toolbar.
 
 ### ✅ 12. Local Image & PDF Annotation — SHIPPED
 * **Status:** Completed! Multi-page PDF viewer directly embedded on the canvas with custom pagination controls via `pdf.ts` loader. Image upload via Base64 encoding with max 800px scaling.
@@ -153,24 +144,21 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
 
 ## 🤖 5. AI-Assisted Design & Automation
 
-### 13. Sketch-to-Vector (AI Drawing Clean-Up)
-* **Description:** Use AI to analyze freehand hand-drawn scribbles and convert them into beautifully formatted vector shapes or icons.
-* **Technical Stack:** Backend endpoint communicating with Gemini Flash Vision API (passing raw base64 drawing data) or local machine learning models like `TensorFlow.js` (for stroke classification).
-* **UX/UI Design:**
-  * Floating AI assistant panel.
-  * Clicking "Clean Up Drawing" overlays a sparkling dust animation (`lottie`) while substituting the scribble with a perfect SVG circle/rectangle/arrow.
-* **Industry Inspiration:** tldraw make-real, Figma AI.
-* **Priority / Difficulty:** 🔥 High / Medium
+### ✅ 13. Sketch-to-Vector (AI Drawing Clean-Up) — SHIPPED
+* **Status:** Fully implemented!
+* **What was built:**
+  * Uses Konva's `toDataURL` to grab viewport crops of the freehand strokes.
+  * Sends it to `/api/ai/clean-sketch` utilizing Gemini 2.5 Flash Vision.
+  * Replaces the pen strokes with exact structured JSON vectors (e.g. perfect rectangle or arrow).
+  * Automatically mocks response if `GEMINI_API_KEY` is not found.
 
-### 14. Text-to-Diagram Generator (LLM Integration)
-* **Description:** Generate flowcharts, database ERDs, or system architecture diagrams directly from written prompts.
-* **Technical Stack:** Prompt engineering targeting LLMs (Gemini / Claude) to output structured JSON representing nodes, coordinates, and arrows, which the canvas store then parses and renders via `addLayers()`.
-* **UX/UI Design:**
-  * Floating command bar (triggered by `Ctrl + K` or an AI button).
-  * Prompt input: "Generate a microservices flow for payment processing".
-  * The canvas dynamically populates the diagram with an animated flow sequence.
-* **Industry Inspiration:** Whimsical AI, Eraser.io.
-* **Priority / Difficulty:** High / Medium
+### ✅ 14. Text-to-Diagram Generator (LLM Integration) — SHIPPED
+* **Status:** Fully implemented!
+* **What was built:**
+  * Added `AiDiagramGeneratorModal.tsx` floating command bar.
+  * Takes text prompt and queries `/api/ai/generate-diagram` via Gemini 2.5 Flash.
+  * Returns JSON structure injected directly onto the canvas view.
+  * Automatically mocks response if `GEMINI_API_KEY` is not found.
 
 ### 15. Diagram OCR & Summary Explainer
 * **Description:** Select a portion of your canvas (diagram, mindmap, annotations) and have the AI explain the architecture or write out technical documentation.
@@ -234,16 +222,13 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
   * Level of Detail (LOD) trigger: `isLowDetail = zoom < 0.4`.
   * `LayerRenderer.tsx` respects `isLowDetail` by hiding text components and disabling complex Sketch mode rendering, ensuring massive boards stay at 60fps.
 
-### ✅ 21. Canvas Time Travel & History Slider — SHIPPED (In-Memory Only)
-* **Status:** In-memory time travel is fully implemented. Database-persisted version history is not yet built.
+### ✅ 21. Canvas Time Travel & Database Version History — SHIPPED
+* **Status:** Both in-memory time travel and database-persisted version history are completed.
 * **What was built:**
-  * `history` and `historyStep` state in `useCanvasStore` — full undo/redo stack with state snapshots.
-  * `saveHistory()`, `undo()`, `redo()`, `jumpToHistoryStep()` actions.
-  * `TimeTravelSlider` widget — visual slider to scrub through history with play/pause animation.
-  * Auto-rewind when pressing play at the end of history.
-  * 300ms per step during playback.
-* **Remaining work:**
-  * **Database-persisted version history** — Save named checkpoints/snapshots to the database.
+  * `BoardSnapshot` model added to Prisma schema.
+  * `VersionHistoryModal.tsx` integrated into the Action Toolbar.
+  * `/api/board/[id]/snapshots` GET and POST routes.
+  * Can save named snapshots ("V1 Design", "Before redesign") and restore them seamlessly.
   * **User attribution** — Track which user made each change.
   * **Restore previous versions** — Allow reverting the board to a prior checkpoint.
   * **Visual diff** — Show what changed between versions.

@@ -16,7 +16,7 @@ export default function Toolbar() {
     const {
         activeTool, setActiveTool, undo, redo, historyStep, history,
         activeEraserType, setActiveEraserType, eraserSize, setEraserSize,
-        activeShape, setActiveShape, penSize, setPenSize, isLocked,
+        activeShape, setActiveShape, penSize, setPenSize, isLocked, selectedLayerIds
     } = useCanvasStore();
 
     // state to manage which dropdown menu is open. null means no menu is open
@@ -127,6 +127,8 @@ export default function Toolbar() {
                         }
                     }}
                 />
+
+                <div className="w-[1px] h-6 bg-slate-700/50 mx-1"></div>
 
                 <ToolButton icon={<Wand2 className="w-4 h-4" />} label="Laser Pointer (K)" onClick={() => handleToolClick('laser')} isActive={activeTool === 'laser'} />
 

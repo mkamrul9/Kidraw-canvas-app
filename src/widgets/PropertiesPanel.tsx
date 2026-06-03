@@ -7,6 +7,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { DEFAULT_COLORS } from '@/shared/constants';
+import AiToolbar from './AiToolbar';
 
 export default function PropertiesPanel() {
     const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward, activeRoughness, setActiveRoughness, activeBowing, setActiveBowing, isSketchMode, layers, selectedLayerIds } = useCanvasStore();
@@ -153,6 +154,8 @@ export default function PropertiesPanel() {
                         <button key={`${color}-${index}`} onClick={() => setActiveColor(color)} className={`w-6 h-6 rounded-full border-2 transition-all shadow-md ${activeColor === color ? 'border-violet-500 scale-125' : 'border-slate-700 hover:scale-110'}`} style={{ backgroundColor: color }} />
                     ))}
                 </div>
+
+                <AiToolbar />
                 </div>
             </div>
         </TooltipProvider>

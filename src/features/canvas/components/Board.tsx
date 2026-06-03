@@ -19,10 +19,15 @@ import { getOrthogonalPath, getCurvedPath, getStraightPath, BoundingBox } from '
 import { renderPDFPages } from '@/features/canvas/lib/pdf';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
-import MindMapOverlay from '@/features/canvas/components/MindMapOverlay';
 import { Shapes, Loader2, Plus } from 'lucide-react';
+import MindMapOverlay from './MindMapOverlay';
+import CodeBlockOverlay from './CodeBlockOverlay';
+import { exportToMermaid } from '@/features/canvas/lib/exportMermaid';
+import IframeEmbedOverlay from './IframeEmbedOverlay';
 import CommentOverlay from './CommentOverlay';
 import LiveCursors from './LiveCursors';
+import CanvasContextMenu from './CanvasContextMenu';
+import SummaryExplainerDrawer from './SummaryExplainerDrawer';
 import { usePresence } from '../hooks/usePresence';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import type { Layer } from '@/features/canvas/types';
@@ -37,6 +42,7 @@ export default function Board() {
     const [hoveredShapeId, setHoveredShapeId] = useState<string | null>(null);
     const [isDraggingFile, setIsDraggingFile] = useState(false);
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+    const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
     const [embedPrompt, setEmbedPrompt] = useState<{ x: number; y: number } | null>(null);
 
     const { data: session } = useSession();
@@ -47,9 +53,9 @@ export default function Board() {
     const {
         layers, activeTool, setActiveTool, activeShape, activeColor, backgroundColor, bgPattern,
         activeOpacity, isDrawing, setIsDrawing, activeGuides, addLayer, addLayers, updateLayer, removeLayer,
-        saveHistory, selectedLayerIds, setSelectedLayerIds, setSelectedLayerId,
+        saveHistory, selectedLayerIds, setSelectedLayerIds, selectedLayerId, setSelectedLayerId,
         eraserSize, penSize, camera, setCamera, zoom, setZoom, isLocked, boardId,
-        isSketchMode,
+        isSketchMode, bringToFront, sendToBack, groupLayers, ungroupLayers
     } = useCanvasStore();
 
     const { updateMyPresence } = usePresence(boardId);
@@ -252,6 +258,131 @@ export default function Board() {
     }, []);
 
     useEffect(() => {
+        const handleAiCleanSketch = async () => {
+            const store = useCanvasStore.getState();
+            const selectedIds = store.selectedLayerIds;
+            if (selectedIds.length === 0) return;
+            
+            const sketchLayers = store.layers.filter(l => selectedIds.includes(l.id) && (l.type === 'pen' || l.type === 'pencil'));
+            if (sketchLayers.length === 0) {
+                toast.error("Select pen/pencil sketches first.");
+                return;
+            }
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            sketchLayers.forEach(l => {
+                if (l.x < minX) minX = l.x;
+                if (l.y < minY) minY = l.y;
+                if (l.x + (l.width || 0) > maxX) maxX = l.x + (l.width || 0);
+                if (l.y + (l.height || 0) > maxY) maxY = l.y + (l.height || 0);
+            });
+            
+            const padding = 20;
+            minX -= padding;
+            minY -= padding;
+            maxX += padding;
+            maxY += padding;
+            
+            const stage = stageRef.current;
+            if (!stage) return;
+            
+            toast.loading("AI is analyzing sketch...", { id: 'ai-clean' });
+            
+            const rect = {
+                x: (minX * zoom) + camera.x,
+                y: (minY * zoom) + camera.y,
+                width: (maxX - minX) * zoom,
+                height: (maxY - minY) * zoom,
+                pixelRatio: 1
+            };
+            
+            const dataUrl = stage.toDataURL(rect);
+            
+            try {
+                const res = await fetch('/api/ai/clean-sketch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageBase64: dataUrl })
+                });
+                
+                const data = await res.json();
+                if (res.ok && data.layers) {
+                    const newLayers = data.layers.map((l: any) => ({
+                        ...l,
+                        id: uuidv4(),
+                        x: minX + l.x,
+                        y: minY + l.y,
+                    }));
+                    
+                    sketchLayers.forEach(l => store.removeLayer(l.id));
+                    store.addLayers(newLayers);
+                    store.setSelectedLayerIds(newLayers.map((l: any) => l.id));
+                    store.saveHistory();
+                    toast.success("Sketch cleaned!", { id: 'ai-clean' });
+                } else {
+                    toast.error(data.error || "Failed to process", { id: 'ai-clean' });
+                }
+            } catch (err) {
+                console.error(err);
+                toast.error("Error processing sketch", { id: 'ai-clean' });
+            }
+        };
+        window.addEventListener('ai-clean-sketch', handleAiCleanSketch);
+
+        const handleAiExplainer = () => {
+            if (!stageRef.current) return;
+            const store = useCanvasStore.getState();
+            const targetIds = store.selectedLayerIds.length > 0 ? store.selectedLayerIds : store.layers.map(l => l.id);
+            
+            if (targetIds.length === 0) {
+                toast.error("Canvas is empty");
+                return;
+            }
+
+            const targetLayers = store.layers.filter(l => targetIds.includes(l.id));
+            
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            targetLayers.forEach(l => {
+                if (l.x < minX) minX = l.x;
+                if (l.y < minY) minY = l.y;
+                if (l.x + (l.width || 100) > maxX) maxX = l.x + (l.width || 100);
+                if (l.y + (l.height || 100) > maxY) maxY = l.y + (l.height || 100);
+            });
+
+            // Add padding
+            minX -= 20; minY -= 20; maxX += 20; maxY += 20;
+
+            const oldScaleX = stageRef.current.scaleX();
+            const oldScaleY = stageRef.current.scaleY();
+            const oldX = stageRef.current.x();
+            const oldY = stageRef.current.y();
+
+            stageRef.current.scale({ x: 1, y: 1 });
+            stageRef.current.position({ x: -minX, y: -minY });
+            transformerRef.current?.hide();
+
+            const dataUrl = stageRef.current.toDataURL({
+                x: 0, y: 0,
+                width: maxX - minX, height: maxY - minY,
+                pixelRatio: 2,
+            });
+
+            stageRef.current.scale({ x: oldScaleX, y: oldScaleY });
+            stageRef.current.position({ x: oldX, y: oldY });
+            transformerRef.current?.show();
+
+            window.dispatchEvent(new CustomEvent('open-ai-explainer', { detail: { imageBase64: dataUrl } }));
+        };
+
+        window.addEventListener('trigger-ai-explainer', handleAiExplainer);
+        
+        return () => {
+            window.removeEventListener('ai-clean-sketch', handleAiCleanSketch);
+            window.removeEventListener('trigger-ai-explainer', handleAiExplainer);
+        };
+    }, [camera, zoom]);
+
+    useEffect(() => {
         if ((activeTool === 'select' || activeTool === 'lasso') && selectedLayerIds.length > 0 && transformerRef.current && stageRef.current) {
             const nodes = selectedLayerIds.map((id) => stageRef.current?.findOne(`#${id}`)).filter(Boolean) as Konva.Node[];
             if (nodes.length > 0) {
@@ -266,6 +397,7 @@ export default function Board() {
         e.evt.preventDefault();
         const stage = e.target.getStage();
         if (!stage) return;
+        setContextMenuPos(null);
 
         if (e.evt.ctrlKey || e.evt.metaKey) {
             const scaleBy = 1.1;
@@ -284,6 +416,7 @@ export default function Board() {
 
     // ─── Pointer Handlers ────────────────────────────────
     const handlePointerDown = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        setContextMenuPos(null);
         if (editingText) {
             (document.activeElement as HTMLElement)?.blur();
             return;
@@ -365,10 +498,20 @@ export default function Board() {
             return;
         }
 
-        if (activeTool === 'code') {
+        if ((activeTool as string) === 'code') {
             setSelectedLayerId(null);
             const newId = uuidv4();
             addLayer({ id: newId, type: 'code', x: pos.x, y: pos.y, width: 450, height: 300, fill: '#0f172a', text: '', opacity: activeOpacity, codeLanguage: '' });
+            setActiveTool('select');
+            setSelectedLayerId(newId);
+            saveHistory();
+            return;
+        }
+
+        if ((activeTool as string) === 'embed') {
+            setSelectedLayerId(null);
+            const newId = uuidv4();
+            addLayer({ id: newId, type: 'embed', x: pos.x, y: pos.y, width: 400, height: 300, fill: '#ffffff', embedUrl: '', opacity: activeOpacity });
             setActiveTool('select');
             setSelectedLayerId(newId);
             saveHistory();
@@ -1136,6 +1279,14 @@ export default function Board() {
                 await processUploadedFile(file, dropX, dropY);
             }}
         >
+            {/* Absolute positioning layer for HTML Overlays */}
+            <div className="absolute inset-0 pointer-events-none z-[100]">
+                {activeTool === 'comment' && <CommentOverlay />}
+                <MindMapOverlay />
+                <CodeBlockOverlay />
+                <IframeEmbedOverlay />
+            </div>
+
             {editingText && (
                 <textarea
                     className="absolute z-50 shadow-xl rounded outline-none resize-none pointer-events-auto"
@@ -1243,82 +1394,6 @@ export default function Board() {
                     </button>
                 </div>
             )}
-
-            {layers.filter(l => l.type === 'embed' && l.embedUrl).map((layer) => {
-                const isSelected = selectedLayerIds.includes(layer.id);
-                // The iframe should only intercept clicks if it's currently selected and we are not panning the board.
-                const pointerEvents = isSelected && activeTool !== 'hand' ? 'auto' : 'none';
-                
-                return (
-                    <div
-                        key={layer.id}
-                        className={`absolute z-10 origin-top-left overflow-hidden bg-slate-900 rounded-xl ${isSelected ? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-transparent' : 'border border-white/10'}`}
-                        style={{
-                            left: 0,
-                            top: 0,
-                            width: layer.width,
-                            height: layer.height,
-                            transform: `translate(${camera.x + layer.x * zoom}px, ${camera.y + layer.y * zoom}px) scale(${zoom})`,
-                            pointerEvents
-                        }}
-                    >
-                        {/* Invisible drag handle over the iframe when selected to allow moving it easily */}
-                        {isSelected && activeTool === 'select' && (
-                            <div className="absolute inset-x-0 top-0 h-6 bg-violet-500/20 cursor-move z-20 hover:bg-violet-500/40 transition-colors flex items-center justify-center" style={{ pointerEvents: 'none' }}>
-                                <div className="w-12 h-1.5 rounded-full bg-white/50"></div>
-                            </div>
-                        )}
-                        <iframe
-                            src={layer.embedUrl}
-                            width="100%"
-                            height="100%"
-                            frameBorder="0"
-                            allowFullScreen
-                            className="w-full h-full"
-                        />
-                    </div>
-                );
-            })}
-
-            {/* Embedded Code Sandbox Layers */}
-            {layers.filter(l => l.type === 'code').map((layer) => {
-                const isSelected = selectedLayerIds.includes(layer.id);
-                const pointerEvents = isSelected && activeTool !== 'hand' ? 'auto' : 'none';
-                
-                return (
-                    <div
-                        key={layer.id}
-                        className={`absolute z-10 origin-top-left overflow-hidden bg-[#0f172a] rounded-xl shadow-2xl ${isSelected ? 'ring-2 ring-violet-500 ring-offset-2 ring-offset-transparent' : 'border border-slate-700/50'}`}
-                        style={{
-                            left: 0,
-                            top: 0,
-                            width: layer.width,
-                            height: layer.height,
-                            transform: `translate(${camera.x + layer.x * zoom}px, ${camera.y + layer.y * zoom}px) scale(${zoom})`,
-                            pointerEvents
-                        }}
-                    >
-                        {/* Mac-like Window Header (Pointer events none so clicks pass through to Konva for dragging) */}
-                        <div className="absolute inset-x-0 top-0 h-9 bg-[#1e293b] flex items-center px-3 gap-2 border-b border-black/20 z-20" style={{ pointerEvents: 'none' }}>
-                            <div className="w-3 h-3 rounded-full bg-red-500 border border-red-600"></div>
-                            <div className="w-3 h-3 rounded-full bg-yellow-500 border border-yellow-600"></div>
-                            <div className="w-3 h-3 rounded-full bg-green-500 border border-green-600"></div>
-                            <span className="ml-2 text-[11px] font-mono text-slate-400 select-none tracking-wider">{layer.codeLanguage || ''}</span>
-                        </div>
-                        
-                        <textarea
-                            value={layer.text}
-                            onChange={(e) => updateLayer(layer.id, { text: e.target.value })}
-                            onPointerDown={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                            onTouchStart={(e) => e.stopPropagation()}
-                            placeholder="Write your code here..."
-                            className="w-full h-full pt-12 pb-4 px-4 bg-transparent text-emerald-400 font-mono text-sm leading-relaxed resize-none focus:outline-none"
-                            spellCheck={false}
-                        />
-                    </div>
-                );
-            })}
 
             {cursorChat && cursorChat.isOpen && (
                 <div
@@ -1432,6 +1507,17 @@ export default function Board() {
                 className={`touch-none ${activeTool === 'laser' ? 'cursor-crosshair' : ''}`}
                 x={camera.x} y={camera.y} scaleX={zoom} scaleY={zoom}
                 draggable={activeTool === 'hand'}
+                onContextMenu={(e) => {
+                    e.evt.preventDefault();
+                    if (e.target !== stageRef.current && e.target.name() !== 'background' && selectedLayerIds.length === 0) {
+                        const id = e.target.id() || e.target.parent?.id();
+                        if (id) {
+                            setSelectedLayerIds([id]);
+                            setSelectedLayerId(id);
+                        }
+                    }
+                    setContextMenuPos({ x: e.evt.clientX, y: e.evt.clientY });
+                }}
                 onWheel={handleWheel}
                 onDragMove={(e) => { if (e.target === stageRef.current) setCamera({ x: e.target.x(), y: e.target.y() }); }}
                 onMouseDown={handlePointerDown} onMouseMove={handlePointerMove} onMouseUp={handlePointerUp}
@@ -1648,6 +1734,33 @@ export default function Board() {
             <CommentOverlay />
             <MindMapOverlay />
             <LiveCursors />
+            {contextMenuPos && (
+                <CanvasContextMenu 
+                    isOpen={!!contextMenuPos}
+                    x={contextMenuPos.x}
+                    y={contextMenuPos.y}
+                    isGroupSelected={!!(selectedLayerId && layers.find(l => l.id === selectedLayerId)?.type === 'group')}
+                    canGroup={selectedLayerIds.length > 1}
+                    hasSelection={selectedLayerIds.length > 0}
+                    onClose={() => setContextMenuPos(null)}
+                    onBringToFront={() => selectedLayerIds.forEach(id => bringToFront(id))}
+                    onSendToBack={() => selectedLayerIds.forEach(id => sendToBack(id))}
+                    onGroup={() => groupLayers(selectedLayerIds)}
+                    onUngroup={() => selectedLayerId && ungroupLayers(selectedLayerId)}
+                    onCopyMermaid={() => {
+                        const code = exportToMermaid(layers.filter(l => selectedLayerIds.includes(l.id)));
+                        navigator.clipboard.writeText(code);
+                        toast.success("Mermaid code copied to clipboard");
+                    }}
+                    onDelete={() => {
+                        selectedLayerIds.forEach(id => removeLayer(id));
+                        setSelectedLayerIds([]);
+                        setSelectedLayerId(null);
+                        saveHistory();
+                    }}
+                />
+            )}
+            <SummaryExplainerDrawer />
         </div>
     );
 }

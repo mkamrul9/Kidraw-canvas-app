@@ -3,9 +3,9 @@
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -14,12 +14,22 @@ import { exportToReactCode } from '@/features/canvas/lib/exportReact';
 import { exportToMermaid } from '@/features/canvas/lib/exportMermaid';
 import { DropdownMenuSeparator } from '@/shared/components/ui/dropdown-menu';
 import ImportMermaidModal from '@/features/canvas/components/ImportMermaidModal';
+import VersionHistoryModal from '@/features/canvas/components/VersionHistoryModal';
+import AiDiagramGeneratorModal from '@/features/canvas/components/AiDiagramGeneratorModal';
 
 export default function ActionToolbar() {
     const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
     const [importMermaidOpen, setImportMermaidOpen] = useState(false);
+    const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
+    const [aiDiagramOpen, setAiDiagramOpen] = useState(false);
+
+    useEffect(() => {
+        const handleOpenAi = () => setAiDiagramOpen(true);
+        window.addEventListener('open-ai-diagram', handleOpenAi);
+        return () => window.removeEventListener('open-ai-diagram', handleOpenAi);
+    }, []);
 
     const selectedLayer = selectedLayerId ? layers.find(l => l.id === selectedLayerId) : null;
     const isGroupSelected = selectedLayer?.type === 'group';
@@ -154,7 +164,10 @@ export default function ActionToolbar() {
                 </DropdownMenu>
 
                 <ImportMermaidModal isOpen={importMermaidOpen} onClose={() => setImportMermaidOpen(false)} />
+                <VersionHistoryModal isOpen={versionHistoryOpen} onClose={() => setVersionHistoryOpen(false)} />
+                <AiDiagramGeneratorModal isOpen={aiDiagramOpen} onClose={() => setAiDiagramOpen(false)} />
 
+                <ToolButton icon={<History className="w-4 h-4" />} label="Version History" onClick={() => setVersionHistoryOpen(true)} className="hover:!bg-blue-500/20 hover:!text-blue-400" />
                 <ToolButton icon={<Cloud className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />} label={isSaving ? "Saving..." : "Save to Cloud"} onClick={() => boardId && saveToCloud(boardId)} className="hover:!text-blue-400 hover:!bg-blue-500/10" />
                 </div>
             </div>
