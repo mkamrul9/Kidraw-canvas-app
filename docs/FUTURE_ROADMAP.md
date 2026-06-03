@@ -160,7 +160,7 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
   * Returns JSON structure injected directly onto the canvas view.
   * Automatically mocks response if `GEMINI_API_KEY` is not found.
 
-### 15. Diagram OCR & Summary Explainer
+### ✅ 15. Diagram OCR & Summary Explainer — SHIPPED
 * **Description:** Select a portion of your canvas (diagram, mindmap, annotations) and have the AI explain the architecture or write out technical documentation.
 * **Technical Stack:** Take a viewport snapshot (using `Stage.toDataURL()`), send it to the Gemini 1.5 Flash Vision endpoint, and return the structured markdown documentation.
 * **UX/UI Design:**
@@ -265,7 +265,7 @@ This document outlines the **feature roadmap** for the Kidraw canvas application
   * **Mobile-optimized tool picker** (bottom sheet instead of top toolbar).
   * **Gesture shortcuts** (two-finger swipe for undo, three-finger tap for redo).
 
-### 24. Context Menus & Right-Click Actions
+### ✅ 24. Context Menus & Right-Click Actions — SHIPPED
 * **Description:** A robust context-menu system for power users with quick access to common operations.
 * **Technical Stack:** Intercept standard right-click context menus (`onContextMenu`). Render custom floating React components using cursor coordinate positioning.
 * **UX/UI Design:**

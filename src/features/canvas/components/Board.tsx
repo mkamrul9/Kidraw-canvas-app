@@ -523,9 +523,9 @@ export default function Board() {
             const newId = uuidv4();
             if (activeTool === 'sticky') {
                 const finalColor = activeColor !== '#000000' ? activeColor : DEFAULT_STICKY_FILL;
-                addLayer({ id: newId, type: 'sticky', x: pos.x, y: pos.y, width: STICKY_WIDTH, height: STICKY_HEIGHT, fill: finalColor, text: '', opacity: activeOpacity });
+                addLayer({ id: newId, type: 'sticky', x: pos.x, y: pos.y, width: STICKY_WIDTH, height: STICKY_HEIGHT, fill: finalColor, text: '', opacity: activeOpacity, fontFamily: useCanvasStore.getState().activeFontFamily });
             } else {
-                addLayer({ id: newId, type: 'text', x: pos.x, y: pos.y, width: 200, height: 50, fill: activeColor, text: '', opacity: activeOpacity });
+                addLayer({ id: newId, type: 'text', x: pos.x, y: pos.y, width: 200, height: 50, fill: activeColor, text: '', opacity: activeOpacity, fontFamily: useCanvasStore.getState().activeFontFamily });
             }
             const absPos = stage.getPointerPosition() || pos;
             setTimeout(() => setEditingText({ id: newId, x: absPos.x, y: absPos.y, text: '' }), 50);
@@ -546,6 +546,7 @@ export default function Board() {
             eraserSize: activeTool === 'eraser' ? eraserSize : undefined,
             penSize: activeTool === 'pen' || activeTool === 'pencil' ? penSize : undefined,
             opacity: activeOpacity,
+            dashPattern: useCanvasStore.getState().activeDashPattern,
         });
     }, [editingText, isLocked, activeTool, activeShape, activeColor, activeOpacity, eraserSize, penSize, addLayer, updateLayer, saveHistory, setIsDrawing, setSelectedLayerId, setSelectedLayerIds]);
 

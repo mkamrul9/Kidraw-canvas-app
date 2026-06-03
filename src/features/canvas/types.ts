@@ -41,4 +41,6 @@ export type Layer = {
     connectorStyle?: 'orthogonal' | 'curved' | 'straight';
     roughness?: number;
     bowing?: number;
+    dashPattern?: number[];
+    fontFamily?: string;
 };

@@ -8,7 +8,9 @@ import BoardGrid from './BoardGrid';
 import Footer from '@/shared/components/Footer';
 import GlobalNavbar from '@/shared/components/GlobalNavbar';
 import { createNewBoard } from '@/features/dashboard/actions/board-actions';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Search, ArrowDownAZ } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DashboardViewProps {
     session: {
@@ -33,6 +35,38 @@ const TEMPLATES = [
 export default function DashboardView({ session, boards }: DashboardViewProps) {
     const [selectedTemplate, setSelectedTemplate] = useState('blank');
     const [isCreating, setIsCreating] = useState(false);
+    
+    // Board Management State
+    const [localBoards, setLocalBoards] = useState(boards);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [sortBy, setSortBy] = useState<'updatedDesc' | 'createdDesc' | 'titleAsc'>('updatedDesc');
+
+    const handleDeleteBoard = async (id: string) => {
+        try {
+            const res = await fetch(`/api/board/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Failed to delete board');
+            setLocalBoards(prev => prev.filter(b => b.id !== id));
+            toast.success('Workspace deleted successfully');
+        } catch (error) {
+            console.error(error);
+            toast.error('Failed to delete workspace');
+        }
+    };
+
+    const filteredAndSortedBoards = useMemo(() => {
+        let result = [...localBoards];
+        if (searchQuery.trim()) {
+            const query = searchQuery.toLowerCase();
+            result = result.filter(b => b.title.toLowerCase().includes(query) || b.description?.toLowerCase().includes(query));
+        }
+        result.sort((a, b) => {
+            if (sortBy === 'updatedDesc') return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+            if (sortBy === 'createdDesc') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            if (sortBy === 'titleAsc') return a.title.localeCompare(b.title);
+            return 0;
+        });
+        return result;
+    }, [localBoards, searchQuery, sortBy]);
 
     return (
         <div className="min-h-screen bg-background text-foreground flex flex-col font-sans relative overflow-x-hidden selection:bg-violet-500/30">
@@ -132,17 +166,52 @@ export default function DashboardView({ session, boards }: DashboardViewProps) {
                     </Dialog>
                 </div>
 
-                {boards.length === 0 ? (
+                {localBoards.length > 0 && (
+                    <div className="flex flex-col md:flex-row gap-4 mb-8">
+                        <div className="relative flex-1 max-w-md">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <Search className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Search workspaces..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="block w-full pl-10 pr-3 py-2 border border-border rounded-xl leading-5 bg-card text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 sm:text-sm transition-all shadow-sm"
+                            />
+                        </div>
+                        <div className="relative">
+                            <select
+                                value={sortBy}
+                                onChange={(e) => setSortBy(e.target.value as any)}
+                                className="appearance-none block w-full pl-10 pr-10 py-2 border border-border rounded-xl leading-5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 sm:text-sm transition-all shadow-sm cursor-pointer"
+                            >
+                                <option value="updatedDesc">Last Updated</option>
+                                <option value="createdDesc">Date Created</option>
+                                <option value="titleAsc">Alphabetical (A-Z)</option>
+                            </select>
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <ArrowDownAZ className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {filteredAndSortedBoards.length === 0 ? (
                     <div className="py-32 flex flex-col items-center justify-center border border-dashed border-border rounded-3xl bg-card shadow-xl relative overflow-hidden backdrop-blur-sm">
                         <div className="absolute inset-0 bg-gradient-to-br from-violet-500/5 to-transparent"></div>
                         <div className="bg-muted p-4 rounded-2xl mb-6 border border-border shadow-md relative z-10">
                             <LayoutDashboard className="w-8 h-8 text-muted-foreground" />
                         </div>
-                        <p className="text-foreground font-bold mb-2 text-2xl relative z-10">Your workspace is empty.</p>
-                        <p className="text-muted-foreground mb-8 max-w-sm text-center relative z-10">Create a new board to start mapping out your ideas, wireframing, or collaborating with your team.</p>
+                        <p className="text-foreground font-bold mb-2 text-2xl relative z-10">
+                            {localBoards.length === 0 ? "Your workspace is empty." : "No workspaces found."}
+                        </p>
+                        <p className="text-muted-foreground mb-8 max-w-sm text-center relative z-10">
+                            {localBoards.length === 0 ? "Create a new board to start mapping out your ideas, wireframing, or collaborating with your team." : "Try adjusting your search query."}
+                        </p>
                     </div>
                 ) : (
-                    <BoardGrid boards={boards} />
+                    <BoardGrid boards={filteredAndSortedBoards} onDelete={handleDeleteBoard} />
                 )}
             </main>
             <div className="relative z-10">

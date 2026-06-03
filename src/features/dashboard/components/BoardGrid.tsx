@@ -2,13 +2,22 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ArrowRight } from 'lucide-react';
+import { LayoutDashboard, ArrowRight, Trash2 } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { DASHBOARD_INITIAL_BOARD_COUNT } from '@/shared/constants';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/components/ui/dialog";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export default function BoardGrid({ boards }: { boards: any[] }) {
+export default function BoardGrid({ boards, onDelete }: { boards: any[], onDelete?: (id: string) => void }) {
     const [showAll, setShowAll] = useState(false);
+    const [boardToDelete, setBoardToDelete] = useState<string | null>(null);
 
     const visibleBoards = showAll ? boards : boards.slice(0, DASHBOARD_INITIAL_BOARD_COUNT);
 
@@ -42,6 +51,21 @@ export default function BoardGrid({ boards }: { boards: any[] }) {
                                 {/* Decorative Blob */}
                                 <div className={`absolute -right-10 -bottom-10 w-48 h-48 rounded-full blur-[40px] bg-transparent ${hoverBg} transition-colors duration-500`}></div>
 
+                                {onDelete && (
+                                    <div className="absolute top-4 right-4 z-20">
+                                        <button 
+                                            onClick={(e) => { 
+                                                e.preventDefault(); 
+                                                e.stopPropagation(); 
+                                                setBoardToDelete(board.id);
+                                            }}
+                                            className="w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-border flex items-center justify-center text-muted-foreground hover:text-red-500 hover:bg-red-500/10 hover:border-red-500/50 transition-colors shadow-sm opacity-0 group-hover:opacity-100 focus:opacity-100"
+                                        >
+                                            <Trash2 className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                )}
+
                                 <div className="p-8 flex-1 flex flex-col relative z-10">
                                     <div className="w-12 h-12 bg-muted/50 border border-border rounded-xl flex items-center justify-center mb-6">
                                         <LayoutDashboard className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
@@ -73,6 +97,37 @@ export default function BoardGrid({ boards }: { boards: any[] }) {
                     </Button>
                 </div>
             )}
+
+            <Dialog open={!!boardToDelete} onOpenChange={(open: boolean) => !open && setBoardToDelete(null)}>
+                <DialogContent className="bg-card border-border rounded-2xl shadow-2xl sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold">Delete Workspace?</DialogTitle>
+                        <DialogDescription className="text-muted-foreground mt-2">
+                            This action cannot be undone. This will permanently delete the board and all of its contents.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="mt-6 flex sm:justify-end gap-2">
+                        <Button 
+                            variant="ghost" 
+                            className="rounded-xl font-bold text-muted-foreground"
+                            onClick={() => setBoardToDelete(null)}
+                        >
+                            Cancel
+                        </Button>
+                        <Button 
+                            className="rounded-xl bg-red-600 text-white hover:bg-red-700 font-bold"
+                            onClick={() => {
+                                if (boardToDelete && onDelete) {
+                                    onDelete(boardToDelete);
+                                    setBoardToDelete(null);
+                                }
+                            }}
+                        >
+                            Yes, Delete
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

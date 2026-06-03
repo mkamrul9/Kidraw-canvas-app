@@ -1,7 +1,7 @@
 'use client';
 
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
-import { Plus, Blend, Grid, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, Layers, Palette, X, Wand2 } from 'lucide-react';
+import { Plus, Blend, Grid, ChevronsUp, ChevronsDown, ChevronUp, ChevronDown, Layers, Palette, X, Wand2, Minus, MoreHorizontal, Type } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/shared/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/shared/components/ui/tooltip';
@@ -10,9 +10,9 @@ import { DEFAULT_COLORS } from '@/shared/constants';
 import AiToolbar from './AiToolbar';
 
 export default function PropertiesPanel() {
-    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward, activeRoughness, setActiveRoughness, activeBowing, setActiveBowing, isSketchMode, layers, selectedLayerIds } = useCanvasStore();
+    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward, activeRoughness, setActiveRoughness, activeBowing, setActiveBowing, isSketchMode, layers, selectedLayerIds, activeDashPattern, setActiveDashPattern, activeFontFamily, setActiveFontFamily } = useCanvasStore();
 
-    const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | 'arrange' | 'sketch' | null>(null);
+    const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | 'arrange' | 'sketch' | 'stroke' | 'font' | null>(null);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
 
     const handleOpacityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,6 +84,52 @@ export default function PropertiesPanel() {
                         )}
                     </div>
                 )}
+
+                <div className="relative w-full flex justify-center">
+                    <ToolButton icon={<Minus className="w-4 h-4" />} label="Stroke Style" onClick={() => setActiveMenu(activeMenu === 'stroke' ? null : 'stroke')} isActive={activeMenu === 'stroke'} tooltipSide="left" tooltipClassName="mr-2" />
+                    {activeMenu === 'stroke' && (
+                        <div className="absolute right-16 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-4 w-60 flex flex-col gap-2 z-50">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Stroke Dash</span>
+                            <div className="flex bg-[#05070B] p-1 rounded-lg border border-slate-800">
+                                <button onClick={() => setActiveDashPattern([])} className={`flex-1 py-1.5 flex items-center justify-center rounded-md transition-all ${activeDashPattern.length === 0 ? 'bg-violet-600 shadow-md text-white' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}>
+                                    <Minus className="w-4 h-4" />
+                                </button>
+                                <button onClick={() => setActiveDashPattern([15, 10])} className={`flex-1 py-1.5 flex items-center justify-center rounded-md transition-all ${activeDashPattern[0] === 15 ? 'bg-violet-600 shadow-md text-white' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}>
+                                    <Minus className="w-4 h-4 opacity-75" />
+                                </button>
+                                <button onClick={() => setActiveDashPattern([5, 5])} className={`flex-1 py-1.5 flex items-center justify-center rounded-md transition-all ${activeDashPattern[0] === 5 ? 'bg-violet-600 shadow-md text-white' : 'text-slate-500 hover:text-white hover:bg-slate-800'}`}>
+                                    <MoreHorizontal className="w-4 h-4" />
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <div className="relative w-full flex justify-center">
+                    <ToolButton icon={<Type className="w-4 h-4" />} label="Typography" onClick={() => setActiveMenu(activeMenu === 'font' ? null : 'font')} isActive={activeMenu === 'font'} tooltipSide="left" tooltipClassName="mr-2" />
+                    {activeMenu === 'font' && (
+                        <div className="absolute right-16 top-0 bg-[#0B0F19] rounded-xl shadow-2xl border border-slate-700 p-4 w-60 flex flex-col gap-2 z-50">
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Font Family</span>
+                            <div className="flex flex-col gap-1 mt-1">
+                                {[
+                                    { name: 'Sans Serif', value: 'sans-serif', preview: 'sans-serif' },
+                                    { name: 'Serif', value: 'serif', preview: 'serif' },
+                                    { name: 'Monospace', value: 'monospace', preview: 'monospace' },
+                                    { name: 'Handwritten', value: "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive", preview: "'Comic Sans MS', cursive" }
+                                ].map((font) => (
+                                    <button 
+                                        key={font.name}
+                                        onClick={() => setActiveFontFamily(font.value)} 
+                                        className={`w-full text-left px-3 py-2 text-sm rounded-lg transition-all ${activeFontFamily === font.value ? 'bg-violet-600 text-white font-bold' : 'text-slate-300 hover:bg-slate-800 hover:text-white'}`}
+                                        style={{ fontFamily: font.preview }}
+                                    >
+                                        {font.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {(isSelectedSketch || isSketchMode) && (
                     <div className="relative w-full flex justify-center">

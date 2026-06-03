@@ -54,6 +54,8 @@ const throttledBroadcastUpdate = (boardId: string | null, id: string, attributes
     }, 85); // Send updates every ~85ms
 };
 
+let autoSaveTimeout: NodeJS.Timeout | null = null;
+
 interface CanvasState {
     activeTool: Tool;
     activeColor: Color;
@@ -62,6 +64,9 @@ interface CanvasState {
     isDrawing: boolean;
     isSaving: boolean;
     boardId: string | null;
+    boardTitle: string;
+    activeDashPattern: number[];
+    activeFontFamily: string;
     selectedLayerId: string | null;
     selectedLayerIds: string[];
     bgPattern: 'solid' | 'dotted' | 'grid';
@@ -94,9 +99,12 @@ interface CanvasState {
     setBackgroundColor: (color: string) => void;
     setIsDrawing: (isDrawing: boolean) => void;
     setBoardId: (id: string) => void;
+    setBoardTitle: (title: string) => void;
     setSelectedLayerId: (id: string | null) => void;
     setSelectedLayerIds: (ids: string[]) => void;
     setBgPattern: (pattern: 'solid' | 'dotted' | 'grid') => void;
+    setActiveDashPattern: (pattern: number[]) => void;
+    setActiveFontFamily: (fontFamily: string) => void;
     setActiveEraserType: (type: 'eraser' | 'object-eraser') => void;
     setEraserSize: (size: number) => void;
     addCustomColor: (color: string) => void;
@@ -147,6 +155,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     isDrawing: false,
     isSaving: false,
     boardId: null,
+    boardTitle: 'Untitled Board',
+    activeDashPattern: [],
+    activeFontFamily: 'sans-serif',
     activeGuides: [],
     selectedLayerId: null,
     selectedLayerIds: [],
@@ -195,6 +206,27 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setSelectedLayerId: (id) => set({ selectedLayerIds: id ? [id] : [], selectedLayerId: id }),
     setSelectedLayerIds: (ids) => set({ selectedLayerIds: ids, selectedLayerId: ids.length > 0 ? ids[0] : null }),
     setBgPattern: (pattern) => set({ bgPattern: pattern }),
+    setActiveDashPattern: (pattern) => {
+        set({ activeDashPattern: pattern });
+        const { selectedLayerIds, layers, updateLayer, saveHistory } = get();
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => updateLayer(id, { dashPattern: pattern }));
+            saveHistory();
+        }
+    },
+    setActiveFontFamily: (fontFamily) => {
+        set({ activeFontFamily: fontFamily });
+        const { selectedLayerIds, layers, updateLayer, saveHistory } = get();
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => {
+                const layer = layers.find(l => l.id === id);
+                if (layer && (layer.type === 'text' || layer.type === 'sticky')) {
+                    updateLayer(id, { fontFamily });
+                }
+            });
+            saveHistory();
+        }
+    },
     setActiveEraserType: (type) => set({ activeEraserType: type, activeTool: type }),
     setEraserSize: (size) => set({ eraserSize: size }),
     addCustomColor: (color) => set((state) => {
@@ -384,7 +416,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     // Called only on MouseUp
     saveHistory: () => {
-        const { layers, history, historyStep } = get();
+        const { layers, history, historyStep, boardId, saveToCloud } = get();
         // Remove any "future" history if we undo it and then drew something new
         const newHistory = history.slice(0, historyStep + 1);
         newHistory.push([...layers]);
@@ -393,6 +425,14 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             history: newHistory,
             historyStep: newHistory.length - 1,
         });
+
+        // Auto-save debounced
+        if (boardId) {
+            if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = setTimeout(() => {
+                saveToCloud(boardId);
+            }, 3000);
+        }
     },
 
     undo: () => {
@@ -502,7 +542,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     saveToCloud: async (boardId: string) => {
         set({ isSaving: true });
-        const loadingToast = toast.loading('Saving to cloud...');
+        // Removed loading toast since it's auto-save now and will spam the user
         try {
             const { layers, backgroundColor } = get();
             const res = await fetch(`/api/board/${boardId}`, {
@@ -512,11 +552,10 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             });
 
             if (!res.ok) throw new Error('Server rejected save');
-
-            toast.success('Saved successfully!', { id: loadingToast });
         } catch (error) {
             console.error('Failed to save:', error);
-            toast.error('Failed to save to cloud.', { id: loadingToast });
+            // We could show an error toast here if auto-save fails completely
+            toast.error('Failed to auto-save to cloud.');
         } finally {
             set({ isSaving: false });
         }
@@ -530,6 +569,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 set({
                     layers: data.layers || [],
                     backgroundColor: data.backgroundColor || '#ffffff',
+                    boardTitle: data.title || 'Untitled Board',
                     history: [data.layers || []],
                     historyStep: 0,
                 });
@@ -538,4 +578,6 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             console.error('Failed to load:', error);
         }
     },
+
+    setBoardTitle: (title: string) => set({ boardTitle: title }),
 }));

@@ -5,7 +5,8 @@ import KidrawLogo from '@/shared/components/KidrawLogo';
 import { useSession } from "next-auth/react";
 import { usePresenceStore } from '@/features/canvas/store/usePresenceStore';
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
-import { Sparkles, User, Settings, LayoutDashboard, CreditCard, Star, LayoutTemplate, Blocks, Rocket, BookOpen, Users, PenTool, Code } from "lucide-react";
+import { Sparkles, User, Settings, LayoutDashboard, CreditCard, Star, LayoutTemplate, Blocks, Rocket, BookOpen, Users, PenTool, Code, Pencil } from "lucide-react";
+import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/components/ui/tooltip";
@@ -13,7 +14,25 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shar
 export default function NavigationHUD() {
     const { data: session } = useSession();
     const { others } = usePresenceStore();
-    const { setCamera, zoom } = useCanvasStore();
+    const { setCamera, zoom, boardTitle, setBoardTitle, boardId } = useCanvasStore();
+
+    const handleTitleSave = async (newTitle: string) => {
+        if (!boardId || !newTitle.trim()) return;
+        try {
+            const res = await fetch(`/api/board/${boardId}/title`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: newTitle.trim() })
+            });
+            if (res.ok) {
+                toast.success('Title updated');
+            } else {
+                toast.error('Failed to update title');
+            }
+        } catch (e) {
+            toast.error('Failed to update title');
+        }
+    };
 
     if (!session?.user) return null;
 
@@ -35,6 +54,20 @@ export default function NavigationHUD() {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">View Homepage</TooltipContent>
                 </Tooltip>
+
+                <div className="w-[1px] h-6 bg-slate-700 mx-1 hidden sm:block"></div>
+
+                <div className="hidden sm:flex items-center relative group bg-[#0B0F19] rounded-xl border border-transparent hover:border-slate-700 hover:shadow-2xl transition-all">
+                    <input 
+                        value={boardTitle}
+                        onChange={(e) => setBoardTitle(e.target.value)}
+                        onBlur={(e) => handleTitleSave(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && e.currentTarget.blur()}
+                        className="bg-transparent border-none text-slate-200 font-semibold text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 rounded-xl px-3 py-2 w-48 transition-colors"
+                        placeholder="Untitled Board"
+                    />
+                    <Pencil className="w-3 h-3 text-slate-500 absolute right-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
+                </div>
 
                 <DropdownMenu>
                     <Tooltip>

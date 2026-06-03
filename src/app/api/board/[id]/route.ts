@@ -52,3 +52,33 @@ export async function POST(
         return NextResponse.json({ error: 'Failed to save board' }, { status: 500 });
     }
 }
+
+export async function DELETE(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+        }
+
+        const { id } = await params;
+        const board = await prisma.board.findUnique({ where: { id } });
+
+        if (!board) {
+            return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+        }
+
+        if (board.authorId !== session.user.id) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
+        await prisma.board.delete({ where: { id } });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('DELETE ERROR:', error);
+        return NextResponse.json({ error: 'Failed to delete board' }, { status: 500 });
+    }
+}

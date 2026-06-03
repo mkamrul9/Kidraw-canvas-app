@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -168,7 +168,20 @@ export default function ActionToolbar() {
                 <AiDiagramGeneratorModal isOpen={aiDiagramOpen} onClose={() => setAiDiagramOpen(false)} />
 
                 <ToolButton icon={<History className="w-4 h-4" />} label="Version History" onClick={() => setVersionHistoryOpen(true)} className="hover:!bg-blue-500/20 hover:!text-blue-400" />
-                <ToolButton icon={<Cloud className={`w-4 h-4 ${isSaving ? 'animate-pulse' : ''}`} />} label={isSaving ? "Saving..." : "Save to Cloud"} onClick={() => boardId && saveToCloud(boardId)} className="hover:!text-blue-400 hover:!bg-blue-500/10" />
+                <div className="flex items-center justify-center w-10 h-10 select-none">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            {isSaving ? (
+                                <Loader2 className="w-4 h-4 animate-spin text-blue-400" />
+                            ) : (
+                                <CheckCircle2 className="w-4 h-4 text-emerald-400 opacity-50" />
+                            )}
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">
+                            {isSaving ? "Saving to Cloud..." : "Cloud Synced"}
+                        </TooltipContent>
+                    </Tooltip>
+                </div>
                 </div>
             </div>
         </TooltipProvider>
