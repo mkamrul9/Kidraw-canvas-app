@@ -55,9 +55,13 @@ model Board {
   description     String?   // NEW: Optional description
   backgroundColor String    @default("#ffffff")
   layers          Json      @default("[]")
+  thumbnail       String?   @db.Text
+  isPublic        Boolean   @default(false)
+  publicRole      String    @default("viewer") // "viewer" or "editor"
   
   authorId        String?
   author          User?     @relation(fields: [authorId], references: [id])
+  collaborators   BoardCollaborator[]
   comments        Comment[]
   snapshots       BoardSnapshot[]
   
@@ -101,4 +105,19 @@ model BoardSnapshot {
   author     User?    @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   createdAt  DateTime @default(now())
+}
+
+// Collaborators
+model BoardCollaborator {
+  id        String   @id @default(cuid())
+  email     String
+  role      String   // "VIEWER", "EDITOR"
+  
+  boardId   String
+  board     Board    @relation(fields: [boardId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([boardId, email])
 }

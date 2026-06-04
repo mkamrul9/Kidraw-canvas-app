@@ -45,11 +45,21 @@ export default function BoardGrid({ boards, onDelete }: { boards: any[], onDelet
                         <Link key={board.id} href={`/board/${board.id}`} className="group block h-full">
                             <div className="bg-card border border-border rounded-3xl shadow-xl overflow-hidden hover:shadow-2xl transition-all duration-500 h-full flex flex-col group-hover:-translate-y-1 backdrop-blur-sm relative">
                                 
-                                {/* Inner Gradient Reveal */}
-                                <div className={`absolute inset-0 bg-gradient-to-br ${hoverGradient} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500`}></div>
+                                {/* Thumbnail Background */}
+                                {board.thumbnail && (
+                                    <div 
+                                        className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-60 mix-blend-luminosity group-hover:opacity-80 transition-opacity duration-500" 
+                                        style={{ backgroundImage: `url(${board.thumbnail})` }} 
+                                    />
+                                )}
+
+                                {/* Inner Gradient Reveal & Readability Overlay */}
+                                <div className={`absolute inset-0 bg-gradient-to-br ${hoverGradient} to-background/90 ${board.thumbnail ? 'opacity-90' : 'opacity-0 group-hover:opacity-100'} transition-opacity duration-500`}></div>
                                 
                                 {/* Decorative Blob */}
-                                <div className={`absolute -right-10 -bottom-10 w-48 h-48 rounded-full blur-[40px] bg-transparent ${hoverBg} transition-colors duration-500`}></div>
+                                {!board.thumbnail && (
+                                    <div className={`absolute -right-10 -bottom-10 w-48 h-48 rounded-full blur-[40px] bg-transparent ${hoverBg} transition-colors duration-500`}></div>
+                                )}
 
                                 {onDelete && (
                                     <div className="absolute top-4 right-4 z-20">

@@ -28,6 +28,7 @@ import CommentOverlay from './CommentOverlay';
 import LiveCursors from './LiveCursors';
 import CanvasContextMenu from './CanvasContextMenu';
 import SummaryExplainerDrawer from './SummaryExplainerDrawer';
+import CanvasSearch from './CanvasSearch';
 import { usePresence } from '../hooks/usePresence';
 import { useKeyboardShortcuts } from '../hooks/useKeyboardShortcuts';
 import type { Layer } from '@/features/canvas/types';
@@ -55,7 +56,7 @@ export default function Board() {
         activeOpacity, isDrawing, setIsDrawing, activeGuides, addLayer, addLayers, updateLayer, removeLayer,
         saveHistory, selectedLayerIds, setSelectedLayerIds, selectedLayerId, setSelectedLayerId,
         eraserSize, penSize, camera, setCamera, zoom, setZoom, isLocked, boardId,
-        isSketchMode, bringToFront, sendToBack, groupLayers, ungroupLayers
+        isSketchMode, bringToFront, sendToBack, groupLayers, ungroupLayers, isReadOnly
     } = useCanvasStore();
 
     const { updateMyPresence } = usePresence(boardId);
@@ -150,6 +151,13 @@ export default function Board() {
     useEffect(() => {
         const handleResize = () => setDimensions({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener('resize', handleResize);
+        
+        // Register thumbnail generator for auto-save
+        useCanvasStore.getState().setGetThumbnailFn(() => {
+            if (!stageRef.current) return null;
+            return stageRef.current.toDataURL({ pixelRatio: 0.2 });
+        });
+        
         return () => window.removeEventListener('resize', handleResize);
     }, []);
 
@@ -416,6 +424,7 @@ export default function Board() {
 
     // ─── Pointer Handlers ────────────────────────────────
     const handlePointerDown = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        if (isReadOnly && activeTool !== 'hand' && activeTool !== 'select') return;
         setContextMenuPos(null);
         if (editingText) {
             (document.activeElement as HTMLElement)?.blur();
@@ -548,9 +557,10 @@ export default function Board() {
             opacity: activeOpacity,
             dashPattern: useCanvasStore.getState().activeDashPattern,
         });
-    }, [editingText, isLocked, activeTool, activeShape, activeColor, activeOpacity, eraserSize, penSize, addLayer, updateLayer, saveHistory, setIsDrawing, setSelectedLayerId, setSelectedLayerIds]);
+    }, [isReadOnly, editingText, isLocked, activeTool, activeShape, activeColor, activeOpacity, eraserSize, penSize, addLayer, updateLayer, saveHistory, setIsDrawing, setSelectedLayerId, setSelectedLayerIds]);
 
     const handlePointerMove = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
+        if (isReadOnly && activeTool !== 'hand' && activeTool !== 'select') return;
         const stage = e.target.getStage();
         const pos = stage?.getRelativePointerPosition();
         if (pos) {
@@ -628,7 +638,7 @@ export default function Board() {
                 updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
             }
         }
-    }, [isDrawing, activeTool, selectionBox, updateLayer, updateMyPresence, cursorChat?.isOpen, cursorChat?.text]);
+    }, [isReadOnly, isDrawing, activeTool, selectionBox, updateLayer, updateMyPresence, cursorChat?.isOpen, cursorChat?.text]);
 
     const handlePointerUp = useCallback(() => {
         if (!isDrawing) return;
@@ -1173,6 +1183,7 @@ export default function Board() {
 
     // ─── Mind Mapping Auto-Layout ───────────────────────────────────────────
     const handleAddNode = (direction: 'top' | 'right' | 'bottom' | 'left', parentLayer: Layer) => {
+        if (isReadOnly) return;
         const spacingX = 120;
         const spacingY = 120;
         
@@ -1288,6 +1299,8 @@ export default function Board() {
                 <IframeEmbedOverlay />
             </div>
 
+            <CanvasSearch />
+
             {editingText && (
                 <textarea
                     className="absolute z-50 shadow-xl rounded outline-none resize-none pointer-events-auto"
@@ -1301,7 +1314,7 @@ export default function Board() {
             )}
 
             {/* Mind-Map Quick Add Overlay */}
-            {selectedLayer && isMindMapCompatible && activeTool === 'select' && !isDraggingFile && !isDrawing && (
+            {selectedLayer && isMindMapCompatible && activeTool === 'select' && !isDraggingFile && !isDrawing && !isReadOnly && (
                 <div 
                     className="absolute z-50 pointer-events-none"
                     style={{
@@ -1592,6 +1605,15 @@ export default function Board() {
                                 onDragEnd={handleLayerDragEnd}
                                 onDragMove={handleLayerDragMove}
                                 onClick={handleLayerClick}
+                                isReadOnly={isReadOnly}
+                                onDblClick={(e) => {
+                                    if (isReadOnly) return;
+                                    if (layer.type === 'text' || layer.type === 'sticky' || layer.type === 'rectangle' || layer.type === 'ellipse' || layer.type === 'diamond' || layer.type === 'hexagon' || layer.type === 'triangle') {
+                                        if (activeTool === 'select' && !isLocked) {
+                                            onTextDblClick(layer.id, e.target.absolutePosition().x, e.target.absolutePosition().y, layer.text || '');
+                                        }
+                                    }
+                                }}
                                 onTextDblClick={handleTextDblClick}
                                 onMouseEnter={handleMouseEnter}
                                 onMouseLeave={handleMouseLeave}
@@ -1762,6 +1784,7 @@ export default function Board() {
                 />
             )}
             <SummaryExplainerDrawer />
+            <CanvasSearch />
         </div>
     );
 }

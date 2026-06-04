@@ -16,7 +16,7 @@ export default function Toolbar() {
     const {
         activeTool, setActiveTool, undo, redo, historyStep, history,
         activeEraserType, setActiveEraserType, eraserSize, setEraserSize,
-        activeShape, setActiveShape, penSize, setPenSize, isLocked, selectedLayerIds
+        activeShape, setActiveShape, penSize, setPenSize, isLocked, selectedLayerIds, isReadOnly
     } = useCanvasStore();
 
     // state to manage which dropdown menu is open. null means no menu is open
@@ -61,7 +61,7 @@ export default function Toolbar() {
                 <ToolButton icon={<Hand className="w-4 h-4" />} label="Pan Canvas (H)" onClick={() => handleToolClick('hand')} isActive={activeTool === 'hand'} />
 
                 <div className="relative flex items-center">
-                    <ToolButton icon={activeTool === 'pencil' ? <Pencil className="w-4 h-4" /> : <Pen className="w-4 h-4" />} label="Draw (P)" onClick={() => { setActiveTool(activeTool === 'pencil' ? 'pencil' : 'pen'); toggleMenu('pen'); }} isActive={activeTool === 'pen' || activeTool === 'pencil'} />
+                    <ToolButton icon={activeTool === 'pencil' ? <Pencil className="w-4 h-4" /> : <Pen className="w-4 h-4" />} label="Draw (P)" onClick={() => { setActiveTool(activeTool === 'pencil' ? 'pencil' : 'pen'); toggleMenu('pen'); }} isActive={activeTool === 'pen' || activeTool === 'pencil'} disabled={isReadOnly} />
                     {activeMenu === 'pen' && (
                         <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-[#0B0F19] rounded-xl shadow-2xl border border-white/10 p-2 flex flex-col gap-2 min-w-[160px]">
                             <div className="flex gap-1">
@@ -82,7 +82,7 @@ export default function Toolbar() {
                 </div>
 
                 <div className="relative flex items-center">
-                    <ToolButton icon={activeShape === 'rectangle' ? <Square className="w-4 h-4" /> : activeShape === 'ellipse' ? <Circle className="w-4 h-4" /> : <Shapes className="w-4 h-4" />} label="Shapes (S)" onClick={() => { setActiveTool('shape'); toggleMenu('shape'); }} isActive={activeTool === 'shape'} />
+                    <ToolButton icon={activeShape === 'rectangle' ? <Square className="w-4 h-4" /> : activeShape === 'ellipse' ? <Circle className="w-4 h-4" /> : <Shapes className="w-4 h-4" />} label="Shapes (S)" onClick={() => { setActiveTool('shape'); toggleMenu('shape'); }} isActive={activeTool === 'shape'} disabled={isReadOnly} />
                     {activeMenu === 'shape' && (
                         <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-[#0B0F19] rounded-xl shadow-2xl border border-white/10 p-2 grid grid-cols-4 gap-1 min-w-[160px]">
                             <Button variant="ghost" size="icon" onClick={() => { setActiveShape('rectangle'); closeMenu(); }} className="text-slate-400 hover:text-white hover:bg-white/10"><Square className="w-4 h-4" /></Button>
@@ -97,23 +97,24 @@ export default function Toolbar() {
                     )}
                 </div>
 
-                <ToolButton icon={<Type className="w-4 h-4" />} label="Text (T)" onClick={() => handleToolClick('text')} isActive={activeTool === 'text'} />
+                <ToolButton icon={<Type className="w-4 h-4" />} label="Text (T)" onClick={() => handleToolClick('text')} isActive={activeTool === 'text'} disabled={isReadOnly} />
 
-                <ToolButton icon={<StickyNote className="w-4 h-4" />} label="Sticky Note (N)" onClick={() => handleToolClick('sticky')} isActive={activeTool === 'sticky'} />
+                <ToolButton icon={<StickyNote className="w-4 h-4" />} label="Sticky Note (N)" onClick={() => handleToolClick('sticky')} isActive={activeTool === 'sticky'} disabled={isReadOnly} />
 
-                <ToolButton icon={<Frame className="w-4 h-4" />} label="Frame / Artboard (F)" onClick={() => handleToolClick('frame')} isActive={activeTool === 'frame'} />
+                <ToolButton icon={<Frame className="w-4 h-4" />} label="Frame / Artboard (F)" onClick={() => handleToolClick('frame')} isActive={activeTool === 'frame'} disabled={isReadOnly} />
 
                 <div className="relative flex items-center">
-                    <ToolButton icon={<Globe className="w-4 h-4" />} label="Embed Website/Video" onClick={() => handleToolClick('embed')} isActive={activeTool === 'embed'} />
+                    <ToolButton icon={<Globe className="w-4 h-4" />} label="Embed Website/Video" onClick={() => handleToolClick('embed')} isActive={activeTool === 'embed'} disabled={isReadOnly} />
                 </div>
 
-                <ToolButton icon={<Code2 className="w-4 h-4" />} label="Code Block (C)" onClick={() => handleToolClick('code')} isActive={activeTool === 'code'} />
+                <ToolButton icon={<Code2 className="w-4 h-4" />} label="Code Block (C)" onClick={() => handleToolClick('code')} isActive={activeTool === 'code'} disabled={isReadOnly} />
 
                 <ToolButton
                     icon={<ImagePlus className="w-4 h-4" />}
                     label="Insert Image"
                     onClick={() => document.getElementById('image-upload')?.click()}
                     isActive={activeTool === 'image'}
+                    disabled={isReadOnly}
                 />
                 <input
                     id="image-upload"
@@ -130,10 +131,10 @@ export default function Toolbar() {
 
                 <div className="w-[1px] h-6 bg-slate-700/50 mx-1"></div>
 
-                <ToolButton icon={<Wand2 className="w-4 h-4" />} label="Laser Pointer (K)" onClick={() => handleToolClick('laser')} isActive={activeTool === 'laser'} />
+                <ToolButton icon={<Wand2 className="w-4 h-4" />} label="Laser Pointer (K)" onClick={() => handleToolClick('laser')} isActive={activeTool === 'laser'} disabled={isReadOnly} />
 
                 <div className="relative flex items-center">
-                    <ToolButton icon={activeEraserType === 'object-eraser' ? <XSquare className="w-4 h-4" /> : <Eraser className="w-4 h-4" />} label="Eraser (E)" onClick={() => { setActiveTool(activeEraserType); toggleMenu('eraser'); }} isActive={activeTool === 'eraser' || activeTool === 'object-eraser'} />
+                    <ToolButton icon={activeEraserType === 'object-eraser' ? <XSquare className="w-4 h-4" /> : <Eraser className="w-4 h-4" />} label="Eraser (E)" onClick={() => { setActiveTool(activeEraserType); toggleMenu('eraser'); }} isActive={activeTool === 'eraser' || activeTool === 'object-eraser'} disabled={isReadOnly} />
                     {activeMenu === 'eraser' && (
                         <div className="absolute top-14 left-1/2 -translate-x-1/2 bg-[#0B0F19] rounded-xl shadow-2xl border border-white/10 p-2 flex flex-col gap-2 min-w-[140px]">
                             <div className="flex gap-1">
@@ -162,8 +163,8 @@ export default function Toolbar() {
 
                 <div className="w-[1px] h-8 bg-white/10 mx-1"></div>
 
-                    <ToolButton icon={<Undo className="w-4 h-4" />} label="Undo (Ctrl+Z)" onClick={undo} disabled={historyStep === 0 || isLocked} />
-                    <ToolButton icon={<Redo className="w-4 h-4" />} label="Redo (Ctrl+Y)" onClick={redo} disabled={historyStep === history.length - 1 || isLocked} />
+                    <ToolButton icon={<Undo className="w-4 h-4" />} label="Undo (Ctrl+Z)" onClick={undo} disabled={historyStep === 0 || isLocked || isReadOnly} />
+                    <ToolButton icon={<Redo className="w-4 h-4" />} label="Redo (Ctrl+Y)" onClick={redo} disabled={historyStep === history.length - 1 || isLocked || isReadOnly} />
                 </div>
             </div>
         </TooltipProvider>

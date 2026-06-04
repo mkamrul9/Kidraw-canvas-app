@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles, Loader2, CheckCircle2 } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles, Loader2, CheckCircle2, Play } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -18,7 +18,7 @@ import VersionHistoryModal from '@/features/canvas/components/VersionHistoryModa
 import AiDiagramGeneratorModal from '@/features/canvas/components/AiDiagramGeneratorModal';
 
 export default function ActionToolbar() {
-    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory } = useCanvasStore();
+    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory, setIsPresenting } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
     const [importMermaidOpen, setImportMermaidOpen] = useState(false);
@@ -168,6 +168,7 @@ export default function ActionToolbar() {
                 <AiDiagramGeneratorModal isOpen={aiDiagramOpen} onClose={() => setAiDiagramOpen(false)} />
 
                 <ToolButton icon={<History className="w-4 h-4" />} label="Version History" onClick={() => setVersionHistoryOpen(true)} className="hover:!bg-blue-500/20 hover:!text-blue-400" />
+                <ToolButton icon={<Play className="w-4 h-4" />} label="Present Mode" onClick={() => setIsPresenting(true)} className="hover:!bg-fuchsia-500/20 hover:!text-fuchsia-400" />
                 <div className="flex items-center justify-center w-10 h-10 select-none">
                     <Tooltip>
                         <TooltipTrigger asChild>

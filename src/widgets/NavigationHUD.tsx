@@ -10,11 +10,16 @@ import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/shared/components/ui/dropdown-menu";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/components/ui/tooltip";
+import { Button } from "@/shared/components/ui/button";
+import { Share2, Play } from "lucide-react";
+import { useState } from 'react';
+import ShareModal from './ShareModal';
 
 export default function NavigationHUD() {
     const { data: session } = useSession();
     const { others } = usePresenceStore();
-    const { setCamera, zoom, boardTitle, setBoardTitle, boardId } = useCanvasStore();
+    const { setCamera, zoom, boardTitle, setBoardTitle, boardId, authorId, setIsPresenting } = useCanvasStore();
+    const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     const handleTitleSave = async (newTitle: string) => {
         if (!boardId || !newTitle.trim()) return;
@@ -67,6 +72,39 @@ export default function NavigationHUD() {
                         placeholder="Untitled Board"
                     />
                     <Pencil className="w-3 h-3 text-slate-500 absolute right-3 opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity" />
+                </div>
+                <div className="flex items-center gap-2">
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="bg-[#0B0F19] text-emerald-400 border-slate-700 hover:bg-slate-900 hover:text-emerald-300 shadow-2xl h-9"
+                                onClick={() => setIsPresenting(true)}
+                            >
+                                <Play className="w-4 h-4 sm:mr-2" />
+                                <span className="hidden sm:inline">Present</span>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Start Presentation</TooltipContent>
+                    </Tooltip>
+
+                    {session?.user?.id === authorId && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                    variant="outline" 
+                                    size="sm" 
+                                    className="bg-[#0B0F19] text-violet-400 border-slate-700 hover:bg-slate-900 hover:text-violet-300 shadow-2xl h-9"
+                                    onClick={() => setIsShareModalOpen(true)}
+                                >
+                                    <Share2 className="w-4 h-4 sm:mr-2" />
+                                    <span className="hidden sm:inline">Share</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Share Board</TooltipContent>
+                        </Tooltip>
+                    )}
                 </div>
 
                 <DropdownMenu>
@@ -136,6 +174,8 @@ export default function NavigationHUD() {
                     </Tooltip>
                 ))}
             </div>
+            
+            <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />
         </TooltipProvider>
     );
 }

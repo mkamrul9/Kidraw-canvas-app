@@ -1,6 +1,6 @@
 'use client';
 
-import { Rect, Ellipse, Line, Text, Group, RegularPolygon, Star as KonvaStar, Arrow, Image as KonvaImage } from 'react-konva';
+import { Rect, Ellipse, Line, Text, Group, RegularPolygon, Star as KonvaStar, Arrow, Image as KonvaImage, Label, Tag } from 'react-konva';
 import Konva from 'konva';
 import useImage from 'use-image';
 import type { Layer } from '@/features/canvas/types';
@@ -20,6 +20,7 @@ interface LayerRendererProps {
     layer: Layer;
     isSelected: boolean;
     isLocked: boolean;
+    isReadOnly?: boolean;
     isSketchMode: boolean;
     activeTool: string;
     onDragEnd: (id: string, x: number, y: number) => void;
@@ -43,6 +44,7 @@ export default function LayerRenderer({
     layer,
     isSelected,
     isLocked,
+    isReadOnly = false,
     isSketchMode,
     activeTool,
     onDragEnd,
@@ -60,7 +62,7 @@ export default function LayerRenderer({
     const isSketch = layer.isSketch ?? isSketchMode;
     const commonProps = {
         id: layer.id,
-        draggable: !isLocked && (activeTool === 'select' || activeTool === 'lasso'),
+        draggable: !isLocked && !isReadOnly && (activeTool === 'select' || activeTool === 'lasso'),
         name: 'canvas-shape',
         onDragStart: (_event: Konva.KonvaEventObject<DragEvent>) => {
             if (!isSelected) {
@@ -183,7 +185,7 @@ export default function LayerRenderer({
                         fontFamily={DEFAULT_FONT_FAMILY}
                         fontStyle="bold"
                         onDblClick={(event) => {
-                            if (activeTool === 'select' && !isLocked) {
+                            if (activeTool === 'select' && !isLocked && !isReadOnly) {
                                 onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || 'Frame');
                             }
                         }}
@@ -367,7 +369,7 @@ export default function LayerRenderer({
                         height={Math.max(10, layer.height - padding * 2)}
                         wrap="word"
                         onDblClick={(event) => {
-                            if (activeTool === 'select' && !isLocked) {
+                            if (activeTool === 'select' && !isLocked && !isReadOnly) {
                                 onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
                             }
                         }}
@@ -392,7 +394,7 @@ export default function LayerRenderer({
                         fontFamily={layer.fontFamily || (isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY)}
                         width={COMMENT_WIDTH - 20}
                         onDblClick={(event) => {
-                            if (activeTool === 'select' && !isLocked) {
+                            if (activeTool === 'select' && !isLocked && !isReadOnly) {
                                 onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
                             }
                         }}
@@ -439,7 +441,7 @@ export default function LayerRenderer({
                 y={layer.y} 
                 opacity={shapeOpacity}
                 onDblClick={(event) => {
-                    if (activeTool === 'select' && !isLocked) {
+                    if (activeTool === 'select' && !isLocked && !isReadOnly) {
                         onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
                     }
                 }}
@@ -475,18 +477,78 @@ export default function LayerRenderer({
 
     // ─── Lines & Arrows ─────────────────────────────────
     if (layer.type === 'straight-line' || layer.type === 'arrow') {
+        const renderTextOverlay = () => {
+            if (!layer.text || isLowDetail) return null;
+            const pts = layer.points && layer.points.length >= 4 ? layer.points : [0, 0, layer.width, layer.height];
+            if (pts.length < 4) return null;
+            
+            const numSegments = pts.length / 2 - 1;
+            const midSegment = Math.floor(numSegments / 2);
+            const midIdx = midSegment * 2;
+            const midX = (pts[midIdx] + pts[midIdx + 2]) / 2;
+            const midY = (pts[midIdx + 1] + pts[midIdx + 3]) / 2;
+
+            return (
+                <Label 
+                    x={midX} 
+                    y={midY}
+                    onDblClick={(event) => {
+                        event.cancelBubble = true;
+                        if (activeTool === 'select' && !isLocked && !isReadOnly) {
+                            onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
+                        }
+                    }}
+                >
+                    <Tag fill="#ffffff" stroke={layer.fill} strokeWidth={1} cornerRadius={4} />
+                    <Text 
+                        text={layer.text} 
+                        fill={layer.fill} 
+                        fontSize={14} 
+                        fontFamily={layer.fontFamily || DEFAULT_FONT_FAMILY} 
+                        padding={6} 
+                    />
+                </Label>
+            );
+        };
+
+        const lineGroupProps = {
+            ...commonProps,
+            x: layer.x,
+            y: layer.y,
+            onDblClick: (event: any) => {
+                if (activeTool === 'select' && !isLocked && !isReadOnly) {
+                    onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || '');
+                }
+            }
+        };
+
         if (isSketch) {
-            return <RoughShape key={layer.id} layer={layer} commonProps={commonProps} />;
+            return (
+                <Group key={layer.id} {...lineGroupProps}>
+                    <RoughShape layer={{...layer, x: 0, y: 0}} commonProps={{}} />
+                    {renderTextOverlay()}
+                </Group>
+            );
         }
         
         if (layer.type === 'straight-line') {
             const pts = layer.points && layer.points.length >= 4 ? layer.points : [0, 0, layer.width, layer.height];
-            return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={pts} stroke={layer.fill} strokeWidth={layer.penSize || 4} lineCap="round" opacity={shapeOpacity} dash={layer.dashPattern} />;
+            return (
+                <Group key={layer.id} {...lineGroupProps}>
+                    <Line points={pts} stroke={layer.fill} strokeWidth={layer.penSize || 4} lineCap="round" opacity={shapeOpacity} dash={layer.dashPattern} />
+                    {renderTextOverlay()}
+                </Group>
+            );
         }
 
         if (layer.type === 'arrow') {
             const pts = layer.points && layer.points.length >= 4 ? layer.points : [0, 0, layer.width, layer.height];
-            return <Arrow key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={pts} fill={layer.fill} stroke={layer.fill} strokeWidth={layer.penSize || 4} pointerLength={15} pointerWidth={15} opacity={shapeOpacity} dash={layer.dashPattern} />;
+            return (
+                <Group key={layer.id} {...lineGroupProps}>
+                    <Arrow points={pts} fill={layer.fill} stroke={layer.fill} strokeWidth={layer.penSize || 4} pointerLength={15} pointerWidth={15} opacity={shapeOpacity} dash={layer.dashPattern} />
+                    {renderTextOverlay()}
+                </Group>
+            );
         }
     }
 
@@ -499,7 +561,7 @@ export default function LayerRenderer({
     }
 
     if (layer.type === 'text')
-        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={layer.fontFamily || (isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY)} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
+        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={layer.fontFamily || (isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY)} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked && !isReadOnly) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
 
     if (layer.type === 'eraser')
         return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;

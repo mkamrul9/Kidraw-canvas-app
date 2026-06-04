@@ -10,7 +10,7 @@ import { DEFAULT_COLORS } from '@/shared/constants';
 import AiToolbar from './AiToolbar';
 
 export default function PropertiesPanel() {
-    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward, activeRoughness, setActiveRoughness, activeBowing, setActiveBowing, isSketchMode, layers, selectedLayerIds, activeDashPattern, setActiveDashPattern, activeFontFamily, setActiveFontFamily } = useCanvasStore();
+    const { activeColor, setActiveColor, bgPattern, setBgPattern, backgroundColor, setBackgroundColor, customColors, addCustomColor, activeOpacity, setOpacity, selectedLayerId, updateLayer, saveHistory, bringToFront, sendToBack, bringForward, sendBackward, activeRoughness, setActiveRoughness, activeBowing, setActiveBowing, isSketchMode, layers, selectedLayerIds, activeDashPattern, setActiveDashPattern, activeFontFamily, setActiveFontFamily, isReadOnly } = useCanvasStore();
 
     const [activeMenu, setActiveMenu] = useState<'opacity' | 'bg' | 'arrange' | 'sketch' | 'stroke' | 'font' | null>(null);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
@@ -45,6 +45,8 @@ export default function PropertiesPanel() {
     const isSelectedSketch = selectedLayerIds.length > 0 
         ? layers.find(l => l.id === selectedLayerIds[0])?.isSketch ?? isSketchMode 
         : isSketchMode;
+
+    if (isReadOnly) return null;
 
     return (
         <TooltipProvider delayDuration={200}>

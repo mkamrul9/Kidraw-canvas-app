@@ -80,7 +80,9 @@ interface CanvasState {
     penSize: number;
     activeOpacity: number;
     isSketchMode: boolean;
-    activeRoughness: number;
+    isPresenting: boolean;
+    isReadOnly: boolean;
+    activeDashPattern: number[];
     activeBowing: number;
     permissionRole: 'owner' | 'editor' | 'viewer';
     activeGuides: GuideLine[];
@@ -102,6 +104,10 @@ interface CanvasState {
     setBoardTitle: (title: string) => void;
     setSelectedLayerId: (id: string | null) => void;
     setSelectedLayerIds: (ids: string[]) => void;
+    
+    isSearchOpen: boolean;
+    setIsSearchOpen: (isOpen: boolean) => void;
+
     setBgPattern: (pattern: 'solid' | 'dotted' | 'grid') => void;
     setActiveDashPattern: (pattern: number[]) => void;
     setActiveFontFamily: (fontFamily: string) => void;
@@ -116,6 +122,8 @@ interface CanvasState {
     setPenSize: (size: number) => void;
     setOpacity: (opacity: number) => void;
     toggleSketchMode: () => void;
+    setIsPresenting: (presenting: boolean) => void;
+    setIsReadOnly: (readOnly: boolean) => void;
     setActiveRoughness: (roughness: number) => void;
     setActiveBowing: (bowing: number) => void;
     setPermissionRole: (role: 'owner' | 'editor' | 'viewer') => void;
@@ -134,6 +142,11 @@ interface CanvasState {
     groupLayers: (ids: string[]) => void;
     ungroupLayers: (groupId: string) => void;
 
+    authorId: string | null;
+    isPublic: boolean;
+    publicRole: string;
+    setShareSettings: (isPublic: boolean, role: string) => void;
+
     // Alignment
     alignSelectedLayers: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom' | 'distribute-h' | 'distribute-v') => void;
 
@@ -145,6 +158,9 @@ interface CanvasState {
     clear: () => void;
     saveToCloud: (boardId: string) => Promise<void>;
     loadFromCloud: (boardId: string) => Promise<void>;
+    
+    getThumbnailFn?: () => string | null;
+    setGetThumbnailFn: (fn: () => string | null) => void;
 }
 
 export const useCanvasStore = create<CanvasState>((set, get) => ({
@@ -161,6 +177,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeGuides: [],
     selectedLayerId: null,
     selectedLayerIds: [],
+    isSearchOpen: false,
     bgPattern: 'dotted',
     activeEraserType: 'eraser',
     eraserSize: 20,
@@ -172,6 +189,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     penSize: 4,
     activeOpacity: 1,
     isSketchMode: false,
+    isPresenting: false,
+    isReadOnly: false,
     activeRoughness: 1.5,
     activeBowing: 1,
     permissionRole: 'owner',
@@ -179,10 +198,19 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     history: [[]], // Start with one empty state
     historyStep: 0,
 
+    authorId: null,
+    isPublic: false,
+    publicRole: 'viewer',
+    
+    setShareSettings: (isPublic, role) => set({ isPublic, publicRole: role }),
+
     exportCodeContent: null,
     exportType: null,
     setExportCodeContent: (code, type = 'react') => set({ exportCodeContent: code, exportType: type }),
     setActiveGuides: (guides) => set({ activeGuides: guides }),
+
+    getThumbnailFn: undefined,
+    setGetThumbnailFn: (fn) => set({ getThumbnailFn: fn }),
 
     setActiveTool: (tool) => set({ activeTool: tool }),
     setActiveColor: (color) => {
@@ -205,6 +233,9 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setBoardId: (id) => set({ boardId: id }),
     setSelectedLayerId: (id) => set({ selectedLayerIds: id ? [id] : [], selectedLayerId: id }),
     setSelectedLayerIds: (ids) => set({ selectedLayerIds: ids, selectedLayerId: ids.length > 0 ? ids[0] : null }),
+    
+    setIsSearchOpen: (isOpen) => set({ isSearchOpen: isOpen }),
+
     setBgPattern: (pattern) => set({ bgPattern: pattern }),
     setActiveDashPattern: (pattern) => {
         set({ activeDashPattern: pattern });
@@ -248,6 +279,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setPenSize: (size) => set({ penSize: size }),
     setOpacity: (opacity) => set({ activeOpacity: opacity }),
     toggleSketchMode: () => set((state) => ({ isSketchMode: !state.isSketchMode })),
+    setIsPresenting: (presenting) => set({ isPresenting: presenting }),
+    setIsReadOnly: (readOnly) => set({ isReadOnly: readOnly }),
     setActiveRoughness: (roughness) => set({ activeRoughness: roughness }),
     setActiveBowing: (bowing) => set({ activeBowing: bowing }),
     setPermissionRole: (role) => set({ permissionRole: role }),
@@ -544,17 +577,26 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         set({ isSaving: true });
         // Removed loading toast since it's auto-save now and will spam the user
         try {
-            const { layers, backgroundColor } = get();
+            const { layers, backgroundColor, getThumbnailFn } = get();
+            
+            let thumbnail: string | undefined = undefined;
+            if (getThumbnailFn) {
+                try {
+                    thumbnail = getThumbnailFn() || undefined;
+                } catch (e) {
+                    console.error('Failed to generate thumbnail', e);
+                }
+            }
+
             const res = await fetch(`/api/board/${boardId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ layers, backgroundColor }),
+                body: JSON.stringify({ layers, backgroundColor, thumbnail }),
             });
 
             if (!res.ok) throw new Error('Server rejected save');
         } catch (error) {
             console.error('Failed to save:', error);
-            // We could show an error toast here if auto-save fails completely
             toast.error('Failed to auto-save to cloud.');
         } finally {
             set({ isSaving: false });
@@ -564,6 +606,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     loadFromCloud: async (boardId: string) => {
         try {
             const res = await fetch(`/api/board/${boardId}`);
+            if (res.status === 403) {
+                toast.error("You don't have permission to view this board.");
+                window.location.href = '/';
+                return;
+            }
             const data = await res.json();
             if (data) {
                 set({
@@ -572,6 +619,11 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                     boardTitle: data.title || 'Untitled Board',
                     history: [data.layers || []],
                     historyStep: 0,
+                    isReadOnly: data.isReadOnly || false,
+                    permissionRole: data.isReadOnly ? 'viewer' : 'editor',
+                    authorId: data.authorId || null,
+                    isPublic: data.isPublic || false,
+                    publicRole: data.publicRole || 'viewer',
                 });
             }
         } catch (error) {

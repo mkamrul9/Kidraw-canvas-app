@@ -38,6 +38,13 @@ export const useKeyboardShortcuts = () => {
                 return;
             }
 
+            // Search (Ctrl+F)
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+                e.preventDefault();
+                state.setIsSearchOpen(!state.isSearchOpen);
+                return;
+            }
+
             // Copy
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
                 if (state.selectedLayerId) {
