@@ -62,6 +62,18 @@ export function usePresence(boardId: string | null) {
                     if (boardId) useCommentStore.getState().fetchComments(boardId);
                 } else {
                     updatePresence(data.userId, data);
+                    
+                    // Follow Mode logic
+                    const { followedUserId, setCamera, camera } = useCanvasStore.getState();
+                    if (followedUserId === data.userId && data.x !== undefined && data.y !== undefined) {
+                        const centerX = window.innerWidth / 2;
+                        const centerY = window.innerHeight / 2;
+                        setCamera({
+                            x: centerX - data.x * camera.z,
+                            y: centerY - data.y * camera.z,
+                            z: camera.z
+                        });
+                    }
                 }
             } catch (_err) {
                 // Ignore ping or malformed JSON

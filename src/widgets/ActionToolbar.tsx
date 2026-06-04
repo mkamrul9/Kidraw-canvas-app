@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles, Loader2, CheckCircle2, Play } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles, Loader2, CheckCircle2, Play, Type, GripHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -18,7 +18,7 @@ import VersionHistoryModal from '@/features/canvas/components/VersionHistoryModa
 import AiDiagramGeneratorModal from '@/features/canvas/components/AiDiagramGeneratorModal';
 
 export default function ActionToolbar() {
-    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory, setIsPresenting } = useCanvasStore();
+    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory, setIsPresenting, activeFontFamily, setActiveFontFamily, activeDashPattern, setActiveDashPattern } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
     const [importMermaidOpen, setImportMermaidOpen] = useState(false);
@@ -69,10 +69,62 @@ export default function ActionToolbar() {
                 </div>
 
                 <div className={`${isMobileExpanded ? 'flex mt-2' : 'hidden'} sm:flex flex-row flex-wrap sm:flex-nowrap items-center justify-end gap-1 max-w-[140px] sm:max-w-none`}>
+                    
+                    {/* Font Family Picker */}
+                    {(activeTool === 'text' || activeTool === 'sticky' || selectedLayer?.type === 'text' || selectedLayer?.type === 'sticky') && (
+                        <DropdownMenu>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"><Type className="w-4 h-4" /></Button>
+                                    </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Font Family</TooltipContent>
+                            </Tooltip>
+                            <DropdownMenuContent align="end" className="w-40 bg-[#0B0F19] border-slate-700 text-slate-300">
+                                <DropdownMenuItem onClick={() => setActiveFontFamily('Inter')} className={`cursor-pointer focus:bg-violet-600 focus:text-white ${activeFontFamily === 'Inter' ? 'bg-violet-600/20 text-violet-400' : ''}`} style={{ fontFamily: 'Inter' }}>Inter</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActiveFontFamily('Comic Sans MS')} className={`cursor-pointer focus:bg-violet-600 focus:text-white ${activeFontFamily === 'Comic Sans MS' ? 'bg-violet-600/20 text-violet-400' : ''}`} style={{ fontFamily: 'Comic Sans MS' }}>Comic Sans</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActiveFontFamily('Georgia')} className={`cursor-pointer focus:bg-violet-600 focus:text-white ${activeFontFamily === 'Georgia' ? 'bg-violet-600/20 text-violet-400' : ''}`} style={{ fontFamily: 'Georgia' }}>Georgia</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActiveFontFamily('monospace')} className={`cursor-pointer focus:bg-violet-600 focus:text-white ${activeFontFamily === 'monospace' ? 'bg-violet-600/20 text-violet-400' : ''}`} style={{ fontFamily: 'monospace' }}>Monospace</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+
+                    {/* Line Style Options */}
+                    {(activeTool === 'pen' || activeTool === 'pencil' || activeTool === 'shape' || selectedLayer?.type === 'straight-line' || selectedLayer?.type === 'arrow' || selectedLayer?.type === 'rectangle' || selectedLayer?.type === 'ellipse' || selectedLayer?.type === 'diamond' || selectedLayer?.type === 'hexagon' || selectedLayer?.type === 'triangle' || selectedLayer?.type === 'star') && (
+                        <DropdownMenu>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"><GripHorizontal className="w-4 h-4" /></Button>
+                                    </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Stroke Style</TooltipContent>
+                            </Tooltip>
+                            <DropdownMenuContent align="end" className="w-32 bg-[#0B0F19] border-slate-700 text-slate-300">
+                                <DropdownMenuItem onClick={() => setActiveDashPattern([])} className={`cursor-pointer focus:bg-violet-600 focus:text-white ${(activeDashPattern || []).length === 0 ? 'bg-violet-600/20 text-violet-400' : ''}`}>Solid</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActiveDashPattern([15, 10])} className={`cursor-pointer focus:bg-violet-600 focus:text-white ${(activeDashPattern || []).length === 2 && activeDashPattern![0] === 15 ? 'bg-violet-600/20 text-violet-400' : ''}`}>Dashed</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setActiveDashPattern([2, 6])} className={`cursor-pointer focus:bg-violet-600 focus:text-white ${(activeDashPattern || []).length === 2 && activeDashPattern![0] === 2 ? 'bg-violet-600/20 text-violet-400' : ''}`}>Dotted</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+
+                    <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+
                     <ToolButton icon={<Palette className="w-4 h-4" />} label={isSelectedSketch ? "Disable Sketch Mode" : "Enable Sketch Mode"} onClick={handleSketchToggle} isActive={isSelectedSketch} className={isSelectedSketch ? "!bg-violet-500 !text-white" : ""} />
                 
                 <ToolButton icon={<MessageSquare className="w-4 h-4" />} label="Add Comment (C)" onClick={() => setActiveTool('comment')} isActive={activeTool === 'comment'} />
                 <ToolButton icon={isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />} label={isLocked ? "Unlock Board" : "Lock Board"} onClick={toggleLock} isActive={isLocked} className={isLocked ? "!bg-amber-500 !text-white" : ""} />
+
+                {selectedLayerIds.length === 1 && selectedLayer && (
+                    <ToolButton 
+                        icon={selectedLayer.isLocked ? <Lock className="w-4 h-4" /> : <Unlock className="w-4 h-4" />} 
+                        label={selectedLayer.isLocked ? "Unlock Layer" : "Lock Layer"} 
+                        onClick={() => { updateLayer(selectedLayerId!, { isLocked: !selectedLayer.isLocked }); saveHistory(); }} 
+                        isActive={selectedLayer.isLocked} 
+                        className={selectedLayer.isLocked ? "!bg-red-500 !text-white" : ""} 
+                    />
+                )}
 
                 {(canGroup || isGroupSelected) && <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>}
                 {canGroup && (

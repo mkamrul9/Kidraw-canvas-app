@@ -43,4 +43,6 @@ export type Layer = {
     bowing?: number;
     dashPattern?: number[];
     fontFamily?: string;
+    lineStyle?: 'solid' | 'dashed' | 'dotted';
+    isLocked?: boolean;
 };

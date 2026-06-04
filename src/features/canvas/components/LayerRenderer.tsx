@@ -34,6 +34,7 @@ interface LayerRendererProps {
     onPdfPageChange?: (id: string, pageIndex: number) => void;
     isLowDetail?: boolean;
     isMagneticTarget?: boolean;
+    onDblClick?: (e: any) => void;
 }
 
 /**
@@ -58,11 +59,12 @@ export default function LayerRenderer({
     onPdfPageChange,
     isLowDetail = false,
     isMagneticTarget = false,
+    onDblClick,
 }: LayerRendererProps) {
     const isSketch = layer.isSketch ?? isSketchMode;
     const commonProps = {
         id: layer.id,
-        draggable: !isLocked && !isReadOnly && (activeTool === 'select' || activeTool === 'lasso'),
+        draggable: !isLocked && !layer.isLocked && !isReadOnly && (activeTool === 'select' || activeTool === 'lasso'),
         name: 'canvas-shape',
         onDragStart: (_event: Konva.KonvaEventObject<DragEvent>) => {
             if (!isSelected) {
@@ -113,6 +115,7 @@ export default function LayerRenderer({
             }
         },
         onClick: () => onClick(layer.id),
+        onDblClick: onDblClick,
         onMouseEnter: () => {
             if (onMouseEnter) onMouseEnter(layer.id);
         },

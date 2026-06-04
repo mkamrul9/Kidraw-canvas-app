@@ -82,10 +82,13 @@ interface CanvasState {
     isSketchMode: boolean;
     isPresenting: boolean;
     isReadOnly: boolean;
-    activeDashPattern: number[];
+    activeRoughness: number;
     activeBowing: number;
     permissionRole: 'owner' | 'editor' | 'viewer';
     activeGuides: GuideLine[];
+
+    followedUserId: string | null;
+    setFollowedUserId: (id: string | null) => void;
 
     // History State
     history: Layer[][];
@@ -195,6 +198,8 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeBowing: 1,
     permissionRole: 'owner',
 
+    followedUserId: null,
+
     history: [[]], // Start with one empty state
     historyStep: 0,
 
@@ -284,6 +289,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setActiveRoughness: (roughness) => set({ activeRoughness: roughness }),
     setActiveBowing: (bowing) => set({ activeBowing: bowing }),
     setPermissionRole: (role) => set({ permissionRole: role }),
+    setFollowedUserId: (id) => set({ followedUserId: id }),
 
     addLayer: (layer, isRemote = false) => {
         const { layers } = get();

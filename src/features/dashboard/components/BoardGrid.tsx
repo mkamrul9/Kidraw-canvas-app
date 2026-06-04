@@ -2,9 +2,11 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, ArrowRight, Trash2 } from 'lucide-react';
+import { LayoutDashboard, ArrowRight, Trash2, Pencil } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
 import { DASHBOARD_INITIAL_BOARD_COUNT } from '@/shared/constants';
+import { toast } from 'sonner';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -18,6 +20,32 @@ import {
 export default function BoardGrid({ boards, onDelete }: { boards: any[], onDelete?: (id: string) => void }) {
     const [showAll, setShowAll] = useState(false);
     const [boardToDelete, setBoardToDelete] = useState<string | null>(null);
+    const [editingBoardId, setEditingBoardId] = useState<string | null>(null);
+    const [editTitle, setEditTitle] = useState('');
+    const router = useRouter();
+
+    const handleRenameSubmit = async (boardId: string) => {
+        if (!editTitle.trim()) {
+            setEditingBoardId(null);
+            return;
+        }
+        try {
+            const res = await fetch(`/api/board/${boardId}/title`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ title: editTitle.trim() })
+            });
+            if (res.ok) {
+                toast.success('Title updated');
+                router.refresh();
+            } else {
+                toast.error('Failed to update title');
+            }
+        } catch (e) {
+            toast.error('Failed to update title');
+        }
+        setEditingBoardId(null);
+    };
 
     const visibleBoards = showAll ? boards : boards.slice(0, DASHBOARD_INITIAL_BOARD_COUNT);
 
@@ -80,7 +108,37 @@ export default function BoardGrid({ boards, onDelete }: { boards: any[], onDelet
                                     <div className="w-12 h-12 bg-muted/50 border border-border rounded-xl flex items-center justify-center mb-6">
                                         <LayoutDashboard className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />
                                     </div>
-                                    <h3 className="font-bold text-foreground text-xl mb-2">{board.title}</h3>
+                                    <div className="group/title flex items-center gap-2 mb-2">
+                                        {editingBoardId === board.id ? (
+                                            <input
+                                                value={editTitle}
+                                                onChange={(e) => setEditTitle(e.target.value)}
+                                                onBlur={() => handleRenameSubmit(board.id)}
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') handleRenameSubmit(board.id);
+                                                    if (e.key === 'Escape') setEditingBoardId(null);
+                                                }}
+                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                                autoFocus
+                                                className="font-bold text-foreground text-xl bg-background border border-primary rounded px-2 py-0.5 w-full focus:outline-none focus:ring-2 focus:ring-primary/50"
+                                            />
+                                        ) : (
+                                            <>
+                                                <h3 className="font-bold text-foreground text-xl truncate">{board.title}</h3>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setEditTitle(board.title);
+                                                        setEditingBoardId(board.id);
+                                                    }}
+                                                    className="opacity-0 group-hover/title:opacity-100 p-1.5 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition-all"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                            </>
+                                        )}
+                                    </div>
                                     <p className="text-sm text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
                                         {board.description || <span className="italic text-muted-foreground/50">No description provided.</span>}
                                     </p>

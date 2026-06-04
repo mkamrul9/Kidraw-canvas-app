@@ -65,6 +65,8 @@ export default function Board() {
     const transformerRef = useRef<Konva.Transformer>(null);
     const currentShapeId = useRef<string | null>(null);
     const hoverTimeoutRef = useRef<any>(null);
+    const lastTouchDistance = useRef<number | null>(null);
+    const lastTouchCenter = useRef<{x: number, y: number} | null>(null);
 
     const processUploadedFile = useCallback(async (file: File, x: number, y: number) => {
         if (file.type.startsWith('image/')) {
@@ -191,6 +193,31 @@ export default function Board() {
                     isOpen: true,
                     isEditing: true,
                 });
+            }
+            
+            // Thumbnail Save (Ctrl+S)
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                
+                const stage = stageRef.current;
+                if (!stage || !boardId || isReadOnly) return;
+                
+                toast.promise(
+                    async () => {
+                        const dataURL = stage.toDataURL({ pixelRatio: 0.5 });
+                        const res = await fetch(`/api/board/${boardId}/thumbnail`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ thumbnail: dataURL })
+                        });
+                        if (!res.ok) throw new Error('Failed to save thumbnail');
+                    },
+                    {
+                        loading: 'Saving thumbnail...',
+                        success: 'Board saved successfully!',
+                        error: 'Failed to save board'
+                    }
+                );
             }
         };
 
@@ -422,6 +449,72 @@ export default function Board() {
         }
     }, [camera, setCamera, setZoom]);
 
+    // ─── Touch Pinch-to-Zoom Handlers ───────────────────────
+    const handleTouchStart = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
+        if (e.evt.touches.length === 2) {
+            e.evt.preventDefault();
+            const touch1 = e.evt.touches[0];
+            const touch2 = e.evt.touches[1];
+            lastTouchDistance.current = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            lastTouchCenter.current = {
+                x: (touch1.clientX + touch2.clientX) / 2,
+                y: (touch1.clientY + touch2.clientY) / 2
+            };
+        } else {
+            handlePointerDown(e);
+        }
+    }, []);
+
+    const handleTouchMove = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
+        if (e.evt.touches.length === 2) {
+            e.evt.preventDefault();
+            const stage = stageRef.current;
+            if (!stage || !lastTouchDistance.current || !lastTouchCenter.current) return;
+
+            const touch1 = e.evt.touches[0];
+            const touch2 = e.evt.touches[1];
+            const dist = Math.hypot(touch1.clientX - touch2.clientX, touch1.clientY - touch2.clientY);
+            const center = {
+                x: (touch1.clientX + touch2.clientX) / 2,
+                y: (touch1.clientY + touch2.clientY) / 2
+            };
+
+            const oldScale = stage.scaleX();
+            const scaleBy = dist / lastTouchDistance.current;
+            const newScale = oldScale * scaleBy;
+            const clampedScale = Math.max(0.1, Math.min(newScale, 5));
+
+            // Pan based on the movement of the center point between touches
+            const dx = center.x - lastTouchCenter.current.x;
+            const dy = center.y - lastTouchCenter.current.y;
+
+            // Zoom around the center point
+            const mousePointTo = {
+                x: (center.x - stage.x()) / oldScale,
+                y: (center.y - stage.y()) / oldScale
+            };
+
+            setZoom(clampedScale);
+            setCamera({
+                x: center.x - mousePointTo.x * clampedScale + dx,
+                y: center.y - mousePointTo.y * clampedScale + dy
+            });
+
+            lastTouchDistance.current = dist;
+            lastTouchCenter.current = center;
+        } else {
+            handlePointerMove(e);
+        }
+    }, [setZoom, setCamera]);
+
+    const handleTouchEnd = useCallback((e: Konva.KonvaEventObject<TouchEvent>) => {
+        if (e.evt.touches.length < 2) {
+            lastTouchDistance.current = null;
+            lastTouchCenter.current = null;
+        }
+        handlePointerUp(e);
+    }, []);
+
     // ─── Pointer Handlers ────────────────────────────────
     const handlePointerDown = useCallback((e: Konva.KonvaEventObject<MouseEvent | TouchEvent>) => {
         if (isReadOnly && activeTool !== 'hand' && activeTool !== 'select') return;
@@ -635,7 +728,14 @@ export default function Board() {
                     points: absPoints.map((val, idx) => idx % 2 === 0 ? val - currentShape.x : val - currentShape.y),
                 });
             } else {
-                updateLayer(currentShapeId.current, { width: pos.x - currentShape.x, height: pos.y - currentShape.y });
+                let w = pos.x - currentShape.x;
+                let h = pos.y - currentShape.y;
+                if (e.evt.shiftKey && (currentShape.type === 'rectangle' || currentShape.type === 'ellipse' || currentShape.type === 'triangle')) {
+                    const size = Math.max(Math.abs(w), Math.abs(h));
+                    w = Math.sign(w) * size;
+                    h = Math.sign(h) * size;
+                }
+                updateLayer(currentShapeId.current, { width: w, height: h });
             }
         }
     }, [isReadOnly, isDrawing, activeTool, selectionBox, updateLayer, updateMyPresence, cursorChat?.isOpen, cursorChat?.text]);
@@ -1074,7 +1174,7 @@ export default function Board() {
         }
 
         if (!isLocked && activeTool === 'select') setSelectedLayerId(targetId);
-        if (!isLocked && activeTool === 'object-eraser') { removeLayer(targetId); saveHistory(); }
+        if (!isLocked && activeTool === 'object-eraser' && !layer?.isLocked) { removeLayer(targetId); saveHistory(); }
     }, [isLocked, activeTool, setSelectedLayerId, removeLayer, saveHistory]);
 
     const handleTextDblClick = useCallback((id: string, x: number, y: number, text: string) => {
@@ -1116,6 +1216,7 @@ export default function Board() {
         if (!editingText || !editingLayer) return {};
         const bg = isSticky || isComment ? (editingLayer.fill || '#fef08a') : 'rgba(255,255,255,0.9)';
         const textCol = '#0f172a';
+        const fontFamily = editingLayer.fontFamily || 'sans-serif';
         
         if (isFrame) {
             return {
@@ -1130,6 +1231,7 @@ export default function Board() {
                 border: '1px solid #475569',
                 borderRadius: '4px',
                 lineHeight: '1.2',
+                fontFamily,
                 fontWeight: 'bold',
             };
         }
@@ -1151,6 +1253,7 @@ export default function Board() {
                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
                 borderRadius: '4px',
                 lineHeight: '1.4',
+                fontFamily,
             };
         }
 
@@ -1166,6 +1269,7 @@ export default function Board() {
                 padding: `${10 * zoom}px`,
                 border: '1px solid #eab308',
                 borderRadius: '4px',
+                fontFamily,
             };
         }
 
@@ -1178,6 +1282,7 @@ export default function Board() {
             color: editingLayer.fill || '#000000',
             fontSize: `${20 * zoom}px`,
             padding: '8px',
+            fontFamily,
         };
     })();
 
@@ -1535,7 +1640,7 @@ export default function Board() {
                 onWheel={handleWheel}
                 onDragMove={(e) => { if (e.target === stageRef.current) setCamera({ x: e.target.x(), y: e.target.y() }); }}
                 onMouseDown={handlePointerDown} onMouseMove={handlePointerMove} onMouseUp={handlePointerUp}
-                onTouchStart={handlePointerDown} onTouchMove={handlePointerMove} onTouchEnd={handlePointerUp}
+                onTouchStart={handleTouchStart as any} onTouchMove={handleTouchMove as any} onTouchEnd={handleTouchEnd as any}
             >
                 <KonvaLayer>
                     {(() => {
@@ -1608,9 +1713,9 @@ export default function Board() {
                                 isReadOnly={isReadOnly}
                                 onDblClick={(e) => {
                                     if (isReadOnly) return;
-                                    if (layer.type === 'text' || layer.type === 'sticky' || layer.type === 'rectangle' || layer.type === 'ellipse' || layer.type === 'diamond' || layer.type === 'hexagon' || layer.type === 'triangle') {
+                                    if (layer.type === 'text' || layer.type === 'sticky' || layer.type === 'rectangle' || layer.type === 'ellipse' || layer.type === 'diamond' || layer.type === 'hexagon' || layer.type === 'triangle' || layer.type === 'arrow' || layer.type === 'straight-line') {
                                         if (activeTool === 'select' && !isLocked) {
-                                            onTextDblClick(layer.id, e.target.absolutePosition().x, e.target.absolutePosition().y, layer.text || '');
+                                            handleTextDblClick(layer.id, e.target.absolutePosition().x, e.target.absolutePosition().y, layer.text || '');
                                         }
                                     }
                                 }}

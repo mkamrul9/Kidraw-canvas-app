@@ -18,7 +18,7 @@ import ShareModal from './ShareModal';
 export default function NavigationHUD() {
     const { data: session } = useSession();
     const { others } = usePresenceStore();
-    const { setCamera, zoom, boardTitle, setBoardTitle, boardId, authorId, setIsPresenting } = useCanvasStore();
+    const { setCamera, zoom, boardTitle, setBoardTitle, boardId, authorId, setIsPresenting, followedUserId, setFollowedUserId } = useCanvasStore();
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     const handleTitleSave = async (newTitle: string) => {
@@ -42,10 +42,20 @@ export default function NavigationHUD() {
     if (!session?.user) return null;
 
     const handleFollow = (user: any) => {
-        setCamera({
-            x: window.innerWidth / 2 - user.x * zoom,
-            y: window.innerHeight / 2 - user.y * zoom,
-        });
+        if (followedUserId === user.userId) {
+            setFollowedUserId(null);
+            toast.info(`Unfollowed ${user.name}`);
+        } else {
+            setFollowedUserId(user.userId);
+            toast.success(`Following ${user.name}`);
+            if (user.x !== undefined && user.y !== undefined) {
+                setCamera({
+                    x: window.innerWidth / 2 - user.x * zoom,
+                    y: window.innerHeight / 2 - user.y * zoom,
+                    z: zoom
+                });
+            }
+        }
     };
 
     return (
@@ -154,25 +164,28 @@ export default function NavigationHUD() {
                 </DropdownMenu>
 
                 {/* Follow Mode Avatars */}
-                {Object.values(others).map((user) => (
-                    <Tooltip key={user.userId}>
-                        <TooltipTrigger asChild>
-                            <Avatar 
-                                onClick={() => handleFollow(user)}
-                                className="h-10 w-10 border-2 shadow-2xl ring-2 ring-transparent transition-all cursor-pointer hover:scale-110"
-                                style={{ borderColor: user.color }}
-                            >
-                                <AvatarImage src={user.image || ""} />
-                                <AvatarFallback style={{ backgroundColor: user.color }} className="text-white font-bold">
-                                    {user.name?.charAt(0) || "U"}
-                                </AvatarFallback>
-                            </Avatar>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">
-                            Follow {user.name || "Anonymous"}
-                        </TooltipContent>
-                    </Tooltip>
-                ))}
+                {Object.values(others).map((user) => {
+                    const isFollowing = followedUserId === user.userId;
+                    return (
+                        <Tooltip key={user.userId}>
+                            <TooltipTrigger asChild>
+                                <Avatar 
+                                    onClick={() => handleFollow(user)}
+                                    className={`h-10 w-10 border-2 shadow-2xl transition-all cursor-pointer hover:scale-110 ${isFollowing ? 'ring-4' : 'ring-2 ring-transparent'}`}
+                                    style={{ borderColor: user.color, ...(isFollowing ? { ringColor: user.color } : {}) }}
+                                >
+                                    <AvatarImage src={user.image || ""} />
+                                    <AvatarFallback style={{ backgroundColor: user.color }} className="text-white font-bold">
+                                        {user.name?.charAt(0) || "U"}
+                                    </AvatarFallback>
+                                </Avatar>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">
+                                {isFollowing ? `Stop following ${user.name}` : `Follow ${user.name || "Anonymous"}`}
+                            </TooltipContent>
+                        </Tooltip>
+                    );
+                })}
             </div>
             
             <ShareModal isOpen={isShareModalOpen} onClose={() => setIsShareModalOpen(false)} />

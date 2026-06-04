@@ -79,9 +79,12 @@ export const useKeyboardShortcuts = () => {
             // Delete
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 if (state.selectedLayerId) {
-                    state.removeLayer(state.selectedLayerId);
-                    state.setSelectedLayerId(null);
-                    state.saveHistory();
+                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
+                    if (layer && !layer.isLocked) {
+                        state.removeLayer(state.selectedLayerId);
+                        state.setSelectedLayerId(null);
+                        state.saveHistory();
+                    }
                 }
                 return;
             }
@@ -102,21 +105,47 @@ export const useKeyboardShortcuts = () => {
                 return;
             }
 
-            // Layer Ordering
-            if (e.key === '[' || e.key === ']') {
-                if (state.selectedLayerId) {
-                    if (e.key === '[') {
-                        if (e.shiftKey) state.sendToBack(state.selectedLayerId);
-                        else state.sendBackward(state.selectedLayerId);
-                    } else if (e.key === ']') {
-                        if (e.shiftKey) state.bringToFront(state.selectedLayerId);
-                        else state.bringForward(state.selectedLayerId);
-                    }
+        // Layer Ordering
+        if (e.key === '[' || e.key === ']') {
+            if (state.selectedLayerId) {
+                if (e.key === '[') {
+                    if (e.shiftKey) state.sendToBack(state.selectedLayerId);
+                    else state.sendBackward(state.selectedLayerId);
+                } else if (e.key === ']') {
+                    if (e.shiftKey) state.bringToFront(state.selectedLayerId);
+                    else state.bringForward(state.selectedLayerId);
                 }
-                return;
             }
+            return;
+        }
 
+        // Nudging
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            if (state.selectedLayerIds.length > 0) {
+                e.preventDefault();
+                const amount = e.shiftKey ? 10 : 1;
+                let dx = 0;
+                let dy = 0;
+                if (e.key === 'ArrowUp') dy = -amount;
+                if (e.key === 'ArrowDown') dy = amount;
+                if (e.key === 'ArrowLeft') dx = -amount;
+                if (e.key === 'ArrowRight') dx = amount;
 
+                state.selectedLayerIds.forEach(id => {
+                    const layer = state.layers.find(l => l.id === id);
+                    if (layer && !layer.isLocked) {
+                        state.updateLayer(id, { x: layer.x + dx, y: layer.y + dy });
+                    }
+                });
+                
+                // Debounce history save
+                if ((window as any).nudgeTimeout) clearTimeout((window as any).nudgeTimeout);
+                (window as any).nudgeTimeout = setTimeout(() => {
+                    state.saveHistory();
+                }, 500);
+            }
+            return;
+        }
             // Single key tools
             if (!e.ctrlKey && !e.metaKey && !e.altKey) {
                 const key = e.key.toLowerCase();

@@ -47,6 +47,20 @@ export async function POST(
             },
         });
 
+        // Broadcast reply via SSE to all active clients on this board
+        const clients = (globalThis as any).presenceClientsMap?.get(parentComment.boardId);
+        if (clients) {
+            const payload = JSON.stringify({ type: 'comment-update', payload: reply, parentId: id });
+            const encoder = new TextEncoder();
+            clients.forEach((client: any) => {
+                try {
+                    client.controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+                } catch (_e) {
+                    // Ignore broken pipes
+                }
+            });
+        }
+
         return NextResponse.json(reply);
     } catch (error) {
         console.error('POST REPLY ERROR:', error);
@@ -86,6 +100,20 @@ export async function PATCH(
                 },
             },
         });
+
+        // Broadcast comment update via SSE to all active clients on this board
+        const clients = (globalThis as any).presenceClientsMap?.get(comment.boardId);
+        if (clients) {
+            const payload = JSON.stringify({ type: 'comment-update', payload: comment });
+            const encoder = new TextEncoder();
+            clients.forEach((client: any) => {
+                try {
+                    client.controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+                } catch (_e) {
+                    // Ignore broken pipes
+                }
+            });
+        }
 
         return NextResponse.json(comment);
     } catch (error) {
