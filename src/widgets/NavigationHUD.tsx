@@ -18,7 +18,7 @@ import ShareModal from './ShareModal';
 export default function NavigationHUD() {
     const { data: session } = useSession();
     const { others } = usePresenceStore();
-    const { setCamera, zoom, boardTitle, setBoardTitle, boardId, authorId, setIsPresenting, followedUserId, setFollowedUserId } = useCanvasStore();
+    const { setCamera, zoom, boardTitle, setBoardTitle, boardId, authorId, setIsPresenting, followedUserId, setFollowedUserId, bgPattern, setBgPattern, backgroundColor, setBackgroundColor } = useCanvasStore();
     const [isShareModalOpen, setIsShareModalOpen] = useState(false);
 
     const handleTitleSave = async (newTitle: string) => {
@@ -41,7 +41,7 @@ export default function NavigationHUD() {
 
     if (!session?.user) return null;
 
-    const handleFollow = (user: any) => {
+    const handleFollow = (user: { userId: string; name: string | null; x?: number; y?: number }) => {
         if (followedUserId === user.userId) {
             setFollowedUserId(null);
             toast.info(`Unfollowed ${user.name}`);
@@ -51,8 +51,7 @@ export default function NavigationHUD() {
             if (user.x !== undefined && user.y !== undefined) {
                 setCamera({
                     x: window.innerWidth / 2 - user.x * zoom,
-                    y: window.innerHeight / 2 - user.y * zoom,
-                    z: zoom
+                    y: window.innerHeight / 2 - user.y * zoom
                 });
             }
         }
@@ -115,6 +114,55 @@ export default function NavigationHUD() {
                             <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Share Board</TooltipContent>
                         </Tooltip>
                     )}
+
+                    <DropdownMenu>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button 
+                                        variant="outline" 
+                                        size="icon" 
+                                        className="bg-[#0B0F19] text-slate-400 border-slate-700 hover:bg-slate-900 hover:text-white shadow-2xl h-9 w-9"
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Board Settings</TooltipContent>
+                        </Tooltip>
+
+                        <DropdownMenuContent align="end" className="w-64 p-3 rounded-xl bg-[#0B0F19] border-slate-700 text-slate-50 shadow-2xl space-y-4">
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Background Pattern</label>
+                                <div className="flex gap-2">
+                                    {['solid', 'dotted', 'grid'].map((p) => (
+                                        <button
+                                            key={p}
+                                            onClick={() => setBgPattern(p as 'solid' | 'dotted' | 'grid')}
+                                            className={`flex-1 py-1.5 text-xs font-medium rounded-lg capitalize transition-colors ${bgPattern === p ? 'bg-violet-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700 hover:text-white'}`}
+                                        >
+                                            {p}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Background Color</label>
+                                <div className="flex gap-2">
+                                    {['#f8fafc', '#fef3c7', '#dcfce7', '#e0e7ff', '#fce7f3', '#0f172a', '#1e1b4b', '#064e3b'].map((c) => (
+                                        <button
+                                            key={c}
+                                            onClick={() => setBackgroundColor(c)}
+                                            className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${backgroundColor === c ? 'border-violet-500 scale-110' : 'border-slate-700/50'}`}
+                                            style={{ backgroundColor: c }}
+                                            title={c}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
 
                 <DropdownMenu>

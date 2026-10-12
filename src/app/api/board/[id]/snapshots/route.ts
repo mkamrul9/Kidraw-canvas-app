@@ -2,11 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/shared/lib/prisma";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/features/auth/config";
+import { getBoardAccess } from "@/features/board/services/board-access";
+
+export const dynamic = 'force-dynamic';
 
 export async function GET(req: NextRequest, props: { params: Promise<{ id: string }> }) {
     const params = await props.params;
     try {
+        const session = await getServerSession(authOptions);
         const boardId = params.id;
+
+        const access = await getBoardAccess(boardId, session?.user || null);
+
+        if (!access.board) {
+            return NextResponse.json({ error: "Board not found" }, { status: 404 });
+        }
+
+        if (!access.capabilities.canRead) {
+            if (!session?.user?.id) {
+                return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            }
+            return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+        }
+
         const snapshots = await prisma.boardSnapshot.findMany({
             where: { boardId },
             orderBy: { createdAt: 'desc' },
@@ -35,20 +53,33 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
     const params = await props.params;
     try {
         const session = await getServerSession(authOptions);
+        if (!session?.user?.id) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
         const boardId = params.id;
+        const access = await getBoardAccess(boardId, session.user);
+
+        if (!access.board) {
+            return NextResponse.json({ error: "Board not found" }, { status: 404 });
+        }
+
+        if (!access.capabilities.canSnapshot) {
+            return NextResponse.json({ error: "Forbidden: Insufficient permissions to create snapshot" }, { status: 403 });
+        }
         
         const { name, layers } = await req.json();
 
-        if (!layers) {
-            return NextResponse.json({ error: "Missing layers data" }, { status: 400 });
+        if (!layers || !Array.isArray(layers)) {
+            return NextResponse.json({ error: "Missing or invalid layers data" }, { status: 400 });
         }
 
         const snapshot = await prisma.boardSnapshot.create({
             data: {
                 boardId,
-                name: name || "Manual Snapshot",
+                name: (typeof name === 'string' && name.trim()) ? name.trim() : "Manual Snapshot",
                 layers: layers,
-                authorId: session?.user?.id || null,
+                authorId: session.user.id,
             },
             include: {
                 author: {
@@ -57,7 +88,6 @@ export async function POST(req: NextRequest, props: { params: Promise<{ id: stri
             }
         });
 
-        // Omit the massive layers payload from the response to save bandwidth
         const responseData = {
             id: snapshot.id,
             name: snapshot.name,

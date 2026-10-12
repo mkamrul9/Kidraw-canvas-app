@@ -153,13 +153,16 @@ interface CanvasState {
     // Alignment
     alignSelectedLayers: (alignmentType: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom' | 'distribute-h' | 'distribute-v') => void;
 
+    boardGeneration: number;
+    clearAutoSave: () => void;
+
     // Canvas Management Actions
     saveHistory: () => void;
     undo: () => void;
     redo: () => void;
     jumpToHistoryStep: (step: number) => void;
     clear: () => void;
-    saveToCloud: (boardId: string) => Promise<void>;
+    saveToCloud: (boardId: string, snapshot?: { layers: Layer[]; backgroundColor: string }) => Promise<void>;
     loadFromCloud: (boardId: string) => Promise<void>;
     
     getThumbnailFn?: () => string | null;
@@ -171,6 +174,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     activeColor: '#000000',
     backgroundColor: '#f8fafc',
     layers: [],
+    boardGeneration: 0,
     isDrawing: false,
     isSaving: false,
     boardId: null,
@@ -220,22 +224,44 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     setActiveTool: (tool) => set({ activeTool: tool }),
     setActiveColor: (color) => {
         set({ activeColor: color });
-        const { selectedLayerId, layers } = get();
-        if (selectedLayerId) {
-            const layer = layers.find((l) => l.id === selectedLayerId);
-            if (layer) {
-                const updates: Partial<Layer> = { fill: color };
-                if (layer.type === 'pen' || layer.type === 'straight-line') {
-                    updates.stroke = color;
+        const { selectedLayerIds, layers, updateLayer, saveHistory } = get();
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => {
+                const layer = layers.find((l) => l.id === id);
+                if (layer) {
+                    const updates: Partial<Layer> = { fill: color };
+                    if (layer.type === 'pen' || layer.type === 'straight-line') {
+                        updates.stroke = color;
+                    }
+                    updateLayer(id, updates);
                 }
-                get().updateLayer(selectedLayerId, updates);
-                get().saveHistory();
-            }
+            });
+            saveHistory();
         }
     },
     setBackgroundColor: (color) => set({ backgroundColor: color }),
     setIsDrawing: (isDrawing) => set({ isDrawing }),
-    setBoardId: (id) => set({ boardId: id }),
+    setBoardId: (id) => {
+        const { boardId, boardGeneration } = get();
+        if (boardId !== id) {
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+                autoSaveTimeout = null;
+            }
+            set({
+                boardId: id,
+                boardGeneration: boardGeneration + 1,
+                selectedLayerIds: [],
+                selectedLayerId: null,
+            });
+        }
+    },
+    clearAutoSave: () => {
+        if (autoSaveTimeout) {
+            clearTimeout(autoSaveTimeout);
+            autoSaveTimeout = null;
+        }
+    },
     setSelectedLayerId: (id) => set({ selectedLayerIds: id ? [id] : [], selectedLayerId: id }),
     setSelectedLayerIds: (ids) => set({ selectedLayerIds: ids, selectedLayerId: ids.length > 0 ? ids[0] : null }),
     
@@ -282,12 +308,33 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     toggleLock: () => set((state) => ({ isLocked: !state.isLocked, selectedLayerId: null })),
     setActiveShape: (shape) => set({ activeShape: shape, activeTool: 'shape' }),
     setPenSize: (size) => set({ penSize: size }),
-    setOpacity: (opacity) => set({ activeOpacity: opacity }),
+    setOpacity: (opacity) => {
+        set({ activeOpacity: opacity });
+        const { selectedLayerIds, updateLayer, saveHistory } = get();
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => updateLayer(id, { opacity }));
+            saveHistory();
+        }
+    },
     toggleSketchMode: () => set((state) => ({ isSketchMode: !state.isSketchMode })),
     setIsPresenting: (presenting) => set({ isPresenting: presenting }),
     setIsReadOnly: (readOnly) => set({ isReadOnly: readOnly }),
-    setActiveRoughness: (roughness) => set({ activeRoughness: roughness }),
-    setActiveBowing: (bowing) => set({ activeBowing: bowing }),
+    setActiveRoughness: (roughness) => {
+        set({ activeRoughness: roughness });
+        const { selectedLayerIds, updateLayer, saveHistory } = get();
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => updateLayer(id, { roughness }));
+            saveHistory();
+        }
+    },
+    setActiveBowing: (bowing) => {
+        set({ activeBowing: bowing });
+        const { selectedLayerIds, updateLayer, saveHistory } = get();
+        if (selectedLayerIds.length > 0) {
+            selectedLayerIds.forEach(id => updateLayer(id, { bowing }));
+            saveHistory();
+        }
+    },
     setPermissionRole: (role) => set({ permissionRole: role }),
     setFollowedUserId: (id) => set({ followedUserId: id }),
 
@@ -455,7 +502,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
 
     // Called only on MouseUp
     saveHistory: () => {
-        const { layers, history, historyStep, boardId, saveToCloud } = get();
+        const { layers, history, historyStep, boardId, boardGeneration, saveToCloud, backgroundColor } = get();
         // Remove any "future" history if we undo it and then drew something new
         const newHistory = history.slice(0, historyStep + 1);
         newHistory.push([...layers]);
@@ -465,11 +512,22 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             historyStep: newHistory.length - 1,
         });
 
-        // Auto-save debounced
+        // Auto-save debounced with generation scoping and immutable snapshot (prevents F05)
         if (boardId) {
             if (autoSaveTimeout) clearTimeout(autoSaveTimeout);
+            const currentGen = boardGeneration;
+            const targetBoardId = boardId;
+            const capturedLayers = [...layers];
+            const capturedBg = backgroundColor;
+
             autoSaveTimeout = setTimeout(() => {
-                saveToCloud(boardId);
+                const current = get();
+                if (current.boardId === targetBoardId && current.boardGeneration === currentGen) {
+                    saveToCloud(targetBoardId, {
+                        layers: capturedLayers,
+                        backgroundColor: capturedBg,
+                    });
+                }
             }, 3000);
         }
     },
@@ -579,11 +637,18 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
         get().saveHistory();
     },
 
-    saveToCloud: async (boardId: string) => {
+    saveToCloud: async (boardId: string, snapshot?: { layers: Layer[]; backgroundColor: string }) => {
+        const current = get();
+        if (current.boardId !== boardId) {
+            // Safety guard: Store has switched boards; do not save to old board (F05)
+            return;
+        }
+
         set({ isSaving: true });
-        // Removed loading toast since it's auto-save now and will spam the user
         try {
-            const { layers, backgroundColor, getThumbnailFn } = get();
+            const layers = snapshot ? snapshot.layers : current.layers;
+            const backgroundColor = snapshot ? snapshot.backgroundColor : current.backgroundColor;
+            const { getThumbnailFn } = get();
             
             let thumbnail: string | undefined = undefined;
             if (getThumbnailFn) {
@@ -610,6 +675,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
     },
 
     loadFromCloud: async (boardId: string) => {
+        const requestGen = get().boardGeneration;
         try {
             const res = await fetch(`/api/board/${boardId}`);
             if (res.status === 403) {
@@ -617,7 +683,21 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
                 window.location.href = '/';
                 return;
             }
+            if (res.status === 404) {
+                toast.error("Board not found.");
+                set({ isReadOnly: true });
+                return;
+            }
+            if (!res.ok) {
+                toast.error("Failed to load board.");
+                set({ isReadOnly: true });
+                return;
+            }
             const data = await res.json();
+            // Discard response if board navigation changed while fetching (F09)
+            if (get().boardId !== boardId || get().boardGeneration !== requestGen) {
+                return;
+            }
             if (data) {
                 set({
                     layers: data.layers || [],
@@ -634,6 +714,7 @@ export const useCanvasStore = create<CanvasState>((set, get) => ({
             }
         } catch (error) {
             console.error('Failed to load:', error);
+            toast.error('Failed to connect to board service.');
         }
     },
 

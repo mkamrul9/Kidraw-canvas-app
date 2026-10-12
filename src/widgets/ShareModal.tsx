@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/shared/components/ui/dialog";
@@ -19,13 +19,7 @@ export default function ShareModal({ isOpen, onClose }: { isOpen: boolean; onClo
     const [newEmail, setNewEmail] = useState('');
     const [newRole, setNewRole] = useState('viewer');
 
-    useEffect(() => {
-        if (isOpen && boardId && !isReadOnly) {
-            fetchCollaborators();
-        }
-    }, [isOpen, boardId, isReadOnly]);
-
-    const fetchCollaborators = async () => {
+    const fetchCollaborators = useCallback(async () => {
         try {
             const res = await fetch(`/api/board/${boardId}/collaborators`);
             if (res.ok) {
@@ -35,7 +29,13 @@ export default function ShareModal({ isOpen, onClose }: { isOpen: boolean; onClo
         } catch (e) {
             console.error('Failed to fetch collaborators');
         }
-    };
+    }, [boardId]);
+
+    useEffect(() => {
+        if (isOpen && boardId && !isReadOnly) {
+            fetchCollaborators();
+        }
+    }, [isOpen, boardId, isReadOnly, fetchCollaborators]);
 
     const handleCopyLink = () => {
         const url = `${window.location.origin}/board/${boardId}`;

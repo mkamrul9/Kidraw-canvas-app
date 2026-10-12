@@ -64,14 +64,13 @@ export function usePresence(boardId: string | null) {
                     updatePresence(data.userId, data);
                     
                     // Follow Mode logic
-                    const { followedUserId, setCamera, camera } = useCanvasStore.getState();
+                    const { followedUserId, setCamera, camera, zoom } = useCanvasStore.getState();
                     if (followedUserId === data.userId && data.x !== undefined && data.y !== undefined) {
                         const centerX = window.innerWidth / 2;
                         const centerY = window.innerHeight / 2;
                         setCamera({
-                            x: centerX - data.x * camera.z,
-                            y: centerY - data.y * camera.z,
-                            z: camera.z
+                            x: centerX - data.x * zoom,
+                            y: centerY - data.y * zoom
                         });
                     }
                 }

@@ -183,7 +183,7 @@ export default function DashboardView({ session, boards }: DashboardViewProps) {
                         <div className="relative">
                             <select
                                 value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value as any)}
+                                onChange={(e) => setSortBy(e.target.value as 'updatedDesc' | 'createdDesc' | 'titleAsc')}
                                 className="appearance-none block w-full pl-10 pr-10 py-2 border border-border rounded-xl leading-5 bg-card text-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 sm:text-sm transition-all shadow-sm cursor-pointer"
                             >
                                 <option value="updatedDesc">Last Updated</option>

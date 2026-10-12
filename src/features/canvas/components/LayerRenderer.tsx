@@ -366,6 +366,8 @@ export default function LayerRenderer({
                         fill="#0f172a"
                         fontSize={fontSize}
                         fontFamily={isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif"}
+                        fontStyle={layer.fontStyle === 'italic' ? 'italic' : layer.fontWeight === 'bold' ? 'bold' : 'normal'}
+                        textDecoration={layer.textDecoration}
                         align="center"
                         verticalAlign="middle"
                         width={textWidth}
@@ -417,12 +419,15 @@ export default function LayerRenderer({
                 return <RoughShape layer={{...layer, x: 0, y: 0}} commonProps={{}} />;
             }
             
-            const shapeProps = layer.dashPattern?.length 
-                ? { stroke: layer.fill, fill: 'transparent', strokeWidth: 4, dash: layer.dashPattern }
-                : { fill: layer.fill };
+            const shapeProps = {
+                ...(layer.dashPattern?.length 
+                    ? { stroke: layer.fill, fill: 'transparent', strokeWidth: layer.penSize || 4, dash: layer.dashPattern }
+                    : { fill: layer.fill, stroke: layer.fill, strokeWidth: layer.penSize ? layer.penSize : 0 }),
+                ...(layer.hasShadow ? { shadowColor: 'rgba(0,0,0,0.3)', shadowBlur: 15, shadowOffsetX: 5, shadowOffsetY: 5 } : {})
+            };
 
             if (layer.type === 'rectangle')
-                return <Rect width={layer.width} height={layer.height} cornerRadius={4} {...shapeProps} />;
+                return <Rect width={layer.width} height={layer.height} cornerRadius={layer.cornerRadius ?? 4} {...shapeProps} />;
             if (layer.type === 'ellipse')
                 return <Ellipse x={layer.width / 2} y={layer.height / 2} radiusX={Math.abs(layer.width / 2)} radiusY={Math.abs(layer.height / 2)} {...shapeProps} />;
             if (layer.type === 'triangle')
@@ -469,6 +474,8 @@ export default function LayerRenderer({
                         text={layer.text}
                         fill={textCol}
                         fontSize={textFontSize}
+                        fontStyle={layer.fontStyle === 'italic' ? 'italic' : layer.fontWeight === 'bold' ? 'bold' : 'normal'}
+                        textDecoration={layer.textDecoration}
                         align="center"
                         verticalAlign="middle"
                         fontFamily={layer.fontFamily || (isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : "sans-serif")}
@@ -564,7 +571,7 @@ export default function LayerRenderer({
     }
 
     if (layer.type === 'text')
-        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={layer.fontFamily || (isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY)} opacity={shapeOpacity} onDblClick={(event) => { if (activeTool === 'select' && !isLocked && !isReadOnly) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
+        return <Text key={layer.id} {...commonProps} x={layer.x} y={layer.y} text={layer.text} fill={layer.fill} fontSize={layer.fontSize || DEFAULT_FONT_SIZE} fontFamily={layer.fontFamily || (isSketch ? "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" : DEFAULT_FONT_FAMILY)} opacity={shapeOpacity} align={layer.textAlign || 'left'} fontStyle={layer.fontStyle === 'italic' ? 'italic' : layer.fontWeight === 'bold' ? 'bold' : 'normal'} textDecoration={layer.textDecoration} width={layer.width} {...(layer.hasShadow ? { shadowColor: 'rgba(0,0,0,0.3)', shadowBlur: 15, shadowOffsetX: 5, shadowOffsetY: 5 } : {})} onDblClick={(event) => { if (activeTool === 'select' && !isLocked && !isReadOnly) { onTextDblClick(layer.id, event.target.absolutePosition().x, event.target.absolutePosition().y, layer.text || ''); } }} />;
 
     if (layer.type === 'eraser')
         return <Line key={layer.id} {...commonProps} x={layer.x} y={layer.y} points={layer.points || []} stroke="#ffffff" strokeWidth={layer.eraserSize || 20} tension={0.5} lineCap="round" lineJoin="round" globalCompositeOperation="destination-out" />;

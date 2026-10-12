@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/features/auth/config';
 import prisma from '@/shared/lib/prisma';
+import { getBoardAccess } from '@/features/board/services/board-access';
+
+export const dynamic = 'force-dynamic';
 
 export async function DELETE(
     request: Request,
@@ -13,12 +16,23 @@ export async function DELETE(
 
         const { id, collabId } = await params;
         
-        const board = await prisma.board.findUnique({ where: { id } });
-        if (!board) return NextResponse.json({ error: 'Board not found' }, { status: 404 });
-        if (board.authorId !== session.user.id) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        const access = await getBoardAccess(id, session.user);
+        if (!access.board) return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+        if (!access.capabilities.canManageCollaborators) {
+            return NextResponse.json({ error: 'Forbidden: Only board owners can remove collaborators' }, { status: 403 });
+        }
+
+        // Must verify that the collaborator belongs to THIS board (prevents cross-board deletion)
+        const collaborator = await prisma.boardCollaborator.findFirst({
+            where: { id: collabId, boardId: id }
+        });
+
+        if (!collaborator) {
+            return NextResponse.json({ error: 'Collaborator not found on this board' }, { status: 404 });
+        }
 
         await prisma.boardCollaborator.delete({
-            where: { id: collabId }
+            where: { id: collaborator.id }
         });
 
         return NextResponse.json({ success: true });

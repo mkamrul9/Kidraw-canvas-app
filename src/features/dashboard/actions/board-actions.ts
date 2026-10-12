@@ -20,7 +20,8 @@ export async function createNewBoard(formData: FormData) {
     const template = (formData.get('template') as string) || 'blank';
     const newId = uuidv4();
 
-    let initialLayers: any[] = []; // Using any to bypass prisma strict JSON checking for the insert
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let initialLayers: any[] = [];
 
     if (template === 'flowchart') {
         const id1 = uuidv4();

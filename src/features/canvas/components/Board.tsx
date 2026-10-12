@@ -19,7 +19,7 @@ import { getOrthogonalPath, getCurvedPath, getStraightPath, BoundingBox } from '
 import { renderPDFPages } from '@/features/canvas/lib/pdf';
 import { toast } from 'sonner';
 import { useSession } from 'next-auth/react';
-import { Shapes, Loader2, Plus } from 'lucide-react';
+import { Shapes, Loader2, Plus, ExternalLink } from 'lucide-react';
 import MindMapOverlay from './MindMapOverlay';
 import CodeBlockOverlay from './CodeBlockOverlay';
 import { exportToMermaid } from '@/features/canvas/lib/exportMermaid';
@@ -512,7 +512,7 @@ export default function Board() {
             lastTouchDistance.current = null;
             lastTouchCenter.current = null;
         }
-        handlePointerUp(e);
+        handlePointerUp();
     }, []);
 
     // ─── Pointer Handlers ────────────────────────────────
@@ -1254,6 +1254,9 @@ export default function Board() {
                 borderRadius: '4px',
                 lineHeight: '1.4',
                 fontFamily,
+                fontWeight: editingLayer.fontWeight || 'normal',
+                fontStyle: editingLayer.fontStyle || 'normal',
+                textDecoration: editingLayer.textDecoration || 'none'
             };
         }
 
@@ -1283,6 +1286,10 @@ export default function Board() {
             fontSize: `${20 * zoom}px`,
             padding: '8px',
             fontFamily,
+            textAlign: editingLayer.textAlign || 'left',
+            fontWeight: editingLayer.fontWeight || 'normal',
+            fontStyle: editingLayer.fontStyle || 'normal',
+            textDecoration: editingLayer.textDecoration || 'none'
         };
     })();
 
@@ -1402,6 +1409,29 @@ export default function Board() {
                 <MindMapOverlay />
                 <CodeBlockOverlay />
                 <IframeEmbedOverlay />
+                {layers.filter(l => l.link).map(layer => {
+                    const screenX = layer.x * zoom + camera.x;
+                    const screenY = layer.y * zoom + camera.y;
+                    const screenW = (layer.width || 0) * zoom;
+                    return (
+                        <div 
+                            key={`link-${layer.id}`}
+                            className="absolute pointer-events-auto cursor-pointer p-1 bg-white dark:bg-slate-800 rounded-full shadow hover:scale-110 transition-transform"
+                            style={{ 
+                                left: screenX + screenW - 12, 
+                                top: screenY - 12,
+                                border: '1px solid #e2e8f0'
+                            }}
+                            title={`Open Link: ${layer.link}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                window.open(layer.link, '_blank');
+                            }}
+                        >
+                            <ExternalLink className="w-3 h-3 text-blue-500" />
+                        </div>
+                    );
+                })}
             </div>
 
             <CanvasSearch />

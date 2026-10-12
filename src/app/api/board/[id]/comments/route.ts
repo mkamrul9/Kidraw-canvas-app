@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/features/auth/config';
 import prisma from '@/shared/lib/prisma';
+import { getBoardAccess } from '@/features/board/services/board-access';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,7 +12,21 @@ export async function GET(
     { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const session = await getServerSession(authOptions);
         const { id } = await params;
+
+        const access = await getBoardAccess(id, session?.user || null);
+
+        if (!access.board) {
+            return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+        }
+
+        if (!access.capabilities.canRead) {
+            if (!session?.user?.id) {
+                return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+            }
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
 
         const comments = await prisma.comment.findMany({
             where: { boardId: id, parentId: null },
@@ -46,6 +61,16 @@ export async function POST(
         }
 
         const { id } = await params;
+        const access = await getBoardAccess(id, session.user);
+
+        if (!access.board) {
+            return NextResponse.json({ error: 'Board not found' }, { status: 404 });
+        }
+
+        if (!access.capabilities.canComment) {
+            return NextResponse.json({ error: 'Forbidden: Insufficient permissions to comment' }, { status: 403 });
+        }
+
         const body = await request.json();
         const { content, x, y, elementId } = body;
 
@@ -72,7 +97,7 @@ export async function POST(
             },
         });
 
-        // Broadcast comment via SSE to all active clients on this board
+        // Broadcast comment via SSE to active clients on this board
         const clients = (globalThis as any).presenceClientsMap?.get(id);
         if (clients) {
             const payload = JSON.stringify({ type: 'comment-update', payload: comment });

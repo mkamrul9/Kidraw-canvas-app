@@ -1,11 +1,12 @@
 'use client';
 
 import { useCanvasStore } from '@/features/canvas/store/useCanvasStore';
+import { Layer } from '@/features/canvas/types';
 import { Button } from '@/shared/components/ui/button';
 import { ToolButton } from '@/shared/components/ToolButton';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles, Loader2, CheckCircle2, Play, Type, GripHorizontal } from 'lucide-react';
+import { MessageSquare, Download, Cloud, RefreshCcw, Lock, Unlock, Image as ImageIcon, FileImage, PenTool, FileText, Group, Ungroup, Palette, Code2, AlignStartVertical, AlignCenterVertical, AlignEndVertical, AlignStartHorizontal, AlignCenterHorizontal, AlignEndHorizontal, AlignHorizontalDistributeCenter, AlignVerticalDistributeCenter, MoreHorizontal, X, Route, Spline, Minus, History, Sparkles, Loader2, CheckCircle2, Play, Type, GripHorizontal, Copy, Trash2, Blend, Grid3X3, AlignLeft, AlignCenter, AlignRight, BringToFront, SendToBack, ArrowUpToLine, ArrowDownToLine, Bold, Italic, Underline, Strikethrough, Link as LinkIcon, Square, ArrowUp, ArrowDown, Sun, Type as TypeIcon } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/shared/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/shared/components/ui/tooltip';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/shared/components/ui/dialog';
@@ -18,7 +19,7 @@ import VersionHistoryModal from '@/features/canvas/components/VersionHistoryModa
 import AiDiagramGeneratorModal from '@/features/canvas/components/AiDiagramGeneratorModal';
 
 export default function ActionToolbar() {
-    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory, setIsPresenting, activeFontFamily, setActiveFontFamily, activeDashPattern, setActiveDashPattern } = useCanvasStore();
+    const { activeTool, setActiveTool, clear, saveToCloud, isSaving, boardId, isLocked, toggleLock, selectedLayerIds, selectedLayerId, layers, groupLayers, ungroupLayers, isSketchMode, toggleSketchMode, setExportCodeContent, alignSelectedLayers, updateLayer, saveHistory, setIsPresenting, activeFontFamily, setActiveFontFamily, activeDashPattern, setActiveDashPattern, bringForward, sendBackward, bringToFront, sendToBack } = useCanvasStore();
     const [resetOpen, setResetOpen] = useState(false);
     const [isMobileExpanded, setIsMobileExpanded] = useState(false);
     const [importMermaidOpen, setImportMermaidOpen] = useState(false);
@@ -109,6 +110,25 @@ export default function ActionToolbar() {
                         </DropdownMenu>
                     )}
 
+                    {selectedLayerIds.length > 0 && (
+                        <DropdownMenu>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"><Blend className="w-4 h-4" /></Button>
+                                    </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Opacity</TooltipContent>
+                            </Tooltip>
+                            <DropdownMenuContent align="end" className="w-32 bg-[#0B0F19] border-slate-700 text-slate-300">
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { opacity: 1 })); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">100%</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { opacity: 0.75 })); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">75%</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { opacity: 0.50 })); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">50%</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { opacity: 0.25 })); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">25%</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+
                     <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
 
                     <ToolButton icon={<Palette className="w-4 h-4" />} label={isSelectedSketch ? "Disable Sketch Mode" : "Enable Sketch Mode"} onClick={handleSketchToggle} isActive={isSelectedSketch} className={isSelectedSketch ? "!bg-violet-500 !text-white" : ""} />
@@ -143,6 +163,120 @@ export default function ActionToolbar() {
                         <ToolButton icon={<AlignVerticalDistributeCenter className="w-4 h-4" />} label="Distribute Vertically" onClick={() => alignSelectedLayers('distribute-v')} />
                     </>
                 )}
+
+                {selectedLayerIds.length > 0 && (
+                    <>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={<Sun className="w-4 h-4" />} label={selectedLayer?.hasShadow ? "Remove Shadow" : "Add Shadow"} onClick={() => {
+                            const newShadowState = !selectedLayer?.hasShadow;
+                            selectedLayerIds.forEach(id => updateLayer(id, { hasShadow: newShadowState }));
+                            saveHistory();
+                        }} isActive={selectedLayer?.hasShadow} />
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <div className="flex items-center gap-2 px-2" title="Opacity">
+                            <Blend className="w-4 h-4 text-slate-400" />
+                            <input 
+                                type="range" 
+                                min="0.1" max="1" step="0.1" 
+                                value={selectedLayer?.opacity ?? 1} 
+                                onChange={(e) => {
+                                    const val = parseFloat(e.target.value);
+                                    selectedLayerIds.forEach(id => updateLayer(id, { opacity: val }));
+                                }} 
+                                onMouseUp={saveHistory}
+                                className="w-20 accent-violet-500" 
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 px-2" title="Stroke Width">
+                            <Minus className="w-4 h-4 text-slate-400" />
+                            <input 
+                                type="range" 
+                                min="1" max="20" step="1" 
+                                value={selectedLayer?.penSize ?? 4} 
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    selectedLayerIds.forEach(id => updateLayer(id, { penSize: val }));
+                                }} 
+                                onMouseUp={saveHistory}
+                                className="w-20 accent-violet-500" 
+                            />
+                        </div>
+                        <div className="flex items-center gap-2 px-2" title="Corner Radius">
+                            <Square className="w-4 h-4 text-slate-400" />
+                            <input 
+                                type="range" 
+                                min="0" max="100" step="1" 
+                                value={selectedLayer?.cornerRadius ?? 4} 
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    selectedLayerIds.forEach(id => updateLayer(id, { cornerRadius: val }));
+                                }} 
+                                onMouseUp={saveHistory}
+                                className="w-20 accent-violet-500" 
+                            />
+                        </div>
+                    </>
+                )}
+
+                {selectedLayerIds.length > 0 && (
+                    <>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={selectedLayer?.isLocked ? <Lock className="w-4 h-4 text-rose-400" /> : <Unlock className="w-4 h-4" />} label={selectedLayer?.isLocked ? "Unlock Layer" : "Lock Layer"} onClick={() => {
+                            const newLockedState = !selectedLayer?.isLocked;
+                            selectedLayerIds.forEach(id => updateLayer(id, { isLocked: newLockedState }));
+                            saveHistory();
+                        }} />
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={<ArrowUpToLine className="w-4 h-4" />} label="Bring to Front" onClick={() => { selectedLayerIds.forEach(id => bringToFront(id)); saveHistory(); }} />
+                        <ToolButton icon={<ArrowUp className="w-4 h-4" />} label="Bring Forward" onClick={() => { selectedLayerIds.forEach(id => bringForward(id)); saveHistory(); }} />
+                        <ToolButton icon={<ArrowDown className="w-4 h-4" />} label="Send Backward" onClick={() => { selectedLayerIds.forEach(id => sendBackward(id)); saveHistory(); }} />
+                        <ToolButton icon={<ArrowDownToLine className="w-4 h-4" />} label="Send to Back" onClick={() => { selectedLayerIds.forEach(id => sendToBack(id)); saveHistory(); }} />
+                    </>
+                )}
+
+                {selectedLayerIds.length > 0 && layers.filter(l => selectedLayerIds.includes(l.id)).every(l => l.type === 'text') && (
+                    <>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <div className="flex items-center gap-2 px-2" title="Font Size">
+                            <TypeIcon className="w-4 h-4 text-slate-400" />
+                            <input 
+                                type="range" 
+                                min="10" max="120" step="1" 
+                                value={selectedLayer?.fontSize ?? 16} 
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value);
+                                    selectedLayerIds.forEach(id => updateLayer(id, { fontSize: val }));
+                                }} 
+                                onMouseUp={saveHistory}
+                                className="w-20 accent-violet-500" 
+                            />
+                        </div>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 text-xs font-medium text-slate-300 hover:text-white hover:bg-slate-800">
+                                    {selectedLayer?.fontFamily || 'Default'}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="center" className="w-32 bg-[#0B0F19] border-slate-700 text-slate-300">
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { fontFamily: "'Inter', sans-serif" })); saveHistory(); }} className="font-sans cursor-pointer focus:bg-violet-600 focus:text-white">Inter</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { fontFamily: "'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive" })); saveHistory(); }} className="font-comic cursor-pointer focus:bg-violet-600 focus:text-white">Comic</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { fontFamily: "'Courier New', Courier, monospace" })); saveHistory(); }} className="font-mono cursor-pointer focus:bg-violet-600 focus:text-white">Mono</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { fontFamily: "'Times New Roman', Times, serif" })); saveHistory(); }} className="font-serif cursor-pointer focus:bg-violet-600 focus:text-white">Serif</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={<Bold className="w-4 h-4" />} label="Bold" onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { fontWeight: selectedLayer?.fontWeight === 'bold' ? 'normal' : 'bold' })); saveHistory(); }} isActive={selectedLayer?.fontWeight === 'bold'} />
+                        <ToolButton icon={<Italic className="w-4 h-4" />} label="Italic" onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { fontStyle: selectedLayer?.fontStyle === 'italic' ? 'normal' : 'italic' })); saveHistory(); }} isActive={selectedLayer?.fontStyle === 'italic'} />
+                        <ToolButton icon={<Underline className="w-4 h-4" />} label="Underline" onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { textDecoration: selectedLayer?.textDecoration === 'underline' ? 'none' : 'underline' })); saveHistory(); }} isActive={selectedLayer?.textDecoration === 'underline'} />
+                        <ToolButton icon={<Strikethrough className="w-4 h-4" />} label="Strikethrough" onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { textDecoration: selectedLayer?.textDecoration === 'linethrough' ? 'none' : 'linethrough' })); saveHistory(); }} isActive={selectedLayer?.textDecoration === 'linethrough'} />
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={<AlignLeft className="w-4 h-4" />} label="Text Align Left" onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { textAlign: 'left' })); saveHistory(); }} isActive={selectedLayer?.textAlign === 'left' || !selectedLayer?.textAlign} />
+                        <ToolButton icon={<AlignCenter className="w-4 h-4" />} label="Text Align Center" onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { textAlign: 'center' })); saveHistory(); }} isActive={selectedLayer?.textAlign === 'center'} />
+                        <ToolButton icon={<AlignRight className="w-4 h-4" />} label="Text Align Right" onClick={() => { selectedLayerIds.forEach(id => updateLayer(id, { textAlign: 'right' })); saveHistory(); }} isActive={selectedLayer?.textAlign === 'right'} />
+                    </>
+                )}
                 {isGroupSelected && (
                     <ToolButton icon={<Ungroup className="w-4 h-4" />} label="Ungroup (Ctrl+Shift+G)" onClick={() => ungroupLayers(selectedLayerId!)} />
                 )}
@@ -160,6 +294,59 @@ export default function ActionToolbar() {
                     <>
                         <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
                         <ToolButton 
+                            icon={<LinkIcon className="w-4 h-4" />} 
+                            label="Add Link" 
+                            onClick={() => {
+                                const url = window.prompt('Enter link URL (e.g. https://google.com):', selectedLayer?.link || '');
+                                if (url !== null) {
+                                    selectedLayerIds.forEach(id => updateLayer(id, { link: url }));
+                                    saveHistory();
+                                }
+                            }} 
+                            isActive={!!selectedLayer?.link}
+                        />
+                        <ToolButton 
+                            icon={<Copy className="w-4 h-4" />} 
+                            label="Duplicate Selection (Ctrl+D)" 
+                            onClick={() => {
+                                const targetIds = selectedLayerIds.length > 0 ? selectedLayerIds : (selectedLayerId ? [selectedLayerId] : []);
+                                if (targetIds.length > 0) {
+                                    const layersToDuplicate = layers.filter(l => targetIds.includes(l.id));
+                                    const idMap = new Map<string, string>();
+                                    const newLayers = JSON.parse(JSON.stringify(layersToDuplicate)).map((layer: Layer) => {
+                                        const newId = crypto.randomUUID();
+                                        idMap.set(layer.id, newId);
+                                        return { ...layer, id: newId, x: (layer.x || 0) + 20, y: (layer.y || 0) + 20 };
+                                    });
+                                    newLayers.forEach((layer: Layer) => {
+                                        if (layer.parentId && idMap.has(layer.parentId)) layer.parentId = idMap.get(layer.parentId);
+                                        useCanvasStore.getState().addLayer(layer);
+                                    });
+                                    useCanvasStore.getState().setSelectedLayerId(null);
+                                    useCanvasStore.getState().setSelectedLayerIds(newLayers.map((l: Layer) => l.id));
+                                    saveHistory();
+                                }
+                            }}
+                        />
+                        <ToolButton 
+                            icon={<Trash2 className="w-4 h-4" />} 
+                            label="Delete Selection (Del)" 
+                            onClick={() => {
+                                const targetIds = selectedLayerIds.length > 0 ? selectedLayerIds : (selectedLayerId ? [selectedLayerId] : []);
+                                if (targetIds.length > 0) {
+                                    targetIds.forEach(id => {
+                                        const layer = layers.find(l => l.id === id);
+                                        if (layer && !layer.isLocked) useCanvasStore.getState().removeLayer(id);
+                                    });
+                                    useCanvasStore.getState().setSelectedLayerId(null);
+                                    useCanvasStore.getState().setSelectedLayerIds([]);
+                                    saveHistory();
+                                }
+                            }}
+                            className="hover:!text-red-400 hover:!bg-red-500/20"
+                        />
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton 
                             icon={<Code2 className="w-4 h-4" />} 
                             label="Export to React/Tailwind" 
                             onClick={() => {
@@ -169,7 +356,36 @@ export default function ActionToolbar() {
                             }} 
                             className="!text-emerald-400 hover:!bg-emerald-500/20"
                         />
+                        <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>
+                        <ToolButton icon={<BringToFront className="w-4 h-4" />} label="Bring to Front" onClick={() => { selectedLayerIds.forEach(id => useCanvasStore.getState().bringToFront(id)); saveHistory(); }} />
+                        <ToolButton icon={<ArrowUpToLine className="w-4 h-4" />} label="Bring Forward" onClick={() => { selectedLayerIds.forEach(id => useCanvasStore.getState().bringForward(id)); saveHistory(); }} />
+                        <ToolButton icon={<ArrowDownToLine className="w-4 h-4" />} label="Send Backward" onClick={() => { selectedLayerIds.forEach(id => useCanvasStore.getState().sendBackward(id)); saveHistory(); }} />
+                        <ToolButton icon={<SendToBack className="w-4 h-4" />} label="Send to Back" onClick={() => { selectedLayerIds.forEach(id => useCanvasStore.getState().sendToBack(id)); saveHistory(); }} />
                     </>
+                )}
+
+                {selectedLayerIds.length === 0 && (
+                    <DropdownMenu>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800"><Grid3X3 className="w-4 h-4" /></Button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" className="bg-slate-900 border-slate-700 text-white text-xs">Canvas Appearance</TooltipContent>
+                        </Tooltip>
+                        <DropdownMenuContent align="end" className="w-40 bg-[#0B0F19] border-slate-700 text-slate-300">
+                            <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Background</div>
+                            <DropdownMenuItem onClick={() => { useCanvasStore.getState().setBgPattern('solid'); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">Solid</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { useCanvasStore.getState().setBgPattern('dotted'); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">Dotted</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { useCanvasStore.getState().setBgPattern('grid'); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">Grid</DropdownMenuItem>
+                            <DropdownMenuSeparator className="bg-slate-700" />
+                            <div className="px-2 py-1.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Color Theme</div>
+                            <DropdownMenuItem onClick={() => { useCanvasStore.getState().setBackgroundColor('#000000'); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">Dark Space</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { useCanvasStore.getState().setBackgroundColor('#0B0F19'); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">Midnight Blue</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => { useCanvasStore.getState().setBackgroundColor('#1e293b'); saveHistory(); }} className="cursor-pointer focus:bg-violet-600 focus:text-white">Slate</DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 )}
 
                 <div className="w-[1px] h-8 bg-slate-700 mx-1"></div>

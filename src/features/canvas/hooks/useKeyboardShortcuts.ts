@@ -5,7 +5,7 @@ import { toast } from 'sonner';
 import { Layer } from '@/features/canvas/types';
 
 export const useKeyboardShortcuts = () => {
-    const clipboardRef = useRef<Layer | null>(null);
+    const clipboardRef = useRef<Layer[]>([]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -47,11 +47,12 @@ export const useKeyboardShortcuts = () => {
 
             // Copy
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'c') {
-                if (state.selectedLayerId) {
-                    const layerToCopy = state.layers.find(l => l.id === state.selectedLayerId);
-                    if (layerToCopy) {
-                        clipboardRef.current = JSON.parse(JSON.stringify(layerToCopy));
-                        toast.success('Copied to clipboard');
+                const targetIds = state.selectedLayerIds.length > 0 ? state.selectedLayerIds : (state.selectedLayerId ? [state.selectedLayerId] : []);
+                if (targetIds.length > 0) {
+                    const layersToCopy = state.layers.filter(l => targetIds.includes(l.id));
+                    if (layersToCopy.length > 0) {
+                        clipboardRef.current = JSON.parse(JSON.stringify(layersToCopy));
+                        toast.success(`Copied ${layersToCopy.length} item(s)`);
                     }
                 }
                 return;
@@ -59,30 +60,98 @@ export const useKeyboardShortcuts = () => {
 
             // Paste
             if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'v') {
-                if (clipboardRef.current) {
-                    const newLayer = {
-                        ...clipboardRef.current,
-                        id: uuidv4(),
-                        x: (clipboardRef.current.x || 0) + 20,
-                        y: (clipboardRef.current.y || 0) + 20,
-                    };
-                    state.addLayer(newLayer);
-                    state.setSelectedLayerId(newLayer.id);
+                if (clipboardRef.current && clipboardRef.current.length > 0) {
+                    const idMap = new Map<string, string>();
+                    const newLayers = clipboardRef.current.map(layer => {
+                        const newId = uuidv4();
+                        idMap.set(layer.id, newId);
+                        return {
+                            ...layer,
+                            id: newId,
+                            x: (layer.x || 0) + 20,
+                            y: (layer.y || 0) + 20,
+                        };
+                    });
+
+                    // Update parentIds if the parent was also copied
+                    newLayers.forEach(layer => {
+                        if (layer.parentId && idMap.has(layer.parentId)) {
+                            layer.parentId = idMap.get(layer.parentId);
+                        }
+                    });
+
+                    newLayers.forEach(layer => state.addLayer(layer));
+                    
+                    if (newLayers.length === 1) {
+                        state.setSelectedLayerId(newLayers[0].id);
+                        state.setSelectedLayerIds([]);
+                    } else {
+                        state.setSelectedLayerId(null);
+                        state.setSelectedLayerIds(newLayers.map(l => l.id));
+                    }
                     state.saveHistory();
                     
                     // Update clipboard so multiple pastes keep offsetting
-                    clipboardRef.current = newLayer;
+                    clipboardRef.current = newLayers;
+                }
+                return;
+            }
+
+            // Duplicate (Ctrl+D)
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+                e.preventDefault();
+                const targetIds = state.selectedLayerIds.length > 0 ? state.selectedLayerIds : (state.selectedLayerId ? [state.selectedLayerId] : []);
+                if (targetIds.length > 0) {
+                    const layersToDuplicate = state.layers.filter(l => targetIds.includes(l.id));
+                    const idMap = new Map<string, string>();
+                    
+                    const newLayers = JSON.parse(JSON.stringify(layersToDuplicate)).map((layer: Layer) => {
+                        const newId = uuidv4();
+                        idMap.set(layer.id, newId);
+                        return {
+                            ...layer,
+                            id: newId,
+                            x: (layer.x || 0) + 20,
+                            y: (layer.y || 0) + 20,
+                        };
+                    });
+
+                    // Update parentIds if the parent was also duplicated
+                    newLayers.forEach((layer: Layer) => {
+                        if (layer.parentId && idMap.has(layer.parentId)) {
+                            layer.parentId = idMap.get(layer.parentId);
+                        }
+                    });
+
+                    newLayers.forEach((layer: Layer) => state.addLayer(layer));
+                    
+                    if (newLayers.length === 1) {
+                        state.setSelectedLayerId(newLayers[0].id);
+                        state.setSelectedLayerIds([]);
+                    } else {
+                        state.setSelectedLayerId(null);
+                        state.setSelectedLayerIds(newLayers.map((l: Layer) => l.id));
+                    }
+                    state.saveHistory();
                 }
                 return;
             }
 
             // Delete
             if (e.key === 'Delete' || e.key === 'Backspace') {
-                if (state.selectedLayerId) {
-                    const layer = state.layers.find(l => l.id === state.selectedLayerId);
-                    if (layer && !layer.isLocked) {
-                        state.removeLayer(state.selectedLayerId);
+                const targetIds = state.selectedLayerIds.length > 0 ? state.selectedLayerIds : (state.selectedLayerId ? [state.selectedLayerId] : []);
+                if (targetIds.length > 0) {
+                    let deletedAny = false;
+                    targetIds.forEach(id => {
+                        const layer = state.layers.find(l => l.id === id);
+                        if (layer && !layer.isLocked) {
+                            state.removeLayer(id);
+                            deletedAny = true;
+                        }
+                    });
+                    if (deletedAny) {
                         state.setSelectedLayerId(null);
+                        state.setSelectedLayerIds([]);
                         state.saveHistory();
                     }
                 }
@@ -106,15 +175,20 @@ export const useKeyboardShortcuts = () => {
             }
 
         // Layer Ordering
-        if (e.key === '[' || e.key === ']') {
-            if (state.selectedLayerId) {
-                if (e.key === '[') {
-                    if (e.shiftKey) state.sendToBack(state.selectedLayerId);
-                    else state.sendBackward(state.selectedLayerId);
-                } else if (e.key === ']') {
-                    if (e.shiftKey) state.bringToFront(state.selectedLayerId);
-                    else state.bringForward(state.selectedLayerId);
-                }
+        if ((e.ctrlKey || e.metaKey) && (e.key === '[' || e.key === ']')) {
+            const targetIds = state.selectedLayerIds.length > 0 ? state.selectedLayerIds : (state.selectedLayerId ? [state.selectedLayerId] : []);
+            if (targetIds.length > 0) {
+                e.preventDefault();
+                targetIds.forEach(id => {
+                    if (e.key === '[') {
+                        if (e.shiftKey) state.sendToBack(id);
+                        else state.sendBackward(id);
+                    } else if (e.key === ']') {
+                        if (e.shiftKey) state.bringToFront(id);
+                        else state.bringForward(id);
+                    }
+                });
+                state.saveHistory();
             }
             return;
         }

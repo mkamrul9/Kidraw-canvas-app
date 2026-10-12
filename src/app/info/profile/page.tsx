@@ -1,6 +1,6 @@
 'use client';
 import { useSession } from "next-auth/react";
-import { ArrowLeft, User, Camera, Mail, Key, Briefcase, MapPin, Link as LinkIcon, Shield, Smartphone, Globe, LogOut } from "lucide-react";
+import { ArrowLeft, User, Camera, Mail, Key, Briefcase, MapPin, Link as LinkIcon, Shield, Globe } from "lucide-react";
 import GlobalNavbar from "@/shared/components/GlobalNavbar";
 import Footer from "@/shared/components/Footer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/components/ui/avatar";
@@ -16,9 +16,6 @@ export default function ProfilePage() {
     const [location, setLocation] = useState("");
     
     const [isPending, startTransition] = useTransition();
-    const [isSecurityPending, startSecurityTransition] = useTransition();
-    
-    const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
     const handleSaveProfile = (e: React.FormEvent) => {
         e.preventDefault();
@@ -40,23 +37,6 @@ export default function ProfilePage() {
 
     const handleAvatarClick = () => {
         toast.info("Avatar managed by OAuth provider", { description: "Change your avatar on GitHub or Google to see it updated here." });
-    };
-
-    const toggle2FA = () => {
-        startSecurityTransition(() => {
-            setTimeout(() => {
-                setTwoFactorEnabled(!twoFactorEnabled);
-                if (!twoFactorEnabled) {
-                    toast.success("Two-Factor Authentication Enabled", { description: "Your account is now more secure." });
-                } else {
-                    toast.warning("Two-Factor Authentication Disabled", { description: "Account security has been reduced." });
-                }
-            }, 800);
-        });
-    };
-
-    const revokeSession = () => {
-        toast.success("Session Revoked", { description: "The device has been signed out." });
     };
 
     return (
@@ -186,22 +166,25 @@ export default function ProfilePage() {
                                 <div>
                                     <h4 className="font-bold text-foreground text-sm mb-1 flex items-center gap-2">
                                         Two-Factor Authentication 
-                                        {twoFactorEnabled && <span className="bg-emerald-500/10 text-emerald-500 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-emerald-500/20">Enabled</span>}
+                                        <span className="bg-primary/10 text-primary text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-primary/20">OAuth Managed</span>
                                     </h4>
-                                    <p className="text-xs text-muted-foreground">Add an extra layer of security to your account.</p>
+                                    <p className="text-xs text-muted-foreground">Managed via your Google or GitHub account settings.</p>
                                 </div>
                                 <Button 
-                                    onClick={toggle2FA}
-                                    disabled={isSecurityPending}
-                                    variant={twoFactorEnabled ? "outline" : "default"} 
-                                    className={`h-9 font-bold rounded-lg ${twoFactorEnabled ? 'bg-background hover:bg-destructive hover:text-destructive-foreground hover:border-destructive' : 'bg-foreground text-background hover:bg-foreground/90'}`}
+                                    variant="outline" 
+                                    size="sm"
+                                    disabled
+                                    className="h-9 font-medium text-xs rounded-lg opacity-70 cursor-not-allowed"
                                 >
-                                    {isSecurityPending ? "Processing..." : twoFactorEnabled ? "Disable" : "Enable 2FA"}
+                                    Provider Managed
                                 </Button>
                             </div>
 
                             <div className="space-y-4">
-                                <h4 className="font-bold text-sm text-foreground mb-3">Active Sessions</h4>
+                                <div className="flex items-center justify-between">
+                                    <h4 className="font-bold text-sm text-foreground">Active Session</h4>
+                                    <span className="text-xs text-muted-foreground">NextAuth Session</span>
+                                </div>
                                 
                                 <div className="flex items-center justify-between p-4 border border-border bg-background rounded-2xl">
                                     <div className="flex items-center gap-4">
@@ -209,26 +192,11 @@ export default function ProfilePage() {
                                             <Globe className="w-5 h-5 text-primary" />
                                         </div>
                                         <div>
-                                            <p className="text-sm font-bold text-foreground">Windows • Chrome</p>
-                                            <p className="text-xs text-muted-foreground">San Francisco, USA • Active Now</p>
+                                            <p className="text-sm font-bold text-foreground">Current Browser Session</p>
+                                            <p className="text-xs text-muted-foreground">Signed in as {session?.user?.email || 'Authenticated User'}</p>
                                         </div>
                                     </div>
-                                    <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full">Current Device</span>
-                                </div>
-
-                                <div className="flex items-center justify-between p-4 border border-border bg-background rounded-2xl opacity-75">
-                                    <div className="flex items-center gap-4">
-                                        <div className="bg-muted p-2.5 rounded-xl border border-border">
-                                            <Smartphone className="w-5 h-5 text-muted-foreground" />
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-bold text-foreground">iPhone 14 Pro • Safari</p>
-                                            <p className="text-xs text-muted-foreground">New York, USA • Last active 2 hours ago</p>
-                                        </div>
-                                    </div>
-                                    <Button onClick={revokeSession} variant="ghost" size="sm" className="h-8 text-destructive hover:text-destructive-foreground hover:bg-destructive rounded-lg">
-                                        <LogOut className="w-3.5 h-3.5 mr-1.5" /> Revoke
-                                    </Button>
+                                    <span className="text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-1 rounded-full">Active</span>
                                 </div>
                             </div>
                         </div>

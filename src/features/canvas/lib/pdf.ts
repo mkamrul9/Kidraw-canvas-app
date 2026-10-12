@@ -1,29 +1,42 @@
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+let cachedPdfjsLib: any = null;
+
+const PDFJS_VERSION = '4.4.168';
+const PDFJS_CDN_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.min.mjs`;
+const PDFJS_WORKER_URL = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${PDFJS_VERSION}/pdf.worker.min.mjs`;
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function loadPDFJS(): Promise<any> {
     if (typeof window === 'undefined') return null;
     
+    if (cachedPdfjsLib) {
+        return cachedPdfjsLib;
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((window as any).pdfjsLib) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (window as any).pdfjsLib;
+        cachedPdfjsLib = (window as any).pdfjsLib;
+        return cachedPdfjsLib;
     }
 
-    return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
-        script.onload = () => {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const pdfjsLib = (window as any).pdfjsLib;
-            if (pdfjsLib) {
-                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                resolve(pdfjsLib);
-            } else {
-                reject(new Error('pdfjsLib is not defined on window'));
-            }
-        };
-        script.onerror = () => reject(new Error('Failed to load PDF.js from CDN'));
-        document.head.appendChild(script);
-    });
+    try {
+        // Dynamically import patched modern PDF.js ES module (resolves CVE-2024-4367)
+        // webpackIgnore ensures Next.js bundler does not attempt to statically bundle external CDN ESM
+        const pdfjsModule = await import(/* webpackIgnore: true */ PDFJS_CDN_URL);
+        const pdfjsLib = pdfjsModule.default || pdfjsModule;
+
+        if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+            pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
+            cachedPdfjsLib = pdfjsLib;
+            return pdfjsLib;
+        }
+
+        throw new Error('PDF.js module loaded without GlobalWorkerOptions');
+    } catch (error) {
+        console.error('Failed to dynamically load PDF.js from CDN:', error);
+        throw new Error('Failed to load secure PDF.js library.');
+    }
 }
 
 export async function renderPDFPages(
@@ -36,7 +49,12 @@ export async function renderPDFPages(
     }
 
     const arrayBuffer = await file.arrayBuffer();
-    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+    // Enforce isEvalSupported: false to eliminate font matrix arbitrary script evaluation (CVE-2024-4367)
+    const loadingTask = pdfjsLib.getDocument({
+        data: arrayBuffer,
+        isEvalSupported: false,
+        useSystemFonts: false,
+    });
 
     loadingTask.onProgress = (progress: { loaded: number; total: number }) => {
         if (progress.total > 0) {
@@ -56,7 +74,7 @@ export async function renderPDFPages(
     for (let i = 1; i <= numPages; i++) {
         const page = await pdf.getPage(i);
         
-        // Render at 1.5x scale for high resolution/crisp text
+        // Render at 1.5x scale for crisp text resolution
         const viewport = page.getViewport({ scale: 1.5 });
         
         if (i === 1) {

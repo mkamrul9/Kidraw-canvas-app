@@ -45,4 +45,11 @@ export type Layer = {
     fontFamily?: string;
     lineStyle?: 'solid' | 'dashed' | 'dotted';
     isLocked?: boolean;
+    textAlign?: 'left' | 'center' | 'right';
+    fontWeight?: 'normal' | 'bold';
+    fontStyle?: 'normal' | 'italic';
+    textDecoration?: 'none' | 'underline' | 'linethrough';
+    link?: string;
+    cornerRadius?: number;
+    hasShadow?: boolean;
 };
